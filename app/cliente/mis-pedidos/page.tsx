@@ -96,6 +96,8 @@ interface Order {
   tracking_link?: string | null; // NUEVO: link de tracking del contenedor
 }
 
+const normalizeOrderId = (id: string | number) => String(id).trim();
+
 interface NewOrderData {
   productName: string;
   description: string;
@@ -803,16 +805,23 @@ export default function MisPedidosPage() {
   };
 
   // Funciones para manejar reseñas
-  const fetchOrderReview = async (orderId: string) => {
-    if (loadingReviews[orderId] || !clientId) return;
+  const fetchOrderReview = async (orderIdRaw: string): Promise<boolean> => {
+    const orderId = normalizeOrderId(orderIdRaw);
+    if (!clientId) return Boolean(orderReviews[orderId]);
+    if (loadingReviews[orderId]) return Boolean(orderReviews[orderId]);
+
     setLoadingReviews(prev => ({ ...prev, [orderId]: true }));
+    let reviewFound = false;
+
     try {
       const response = await fetch(`/api/orders/${orderId}/review?userId=${encodeURIComponent(clientId)}`);
+      console.log('[reviews][fetch]', { orderId, status: response.status, ok: response.ok });
       if (response.ok) {
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('application/json')) {
           const data = await response.json();
           if (data.exists && data.review) {
+            reviewFound = true;
             setOrderReviews(prev => ({
               ...prev,
               [orderId]: {
@@ -821,45 +830,36 @@ export default function MisPedidosPage() {
                 createdAt: data.review.createdAt,
               },
             }));
+          } else {
+            console.log('[reviews][fetch] no review in payload', data);
           }
         }
+      } else {
+        const text = await response.text();
+        console.warn('[reviews][fetch] failed', { orderId, status: response.status, body: text });
       }
     } catch (error) {
       console.error('Error fetching review:', error);
     } finally {
       setLoadingReviews(prev => ({ ...prev, [orderId]: false }));
     }
+
+    return reviewFound;
   };
 
   const openReviewModal = async (order: Order) => {
-    // Verificar si ya existe una reseña antes de abrir el modal
-    if (!orderReviews[order.id] && !loadingReviews[order.id]) {
-      // Cargar la reseña primero para verificar si existe
-      await fetchOrderReview(order.id);
+    const orderKey = normalizeOrderId(order.id);
+    let hasReview = Boolean(orderReviews[orderKey]);
+
+    if (!hasReview) {
+      hasReview = await fetchOrderReview(orderKey);
     }
-    
-    // Si ya existe una reseña, mostrar el modal de visualización en lugar del de calificación
-    if (orderReviews[order.id]) {
+
+    if (hasReview) {
       openViewReviewModal(order);
       return;
     }
-    
-    // Si aún está cargando, esperar un momento
-    if (loadingReviews[order.id]) {
-      // Esperar a que termine de cargar
-      setTimeout(async () => {
-        if (orderReviews[order.id]) {
-          openViewReviewModal(order);
-        } else {
-          setSelectedOrderForReview(order);
-          setReviewRating(0);
-          setReviewText('');
-          setIsReviewModalOpen(true);
-        }
-      }, 500);
-      return;
-    }
-    
+
     setSelectedOrderForReview(order);
     setReviewRating(0);
     setReviewText('');
@@ -867,9 +867,10 @@ export default function MisPedidosPage() {
   };
 
   const openViewReviewModal = async (order: Order) => {
+    const orderKey = normalizeOrderId(order.id);
     setSelectedOrderForReview(order);
-    if (!orderReviews[order.id]) {
-      await fetchOrderReview(order.id);
+    if (!orderReviews[orderKey]) {
+      await fetchOrderReview(orderKey);
     }
     setIsViewReviewModalOpen(true);
   };
@@ -886,7 +887,7 @@ export default function MisPedidosPage() {
 
     setSubmittingReview(true);
     try {
-      const response = await fetch(`/api/orders/${selectedOrderForReview.id}/review`, {
+      const response = await fetch(`/api/orders/${normalizeOrderId(selectedOrderForReview.id)}/review`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -909,7 +910,14 @@ export default function MisPedidosPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error al enviar la reseña');
+        const serverMessage = data?.error || data?.message || '';
+        if (response.status === 400 && serverMessage.toLowerCase().includes('ya has calificado')) {
+          await fetchOrderReview(selectedOrderForReview.id);
+          setIsReviewModalOpen(false);
+          openViewReviewModal(selectedOrderForReview);
+          return;
+        }
+        throw new Error(serverMessage || 'Error al enviar la reseña');
       }
 
       toast({
@@ -918,9 +926,10 @@ export default function MisPedidosPage() {
       });
 
       // Actualizar el estado local
+      const orderKey = normalizeOrderId(selectedOrderForReview.id);
       setOrderReviews(prev => ({
         ...prev,
-        [selectedOrderForReview.id]: {
+        [orderKey]: {
           rating: reviewRating,
           reviewText: reviewText.trim() || null,
           createdAt: new Date().toISOString(),
@@ -942,16 +951,18 @@ export default function MisPedidosPage() {
     }
   };
 
-  // Cargar reseñas para pedidos completados al 100%
+  // Cargar reseñas para pedidos completados al 100% cuando tengamos clientId
   useEffect(() => {
+    if (!clientId) return;
     const completedOrders = orders.filter(o => o.stateNum === 13);
     completedOrders.forEach(order => {
-      if (!orderReviews[order.id] && !loadingReviews[order.id]) {
-        fetchOrderReview(order.id);
+      const orderKey = normalizeOrderId(order.id);
+      if (!orderReviews[orderKey] && !loadingReviews[orderKey]) {
+        fetchOrderReview(orderKey);
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orders]);
+  }, [orders, clientId]);
 
 
   const getProgressColor = (progress: number) => {
@@ -2443,8 +2454,9 @@ export default function MisPedidosPage() {
                         <div className="flex flex-col gap-2">
                           <span className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>{t('client.recentOrders.estimatedDelivery')}: {order.estimatedDelivery}</span>
                           {/* Botón de calificar solo para pedidos completados al 100% */}
-                          {order.stateNum === 13 && (
-                            loadingReviews[order.id] ? (
+                          {order.stateNum === 13 && (() => {
+                            const orderKey = normalizeOrderId(order.id);
+                            return loadingReviews[orderKey] ? (
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -2454,7 +2466,7 @@ export default function MisPedidosPage() {
                                 <Star className="h-3 w-3 mr-1 animate-pulse" />
                                 Verificando...
                               </Button>
-                            ) : orderReviews[order.id] ? (
+                            ) : orderReviews[orderKey] ? (
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -2475,7 +2487,7 @@ export default function MisPedidosPage() {
                                 {t('client.recentOrders.reviews.rate', { fallback: 'Calificar' })}
                               </Button>
                             )
-                          )}
+                          })()}
                         </div>
                         <div className="flex gap-2 md:gap-3">
                           {(order.status === 'quoted' || order.stateNum === -1) && (
@@ -3288,7 +3300,18 @@ export default function MisPedidosPage() {
             </DialogDescription>
           </DialogHeader>
           
-          {selectedOrderForReview && orderReviews[selectedOrderForReview.id] ? (
+          {(() => {
+            if (!selectedOrderForReview) return null;
+            const selectedKey = normalizeOrderId(selectedOrderForReview.id);
+            const reviewData = orderReviews[selectedKey];
+            if (!reviewData) return (
+              <div className="py-4">
+                <p className={`text-center ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                  {t('client.recentOrders.reviews.viewModal.loading', { fallback: 'Cargando reseña...' })}
+                </p>
+              </div>
+            );
+            return (
             <div className="space-y-4 py-4">
               {/* Calificación mostrada */}
               <div>
@@ -3300,7 +3323,7 @@ export default function MisPedidosPage() {
                     <Star
                       key={star}
                       className={`w-6 h-6 ${
-                        star <= orderReviews[selectedOrderForReview.id].rating
+                        star <= reviewData.rating
                           ? 'text-yellow-400 fill-yellow-400'
                           : mounted && theme === 'dark'
                           ? 'text-slate-600'
@@ -3310,21 +3333,21 @@ export default function MisPedidosPage() {
                   ))}
                 </div>
                 <p className={`text-sm mt-2 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                  {orderReviews[selectedOrderForReview.id].rating}{' '}
-                  {orderReviews[selectedOrderForReview.id].rating === 1
+                  {reviewData.rating}{' '}
+                  {reviewData.rating === 1
                     ? t('client.recentOrders.reviews.modal.star', { fallback: 'estrella' })
                     : t('client.recentOrders.reviews.modal.stars', { fallback: 'estrellas' })}
                 </p>
               </div>
 
               {/* Texto de la reseña */}
-              {orderReviews[selectedOrderForReview.id].reviewText && (
+              {reviewData.reviewText && (
                 <div>
                   <Label className={`text-sm font-semibold ${mounted && theme === 'dark' ? 'text-slate-300' : ''}`}>
                     {t('client.recentOrders.reviews.viewModal.reviewText', { fallback: 'Tu Reseña' })}
                   </Label>
                   <div className={`mt-2 p-3 rounded-lg ${mounted && theme === 'dark' ? 'bg-slate-700 text-slate-200' : 'bg-slate-50 text-slate-800'}`}>
-                    <p className="text-sm whitespace-pre-wrap">{orderReviews[selectedOrderForReview.id].reviewText}</p>
+                    <p className="text-sm whitespace-pre-wrap">{reviewData.reviewText}</p>
                   </div>
                 </div>
               )}
@@ -3333,17 +3356,12 @@ export default function MisPedidosPage() {
               <div>
                 <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
                   {t('client.recentOrders.reviews.viewModal.date', { fallback: 'Fecha' })}:{' '}
-                  {new Date(orderReviews[selectedOrderForReview.id].createdAt).toLocaleDateString()}
+                  {new Date(reviewData.createdAt).toLocaleDateString()}
                 </p>
               </div>
             </div>
-          ) : (
-            <div className="py-4">
-              <p className={`text-center ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                {t('client.recentOrders.reviews.viewModal.loading', { fallback: 'Cargando reseña...' })}
-              </p>
-            </div>
-          )}
+            );
+          })()}
 
           <div className="flex justify-end pt-4 border-t">
             <Button
