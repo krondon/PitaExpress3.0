@@ -1708,7 +1708,7 @@ export default function ConfiguracionPage() {
                   <p className={`font-bold text-red-600 dark:text-red-400`}>{config.auto_update_exchange_rate_cny ? (currentExchangeRateCNY || config.cnyRate) : config.cnyRate} CNY</p>
                 </div>
                 <div className={`text-center p-3 bg-white dark:bg-slate-700 rounded-lg`}>
-                  <p className={`text-slate-600 dark:text-slate-300`}>🪙 USDT → VES</p>
+                  <p className={`text-slate-600 dark:text-slate-300`}>🪙 VES → USDT</p>
                   <p className={`font-bold text-orange-600 dark:text-orange-400`}>{config.auto_update_binance_rate ? (currentExchangeRateBinance !== null ? currentExchangeRateBinance.toFixed(2) : config.binanceRate.toFixed(2)) : config.binanceRate.toFixed(2)} Bs</p>
                 </div>
                 <div className={`text-center p-3 bg-white dark:bg-slate-700 rounded-lg`}>

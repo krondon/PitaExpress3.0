@@ -877,8 +877,8 @@ export default function MisPedidosPage() {
   const handleSubmitReview = async () => {
     if (!selectedOrderForReview || reviewRating === 0) {
       toast({
-        title: t('client.reviews.error.title') || 'Error',
-        description: t('client.reviews.error.ratingRequired') || 'Por favor selecciona una calificación',
+        title: t('client.recentOrders.reviews.error.title') || 'Error',
+        description: t('client.recentOrders.reviews.error.ratingRequired') || 'Por favor selecciona una calificación',
         variant: 'destructive',
       });
       return;
@@ -913,8 +913,8 @@ export default function MisPedidosPage() {
       }
 
       toast({
-        title: t('client.reviews.success.title') || '¡Reseña enviada!',
-        description: t('client.reviews.success.description') || 'Gracias por tu calificación',
+        title: t('client.recentOrders.reviews.success.title') || '¡Reseña enviada!',
+        description: t('client.recentOrders.reviews.success.description') || 'Gracias por tu calificación',
       });
 
       // Actualizar el estado local
@@ -933,8 +933,8 @@ export default function MisPedidosPage() {
       setReviewText('');
     } catch (error: any) {
       toast({
-        title: t('client.reviews.error.title') || 'Error',
-        description: error.message || t('client.reviews.error.submitFailed') || 'No se pudo enviar la reseña',
+        title: t('client.recentOrders.reviews.error.title') || 'Error',
+        description: error.message || t('client.recentOrders.reviews.error.submitFailed') || 'No se pudo enviar la reseña',
         variant: 'destructive',
       });
     } finally {
@@ -2462,7 +2462,7 @@ export default function MisPedidosPage() {
                                 onClick={() => openViewReviewModal(order)}
                               >
                                 <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-400" />
-                                Ya calificado
+                                {t('client.recentOrders.reviews.alreadyRated', { fallback: 'Ya calificado' })}
                               </Button>
                             ) : (
                               <Button
@@ -2472,7 +2472,7 @@ export default function MisPedidosPage() {
                                 onClick={() => openReviewModal(order)}
                               >
                                 <Star className="h-3 w-3 mr-1" />
-                                Calificar
+                                {t('client.recentOrders.reviews.rate', { fallback: 'Calificar' })}
                               </Button>
                             )
                           )}
@@ -3177,10 +3177,11 @@ export default function MisPedidosPage() {
         <DialogContent className={`max-w-md ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
           <DialogHeader>
             <DialogTitle className={`${mounted && theme === 'dark' ? 'text-white' : ''}`}>
-              Calificar Pedido
+              {t('client.recentOrders.reviews.modal.title', { fallback: 'Calificar pedido' })}
             </DialogTitle>
             <DialogDescription className={mounted && theme === 'dark' ? 'text-slate-400' : ''}>
-              {selectedOrderForReview && `Pedido #${selectedOrderForReview.id} - ${selectedOrderForReview.product}`}
+              {selectedOrderForReview &&
+                `${t('client.recentOrders.reviews.modal.subtitle', { fallback: 'Pedido' })} #${selectedOrderForReview.id} - ${selectedOrderForReview.product}`}
             </DialogDescription>
           </DialogHeader>
           
@@ -3188,7 +3189,7 @@ export default function MisPedidosPage() {
             {/* Calificación con estrellas */}
             <div>
               <Label className={`text-sm font-semibold ${mounted && theme === 'dark' ? 'text-slate-300' : ''}`}>
-                Califique de 1 a 5 estrellas *
+                {t('client.recentOrders.reviews.modal.rating', { fallback: 'Calificación' })} *
               </Label>
               <div className="flex gap-2 mt-2">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -3212,7 +3213,10 @@ export default function MisPedidosPage() {
               </div>
               {reviewRating > 0 && (
                 <p className={`text-sm mt-2 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                  {reviewRating} {reviewRating === 1 ? 'estrella' : 'estrellas'}
+                  {reviewRating}{' '}
+                  {reviewRating === 1
+                    ? t('client.recentOrders.reviews.modal.star', { fallback: 'estrella' })
+                    : t('client.recentOrders.reviews.modal.stars', { fallback: 'estrellas' })}
                 </p>
               )}
             </div>
@@ -3220,18 +3224,18 @@ export default function MisPedidosPage() {
             {/* Texto de la reseña */}
             <div>
               <Label htmlFor="review-text" className={`text-sm font-semibold ${mounted && theme === 'dark' ? 'text-slate-300' : ''}`}>
-                Escribe tu reseña
+                {t('client.recentOrders.reviews.modal.reviewText', { fallback: 'Escribe tu reseña' })}
               </Label>
               <Textarea
                 id="review-text"
                 value={reviewText}
                 onChange={(e) => setReviewText(e.target.value)}
-                placeholder="Deje su reseña aquí"
+                placeholder={t('client.recentOrders.reviews.modal.reviewPlaceholder', { fallback: 'Deja tu reseña aquí' })}
                 className={`mt-2 min-h-[100px] ${mounted && theme === 'dark' ? 'bg-slate-700 border-slate-600 text-white' : ''}`}
                 maxLength={500}
               />
               <p className={`text-xs mt-1 ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                {reviewText.length}/500 caracteres
+                {reviewText.length}/500 {t('client.recentOrders.reviews.modal.characters', { fallback: 'caracteres' })}
               </p>
             </div>
           </div>
@@ -3248,7 +3252,7 @@ export default function MisPedidosPage() {
               disabled={submittingReview}
               className={mounted && theme === 'dark' ? 'border-slate-600' : ''}
             >
-              Cancelar
+              {t('client.recentOrders.reviews.modal.cancel', { fallback: 'Cancelar' })}
             </Button>
             <Button
               onClick={handleSubmitReview}
@@ -3258,12 +3262,12 @@ export default function MisPedidosPage() {
               {submittingReview ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Enviando...
+                  {t('client.recentOrders.reviews.modal.submitting', { fallback: 'Enviando...' })}
                 </>
               ) : (
                 <>
                   <Star className="w-4 h-4 mr-2" />
-                  Enviar
+                  {t('client.recentOrders.reviews.modal.submit', { fallback: 'Enviar' })}
                 </>
               )}
             </Button>
@@ -3276,10 +3280,11 @@ export default function MisPedidosPage() {
         <DialogContent className={`max-w-md ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
           <DialogHeader>
             <DialogTitle className={`${mounted && theme === 'dark' ? 'text-white' : ''}`}>
-              {t('client.reviews.viewModal.title') || 'Tu Reseña'}
+              {t('client.recentOrders.reviews.viewModal.title', { fallback: 'Tu Reseña' })}
             </DialogTitle>
             <DialogDescription className={mounted && theme === 'dark' ? 'text-slate-400' : ''}>
-              {selectedOrderForReview && `${t('client.reviews.viewModal.subtitle') || 'Pedido'} #${selectedOrderForReview.id} - ${selectedOrderForReview.product}`}
+              {selectedOrderForReview &&
+                `${t('client.recentOrders.reviews.viewModal.subtitle', { fallback: 'Pedido' })} #${selectedOrderForReview.id} - ${selectedOrderForReview.product}`}
             </DialogDescription>
           </DialogHeader>
           
@@ -3288,7 +3293,7 @@ export default function MisPedidosPage() {
               {/* Calificación mostrada */}
               <div>
                 <Label className={`text-sm font-semibold ${mounted && theme === 'dark' ? 'text-slate-300' : ''}`}>
-                  {t('client.reviews.viewModal.rating') || 'Tu Calificación'}
+                  {t('client.recentOrders.reviews.viewModal.rating', { fallback: 'Tu Calificación' })}
                 </Label>
                 <div className="flex gap-2 mt-2">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -3305,7 +3310,10 @@ export default function MisPedidosPage() {
                   ))}
                 </div>
                 <p className={`text-sm mt-2 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                  {orderReviews[selectedOrderForReview.id].rating} {orderReviews[selectedOrderForReview.id].rating === 1 ? t('client.reviews.modal.star') || 'estrella' : t('client.reviews.modal.stars') || 'estrellas'}
+                  {orderReviews[selectedOrderForReview.id].rating}{' '}
+                  {orderReviews[selectedOrderForReview.id].rating === 1
+                    ? t('client.recentOrders.reviews.modal.star', { fallback: 'estrella' })
+                    : t('client.recentOrders.reviews.modal.stars', { fallback: 'estrellas' })}
                 </p>
               </div>
 
@@ -3313,7 +3321,7 @@ export default function MisPedidosPage() {
               {orderReviews[selectedOrderForReview.id].reviewText && (
                 <div>
                   <Label className={`text-sm font-semibold ${mounted && theme === 'dark' ? 'text-slate-300' : ''}`}>
-                    {t('client.reviews.viewModal.reviewText') || 'Tu Reseña'}
+                    {t('client.recentOrders.reviews.viewModal.reviewText', { fallback: 'Tu Reseña' })}
                   </Label>
                   <div className={`mt-2 p-3 rounded-lg ${mounted && theme === 'dark' ? 'bg-slate-700 text-slate-200' : 'bg-slate-50 text-slate-800'}`}>
                     <p className="text-sm whitespace-pre-wrap">{orderReviews[selectedOrderForReview.id].reviewText}</p>
@@ -3324,14 +3332,15 @@ export default function MisPedidosPage() {
               {/* Fecha */}
               <div>
                 <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                  {t('client.reviews.viewModal.date') || 'Fecha'}: {new Date(orderReviews[selectedOrderForReview.id].createdAt).toLocaleDateString()}
+                  {t('client.recentOrders.reviews.viewModal.date', { fallback: 'Fecha' })}:{' '}
+                  {new Date(orderReviews[selectedOrderForReview.id].createdAt).toLocaleDateString()}
                 </p>
               </div>
             </div>
           ) : (
             <div className="py-4">
               <p className={`text-center ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                {t('client.reviews.viewModal.loading') || 'Cargando reseña...'}
+                {t('client.recentOrders.reviews.viewModal.loading', { fallback: 'Cargando reseña...' })}
               </p>
             </div>
           )}
@@ -3345,7 +3354,7 @@ export default function MisPedidosPage() {
               }}
               className={mounted && theme === 'dark' ? 'border-slate-600' : ''}
             >
-              {t('client.reviews.viewModal.close') || 'Cerrar'}
+              {t('client.recentOrders.reviews.viewModal.close', { fallback: 'Cerrar' })}
             </Button>
           </div>
         </DialogContent>

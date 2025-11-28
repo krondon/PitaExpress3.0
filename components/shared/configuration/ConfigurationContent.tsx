@@ -979,21 +979,21 @@ function AdminReviewsSection() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Star className="w-5 h-5" />
-          {t('admin.configuration.reviews.title') || 'Reseñas de Pedidos'}
+          {t('admin.configuration.reviews.title', { fallback: 'Reseñas de clientes' })}
         </CardTitle>
       </CardHeader>
       <CardContent>
         {loading ? (
           <div className="text-center py-8">
             <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>
-              {t('admin.configuration.reviews.loading') || 'Cargando reseñas...'}
+              {t('admin.configuration.reviews.loading', { fallback: 'Cargando reseñas...' })}
             </p>
           </div>
         ) : reviews.length === 0 ? (
           <div className="text-center py-8">
             <Star className={`w-12 h-12 mx-auto mb-4 ${mounted && theme === 'dark' ? 'text-slate-600' : 'text-slate-300'}`} />
             <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>
-              {t('admin.configuration.reviews.noReviews') || 'No hay reseñas aún'}
+              {t('admin.configuration.reviews.noReviews', { fallback: 'No hay reseñas aún' })}
             </p>
           </div>
         ) : (
@@ -1011,14 +1011,15 @@ function AdminReviewsSection() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <Badge variant="outline" className="text-xs">
-                        {t('admin.configuration.reviews.order') || 'Pedido'} #{review.orderId}
+                        {t('admin.configuration.reviews.order', { fallback: 'Pedido' })} #{review.orderId}
                       </Badge>
                       <span className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
                         {review.orderProductName}
                       </span>
                     </div>
                     <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                      {t('admin.configuration.reviews.client') || 'Cliente'}: <span className="font-medium">{review.clientName}</span>
+                      {t('admin.configuration.reviews.client', { fallback: 'Cliente' })}:{' '}
+                      <span className="font-medium">{review.clientName}</span>
                     </p>
                   </div>
                   <div className="text-right">

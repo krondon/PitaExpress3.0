@@ -1,5 +1,6 @@
 "use client";
-export type TFunction = (key: string, options?: Record<string, any>) => string;
+type TranslationOptions = Record<string, any> & { fallback?: string };
+export type TFunction = (key: string, options?: TranslationOptions) => string;
 
 import { useLanguage } from '@/lib/LanguageContext';
 import esTranslations from '@/lib/translations/es.json';
@@ -17,7 +18,7 @@ const translations = {
 export function useTranslation() {
   const { language } = useLanguage();
 
-  const t = (key: TranslationKey, options?: Record<string, any>): string => {
+  const t = (key: TranslationKey, options?: TranslationOptions): string => {
     const keys = key.split('.');
     let current: any = translations[language];
     let usedLanguage = language;
@@ -34,7 +35,7 @@ export function useTranslation() {
             current = current[fallbackKey];
           } else {
             console.log('[i18n][MISS]', { lang: language, key, tried: keys });
-            return key; // Devolver la clave si no se encuentra
+            return typeof options?.fallback === 'string' ? options.fallback : key;
           }
         }
         break;
@@ -43,13 +44,19 @@ export function useTranslation() {
 
     let result = typeof current === 'string' ? current : key;
 
+    const fallbackText = options?.fallback;
+    const interpolationEntries = options
+      ? Object.entries(options).filter(([k]) => k !== 'fallback')
+      : [];
+
     // Interpolación de variables en la cadena
-    if (options) {
-      Object.entries(options).forEach(([k, v]) => {
-        // Regex correcta con escapes para espacios opcionales
-        const pattern = new RegExp(`{{\\s*${k}\\s*}}`, 'g');
-        result = result.replace(pattern, String(v));
-      });
+    interpolationEntries.forEach(([k, v]) => {
+      const pattern = new RegExp(`{{\\s*${k}\\s*}}`, 'g');
+      result = result.replace(pattern, String(v));
+    });
+
+    if (result === key && typeof fallbackText === 'string') {
+      return fallbackText;
     }
 
     console.log('[i18n][HIT]', { lang: usedLanguage, key, result });

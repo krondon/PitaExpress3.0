@@ -566,6 +566,13 @@
         "preferences": "Preferencias",
         "reviews": "Reseñas"
       },
+      "reviews": {
+        "title": "Reseñas de clientes",
+        "loading": "Cargando reseñas...",
+        "noReviews": "No hay reseñas aún",
+        "order": "Pedido",
+        "client": "Cliente"
+      },
       "profile": {
         "title": "Información Personal",
         "fields": {

@@ -330,6 +330,13 @@
         "preferences": "Preferences",
         "reviews": "Reviews"
       },
+      "reviews": {
+        "title": "Customer reviews",
+        "loading": "Loading reviews...",
+        "noReviews": "No reviews yet",
+        "order": "Order",
+        "client": "Client"
+      },
       "profile": {
         "title": "Personal Information",
         "fields": {
