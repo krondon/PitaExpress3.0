@@ -831,7 +831,35 @@ export default function MisPedidosPage() {
     }
   };
 
-  const openReviewModal = (order: Order) => {
+  const openReviewModal = async (order: Order) => {
+    // Verificar si ya existe una reseña antes de abrir el modal
+    if (!orderReviews[order.id] && !loadingReviews[order.id]) {
+      // Cargar la reseña primero para verificar si existe
+      await fetchOrderReview(order.id);
+    }
+    
+    // Si ya existe una reseña, mostrar el modal de visualización en lugar del de calificación
+    if (orderReviews[order.id]) {
+      openViewReviewModal(order);
+      return;
+    }
+    
+    // Si aún está cargando, esperar un momento
+    if (loadingReviews[order.id]) {
+      // Esperar a que termine de cargar
+      setTimeout(async () => {
+        if (orderReviews[order.id]) {
+          openViewReviewModal(order);
+        } else {
+          setSelectedOrderForReview(order);
+          setReviewRating(0);
+          setReviewText('');
+          setIsReviewModalOpen(true);
+        }
+      }, 500);
+      return;
+    }
+    
     setSelectedOrderForReview(order);
     setReviewRating(0);
     setReviewText('');
@@ -2416,7 +2444,17 @@ export default function MisPedidosPage() {
                           <span className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>{t('client.recentOrders.estimatedDelivery')}: {order.estimatedDelivery}</span>
                           {/* Botón de calificar solo para pedidos completados al 100% */}
                           {order.stateNum === 13 && (
-                            orderReviews[order.id] ? (
+                            loadingReviews[order.id] ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled
+                                className={`h-7 md:h-8 px-3 md:px-4 text-xs font-semibold transition-all duration-300 w-fit opacity-50 ${mounted && theme === 'dark' ? 'border-slate-600 text-slate-400' : 'border-slate-300 text-slate-500'}`}
+                              >
+                                <Star className="h-3 w-3 mr-1 animate-pulse" />
+                                Verificando...
+                              </Button>
+                            ) : orderReviews[order.id] ? (
                               <Button
                                 variant="outline"
                                 size="sm"
