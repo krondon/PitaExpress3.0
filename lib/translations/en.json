@@ -327,7 +327,8 @@
         "profile": "Profile",
         "security": "Security",
         "notifications": "Notifications",
-        "preferences": "Preferences"
+        "preferences": "Preferences",
+        "reviews": "Reviews"
       },
       "profile": {
         "title": "Personal Information",
@@ -626,6 +627,41 @@
           "customs": "In customs",
           "delivered": "Delivered"
         }
+      },
+      "reviews": {
+        "rate": "Rate",
+        "alreadyRated": "Already Rated",
+        "error": {
+          "title": "Error",
+          "ratingRequired": "Please select a rating",
+          "submitFailed": "Failed to submit review"
+        },
+        "success": {
+          "title": "Message Sent",
+          "description": "Your review has been successfully registered"
+        },
+        "modal": {
+          "title": "Rate Order",
+          "subtitle": "Order",
+          "rating": "Rating",
+          "star": "star",
+          "stars": "stars",
+          "reviewText": "Write your review (optional)",
+          "reviewPlaceholder": "Share your experience with this order...",
+          "characters": "characters",
+          "cancel": "Cancel",
+          "submit": "Submit Review",
+          "submitting": "Submitting..."
+        },
+        "viewModal": {
+          "title": "Your Review",
+          "subtitle": "Order",
+          "rating": "Your Rating",
+          "reviewText": "Your Review",
+          "date": "Date",
+          "loading": "Loading review...",
+          "close": "Close"
+        }
       }
     }
   },
@@ -662,7 +698,8 @@
         "profile": "Profile",
         "security": "Security",
         "notifications": "Notifications",
-        "preferences": "Preferences"
+        "preferences": "Preferences",
+        "reviews": "Reviews"
       },
       "profile": {
         "title": "Personal Information",
@@ -832,20 +869,27 @@
           "12h": "12 hours (AM/PM)"
         }
       },
+      "reviews": {
+        "title": "Order Reviews",
+        "loading": "Loading reviews...",
+        "noReviews": "No reviews yet",
+        "order": "Order",
+        "client": "Client"
+      },
       "messages": {
         "profileUpdated": "Profile updated",
-  "profileUpdatedDesc": "Changes have been saved successfully.",
+        "profileUpdatedDesc": "Changes have been saved successfully.",
         "passwordUpdated": "Password updated",
         "passwordUpdatedDesc": "Your password has been changed successfully.",
         "passwordMismatch": "Passwords do not match.",
         "notificationsUpdated": "Notifications updated",
         "notificationsUpdatedDesc": "Your notification preferences have been saved.",
         "securityUpdated": "Security settings updated",
-  "securityUpdatedDesc": "Security changes have been applied successfully.",
-  "photoUpdated": "Photo updated successfully",
-  "photoUpdatedDesc": "Your profile picture has been updated.",
-  "photoDeleted": "Photo removed",
-  "photoDeletedDesc": "Your profile picture has been deleted."
+        "securityUpdatedDesc": "Security changes have been applied successfully.",
+        "photoUpdated": "Photo updated successfully",
+        "photoUpdatedDesc": "Your profile picture has been updated.",
+        "photoDeleted": "Photo removed",
+        "photoDeletedDesc": "Your profile picture has been deleted."
       }
     },
     "dashboard": {
@@ -2238,7 +2282,8 @@
         "perfil": "Profile",
         "seguridad": "Security",
         "notificaciones": "Notifications",
-        "preferencias": "Preferences"
+        "preferencias": "Preferences",
+        "reviews": "Reviews"
       },
       "profile": {
         "title": "Personal Information",

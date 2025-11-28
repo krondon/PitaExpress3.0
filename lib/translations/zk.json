@@ -329,7 +329,8 @@
         "profile": "个人资料",
         "security": "安全",
         "notifications": "通知",
-        "preferences": "偏好"
+        "preferences": "偏好",
+        "reviews": "评价"
       },
       "profile": {
         "title": "个人信息",
@@ -627,6 +628,41 @@
           "customs": "海关处理中",
           "delivered": "已交付"
         }
+      },
+      "reviews": {
+        "rate": "评价",
+        "alreadyRated": "已评价",
+        "error": {
+          "title": "错误",
+          "ratingRequired": "请选择评分",
+          "submitFailed": "提交评价失败"
+        },
+        "success": {
+          "title": "消息已发送",
+          "description": "您的评价已成功注册"
+        },
+        "modal": {
+          "title": "评价订单",
+          "subtitle": "订单",
+          "rating": "评分",
+          "star": "星",
+          "stars": "星",
+          "reviewText": "写下您的评价（可选）",
+          "reviewPlaceholder": "分享您对此订单的体验...",
+          "characters": "字符",
+          "cancel": "取消",
+          "submit": "提交评价",
+          "submitting": "提交中..."
+        },
+        "viewModal": {
+          "title": "您的评价",
+          "subtitle": "订单",
+          "rating": "您的评分",
+          "reviewText": "您的评价",
+          "date": "日期",
+          "loading": "加载评价中...",
+          "close": "关闭"
+        }
       }
     }
   },
@@ -664,7 +700,8 @@
         "profile": "个人资料",
         "security": "安全",
         "notifications": "通知",
-        "preferences": "偏好"
+        "preferences": "偏好",
+        "reviews": "评价"
       },
       "profile": {
         "title": "个人信息",
@@ -833,20 +870,27 @@
           "12h": "12 小时 (AM/PM)"
         }
       },
+      "reviews": {
+        "title": "订单评价",
+        "loading": "加载评价中...",
+        "noReviews": "暂无评价",
+        "order": "订单",
+        "client": "客户"
+      },
       "messages": {
         "profileUpdated": "资料已更新",
-  "profileUpdatedDesc": "更改已成功保存。",
+        "profileUpdatedDesc": "更改已成功保存。",
         "passwordUpdated": "密码已更新",
         "passwordUpdatedDesc": "你的密码已成功更改。",
         "passwordMismatch": "密码不匹配。",
         "notificationsUpdated": "通知已更新",
         "notificationsUpdatedDesc": "你的通知偏好已保存。",
         "securityUpdated": "安全设置已更新",
-  "securityUpdatedDesc": "安全更改已成功应用。",
-  "photoUpdated": "头像更新成功",
-  "photoUpdatedDesc": "你的头像已更新。",
-  "photoDeleted": "头像已删除",
-  "photoDeletedDesc": "你的头像已被删除。"
+        "securityUpdatedDesc": "安全更改已成功应用。",
+        "photoUpdated": "头像更新成功",
+        "photoUpdatedDesc": "你的头像已更新。",
+        "photoDeleted": "头像已删除",
+        "photoDeletedDesc": "你的头像已被删除。"
       }
     },
     "dashboard": {
@@ -2233,7 +2277,8 @@
         "perfil": "个人资料",
         "seguridad": "安全",
         "notificaciones": "通知",
-        "preferencias": "偏好"
+        "preferencias": "偏好",
+        "reviews": "评价"
       },
       "profile": {
         "title": "个人信息",

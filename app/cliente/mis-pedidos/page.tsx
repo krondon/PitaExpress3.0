@@ -53,7 +53,8 @@ import {
   DollarSign,
   Search,
   Eye,
-  Plus
+  Plus,
+  Star
 } from 'lucide-react';
 
 // Rutas de animaciones Lottie (desde /public)
@@ -234,6 +235,16 @@ export default function MisPedidosPage() {
   const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
   const [selectedTrackingOrder, setSelectedTrackingOrder] = useState<TrackingOrder | null>(null);
   const [isTrackingQRModalOpen, setIsTrackingQRModalOpen] = useState(false); // modal separado para QR del tracking link
+  
+  // Estados para reseñas
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [isViewReviewModalOpen, setIsViewReviewModalOpen] = useState(false);
+  const [selectedOrderForReview, setSelectedOrderForReview] = useState<Order | null>(null);
+  const [reviewRating, setReviewRating] = useState<number>(0);
+  const [reviewText, setReviewText] = useState<string>('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [orderReviews, setOrderReviews] = useState<Record<string, { rating: number; reviewText: string | null; createdAt: string }>>({});
+  const [loadingReviews, setLoadingReviews] = useState<Record<string, boolean>>({});
 
   // Estados del modal de nuevo pedido
   const [isNewOrderModalOpen, setIsNewOrderModalOpen] = useState(false);
@@ -790,6 +801,129 @@ export default function MisPedidosPage() {
   const getStatusText = (status: string) => {
     return t(`client.recentOrders.statuses.${status}`) || status;
   };
+
+  // Funciones para manejar reseñas
+  const fetchOrderReview = async (orderId: string) => {
+    if (loadingReviews[orderId] || !clientId) return;
+    setLoadingReviews(prev => ({ ...prev, [orderId]: true }));
+    try {
+      const response = await fetch(`/api/orders/${orderId}/review?userId=${encodeURIComponent(clientId)}`);
+      if (response.ok) {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const data = await response.json();
+          if (data.exists && data.review) {
+            setOrderReviews(prev => ({
+              ...prev,
+              [orderId]: {
+                rating: data.review.rating,
+                reviewText: data.review.reviewText,
+                createdAt: data.review.createdAt,
+              },
+            }));
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching review:', error);
+    } finally {
+      setLoadingReviews(prev => ({ ...prev, [orderId]: false }));
+    }
+  };
+
+  const openReviewModal = (order: Order) => {
+    setSelectedOrderForReview(order);
+    setReviewRating(0);
+    setReviewText('');
+    setIsReviewModalOpen(true);
+  };
+
+  const openViewReviewModal = async (order: Order) => {
+    setSelectedOrderForReview(order);
+    if (!orderReviews[order.id]) {
+      await fetchOrderReview(order.id);
+    }
+    setIsViewReviewModalOpen(true);
+  };
+
+  const handleSubmitReview = async () => {
+    if (!selectedOrderForReview || reviewRating === 0) {
+      toast({
+        title: t('client.reviews.error.title') || 'Error',
+        description: t('client.reviews.error.ratingRequired') || 'Por favor selecciona una calificación',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setSubmittingReview(true);
+    try {
+      const response = await fetch(`/api/orders/${selectedOrderForReview.id}/review`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: clientId, // Enviar userId para autenticación
+          rating: reviewRating,
+          reviewText: reviewText.trim() || null,
+        }),
+      });
+
+      // Verificar si la respuesta es JSON antes de parsear
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Error: La API devolvió HTML en lugar de JSON:', text.substring(0, 200));
+        throw new Error('Error del servidor. Por favor, intenta nuevamente.');
+      }
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al enviar la reseña');
+      }
+
+      toast({
+        title: t('client.reviews.success.title') || '¡Reseña enviada!',
+        description: t('client.reviews.success.description') || 'Gracias por tu calificación',
+      });
+
+      // Actualizar el estado local
+      setOrderReviews(prev => ({
+        ...prev,
+        [selectedOrderForReview.id]: {
+          rating: reviewRating,
+          reviewText: reviewText.trim() || null,
+          createdAt: new Date().toISOString(),
+        },
+      }));
+
+      setIsReviewModalOpen(false);
+      setSelectedOrderForReview(null);
+      setReviewRating(0);
+      setReviewText('');
+    } catch (error: any) {
+      toast({
+        title: t('client.reviews.error.title') || 'Error',
+        description: error.message || t('client.reviews.error.submitFailed') || 'No se pudo enviar la reseña',
+        variant: 'destructive',
+      });
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  // Cargar reseñas para pedidos completados al 100%
+  useEffect(() => {
+    const completedOrders = orders.filter(o => o.stateNum === 13);
+    completedOrders.forEach(order => {
+      if (!orderReviews[order.id] && !loadingReviews[order.id]) {
+        fetchOrderReview(order.id);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders]);
 
 
   const getProgressColor = (progress: number) => {
@@ -2278,7 +2412,33 @@ export default function MisPedidosPage() {
                         ></div>
                       </div>
                       <div className="flex flex-col md:flex-row md:justify-between gap-3 md:gap-0 text-sm">
-                        <span className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>{t('client.recentOrders.estimatedDelivery')}: {order.estimatedDelivery}</span>
+                        <div className="flex flex-col gap-2">
+                          <span className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>{t('client.recentOrders.estimatedDelivery')}: {order.estimatedDelivery}</span>
+                          {/* Botón de calificar solo para pedidos completados al 100% */}
+                          {order.stateNum === 13 && (
+                            orderReviews[order.id] ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className={`h-7 md:h-8 px-3 md:px-4 text-xs font-semibold transition-all duration-300 w-fit ${mounted && theme === 'dark' ? 'border-yellow-600 text-yellow-300 hover:bg-yellow-900/30 hover:border-yellow-500' : 'border-yellow-200 text-yellow-700 hover:bg-yellow-50 hover:border-yellow-300'}`}
+                                onClick={() => openViewReviewModal(order)}
+                              >
+                                <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-400" />
+                                Ya calificado
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className={`h-7 md:h-8 px-3 md:px-4 text-xs font-semibold transition-all duration-300 w-fit ${mounted && theme === 'dark' ? 'border-purple-600 text-purple-300 hover:bg-purple-900/30 hover:border-purple-500' : 'border-purple-200 text-purple-700 hover:bg-purple-50 hover:border-purple-300'}`}
+                                onClick={() => openReviewModal(order)}
+                              >
+                                <Star className="h-3 w-3 mr-1" />
+                                Calificar
+                              </Button>
+                            )
+                          )}
+                        </div>
                         <div className="flex gap-2 md:gap-3">
                           {(order.status === 'quoted' || order.stateNum === -1) && (
                             <Button 
@@ -2973,6 +3133,185 @@ export default function MisPedidosPage() {
           animation: slideInFromBottom 0.4s ease-out;
         }
       `}</style>
+
+      {/* Modal de Calificación */}
+      <Dialog open={isReviewModalOpen} onOpenChange={setIsReviewModalOpen}>
+        <DialogContent className={`max-w-md ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
+          <DialogHeader>
+            <DialogTitle className={`${mounted && theme === 'dark' ? 'text-white' : ''}`}>
+              Calificar Pedido
+            </DialogTitle>
+            <DialogDescription className={mounted && theme === 'dark' ? 'text-slate-400' : ''}>
+              {selectedOrderForReview && `Pedido #${selectedOrderForReview.id} - ${selectedOrderForReview.product}`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Calificación con estrellas */}
+            <div>
+              <Label className={`text-sm font-semibold ${mounted && theme === 'dark' ? 'text-slate-300' : ''}`}>
+                Califique de 1 a 5 estrellas *
+              </Label>
+              <div className="flex gap-2 mt-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setReviewRating(star)}
+                    className={`transition-all duration-200 ${
+                      star <= reviewRating
+                        ? 'text-yellow-400 scale-110'
+                        : mounted && theme === 'dark'
+                        ? 'text-slate-500 hover:text-yellow-300'
+                        : 'text-slate-300 hover:text-yellow-400'
+                    }`}
+                  >
+                    <Star
+                      className={`w-8 h-8 ${star <= reviewRating ? 'fill-current' : ''}`}
+                    />
+                  </button>
+                ))}
+              </div>
+              {reviewRating > 0 && (
+                <p className={`text-sm mt-2 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                  {reviewRating} {reviewRating === 1 ? 'estrella' : 'estrellas'}
+                </p>
+              )}
+            </div>
+
+            {/* Texto de la reseña */}
+            <div>
+              <Label htmlFor="review-text" className={`text-sm font-semibold ${mounted && theme === 'dark' ? 'text-slate-300' : ''}`}>
+                Escribe tu reseña
+              </Label>
+              <Textarea
+                id="review-text"
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+                placeholder="Deje su reseña aquí"
+                className={`mt-2 min-h-[100px] ${mounted && theme === 'dark' ? 'bg-slate-700 border-slate-600 text-white' : ''}`}
+                maxLength={500}
+              />
+              <p className={`text-xs mt-1 ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                {reviewText.length}/500 caracteres
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-3 justify-end pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsReviewModalOpen(false);
+                setReviewRating(0);
+                setReviewText('');
+                setSelectedOrderForReview(null);
+              }}
+              disabled={submittingReview}
+              className={mounted && theme === 'dark' ? 'border-slate-600' : ''}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSubmitReview}
+              disabled={submittingReview || reviewRating === 0}
+              className="bg-purple-600 hover:bg-purple-700 disabled:opacity-60"
+            >
+              {submittingReview ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <Star className="w-4 h-4 mr-2" />
+                  Enviar
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Ver Reseña */}
+      <Dialog open={isViewReviewModalOpen} onOpenChange={setIsViewReviewModalOpen}>
+        <DialogContent className={`max-w-md ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
+          <DialogHeader>
+            <DialogTitle className={`${mounted && theme === 'dark' ? 'text-white' : ''}`}>
+              {t('client.reviews.viewModal.title') || 'Tu Reseña'}
+            </DialogTitle>
+            <DialogDescription className={mounted && theme === 'dark' ? 'text-slate-400' : ''}>
+              {selectedOrderForReview && `${t('client.reviews.viewModal.subtitle') || 'Pedido'} #${selectedOrderForReview.id} - ${selectedOrderForReview.product}`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedOrderForReview && orderReviews[selectedOrderForReview.id] ? (
+            <div className="space-y-4 py-4">
+              {/* Calificación mostrada */}
+              <div>
+                <Label className={`text-sm font-semibold ${mounted && theme === 'dark' ? 'text-slate-300' : ''}`}>
+                  {t('client.reviews.viewModal.rating') || 'Tu Calificación'}
+                </Label>
+                <div className="flex gap-2 mt-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`w-6 h-6 ${
+                        star <= orderReviews[selectedOrderForReview.id].rating
+                          ? 'text-yellow-400 fill-yellow-400'
+                          : mounted && theme === 'dark'
+                          ? 'text-slate-600'
+                          : 'text-slate-300'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p className={`text-sm mt-2 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                  {orderReviews[selectedOrderForReview.id].rating} {orderReviews[selectedOrderForReview.id].rating === 1 ? t('client.reviews.modal.star') || 'estrella' : t('client.reviews.modal.stars') || 'estrellas'}
+                </p>
+              </div>
+
+              {/* Texto de la reseña */}
+              {orderReviews[selectedOrderForReview.id].reviewText && (
+                <div>
+                  <Label className={`text-sm font-semibold ${mounted && theme === 'dark' ? 'text-slate-300' : ''}`}>
+                    {t('client.reviews.viewModal.reviewText') || 'Tu Reseña'}
+                  </Label>
+                  <div className={`mt-2 p-3 rounded-lg ${mounted && theme === 'dark' ? 'bg-slate-700 text-slate-200' : 'bg-slate-50 text-slate-800'}`}>
+                    <p className="text-sm whitespace-pre-wrap">{orderReviews[selectedOrderForReview.id].reviewText}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Fecha */}
+              <div>
+                <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                  {t('client.reviews.viewModal.date') || 'Fecha'}: {new Date(orderReviews[selectedOrderForReview.id].createdAt).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="py-4">
+              <p className={`text-center ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                {t('client.reviews.viewModal.loading') || 'Cargando reseña...'}
+              </p>
+            </div>
+          )}
+
+          <div className="flex justify-end pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsViewReviewModalOpen(false);
+                setSelectedOrderForReview(null);
+              }}
+              className={mounted && theme === 'dark' ? 'border-slate-600' : ''}
+            >
+              {t('client.reviews.viewModal.close') || 'Cerrar'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -22,7 +22,8 @@ import {
   Trash2,
   Sun,
   Moon,
-  Save
+  Save,
+  Star
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/lib/LanguageContext';
@@ -570,7 +571,7 @@ export default function ConfigurationContent({ role, onUserImageUpdate }: Config
         {/* Contenido principal */}
         <div className="p-4 md:p-5 lg:p-6 space-y-6 md:space-y-8">
           <Tabs defaultValue="perfil" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-2 lg:w-auto lg:grid-cols-2 gap-1">
+            <TabsList className={role === 'admin' ? 'grid w-full grid-cols-3 md:grid-cols-3 lg:w-auto lg:grid-cols-3 gap-1' : 'grid w-full grid-cols-2 md:grid-cols-2 lg:w-auto lg:grid-cols-2 gap-1'}>
               <TabsTrigger value="perfil" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm">
                 <User className="w-3 h-3 md:w-4 md:h-4" />
                 <span>{t('admin.configuration.tabs.profile')}</span>
@@ -579,6 +580,12 @@ export default function ConfigurationContent({ role, onUserImageUpdate }: Config
                 <Globe className="w-3 h-3 md:w-4 md:h-4" />
                 <span>{t('admin.configuration.tabs.preferences')}</span>
               </TabsTrigger>
+              {role === 'admin' && (
+                <TabsTrigger value="reviews" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm">
+                  <Star className="w-3 h-3 md:w-4 md:h-4" />
+                  <span>{t('admin.configuration.tabs.reviews')}</span>
+                </TabsTrigger>
+              )}
             </TabsList>
 
             {/* Tab Perfil */}
@@ -901,9 +908,138 @@ export default function ConfigurationContent({ role, onUserImageUpdate }: Config
                 </div>
               </div>
             </TabsContent>
+
+            {/* Tab Reseñas (solo para admin) */}
+            {role === 'admin' && (
+              <TabsContent value="reviews" className="space-y-6">
+                <AdminReviewsSection />
+              </TabsContent>
+            )}
           </Tabs>
         </div>
       </main>
     </div>
+  );
+}
+
+// Componente para la sección de reseñas del admin
+function AdminReviewsSection() {
+  const { t } = useTranslation();
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setMounted(true);
+    fetchReviews();
+  }, []);
+
+  const fetchReviews = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/admin/reviews');
+      if (response.ok) {
+        const data = await response.json();
+        // La API devuelve { success: true, reviews: [...], count: ... }
+        setReviews(data.reviews || data || []);
+      } else {
+        console.error('Error fetching reviews');
+        setReviews([]);
+      }
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+      setReviews([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderStars = (rating: number) => {
+    return (
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star
+            key={star}
+            className={`w-4 h-4 ${
+              star <= rating
+                ? 'text-yellow-400 fill-yellow-400'
+                : mounted && theme === 'dark'
+                ? 'text-slate-600'
+                : 'text-slate-300'
+            }`}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <Card className="bg-white/80 backdrop-blur-sm border-slate-200 dark:bg-slate-800/80 dark:border-slate-700">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Star className="w-5 h-5" />
+          {t('admin.configuration.reviews.title') || 'Reseñas de Pedidos'}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="text-center py-8">
+            <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>
+              {t('admin.configuration.reviews.loading') || 'Cargando reseñas...'}
+            </p>
+          </div>
+        ) : reviews.length === 0 ? (
+          <div className="text-center py-8">
+            <Star className={`w-12 h-12 mx-auto mb-4 ${mounted && theme === 'dark' ? 'text-slate-600' : 'text-slate-300'}`} />
+            <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>
+              {t('admin.configuration.reviews.noReviews') || 'No hay reseñas aún'}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {reviews.map((review) => (
+              <div
+                key={review.id}
+                className={`p-4 rounded-lg border ${
+                  mounted && theme === 'dark'
+                    ? 'bg-slate-700/50 border-slate-600'
+                    : 'bg-slate-50 border-slate-200'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4 mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant="outline" className="text-xs">
+                        {t('admin.configuration.reviews.order') || 'Pedido'} #{review.orderId}
+                      </Badge>
+                      <span className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                        {review.orderProductName}
+                      </span>
+                    </div>
+                    <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                      {t('admin.configuration.reviews.client') || 'Cliente'}: <span className="font-medium">{review.clientName}</span>
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    {renderStars(review.rating)}
+                    <p className={`text-xs mt-1 ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                      {new Date(review.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                {review.reviewText && (
+                  <div className={`mt-3 p-3 rounded ${
+                    mounted && theme === 'dark' ? 'bg-slate-800 text-slate-200' : 'bg-white text-slate-800'
+                  }`}>
+                    <p className="text-sm whitespace-pre-wrap">{review.reviewText}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

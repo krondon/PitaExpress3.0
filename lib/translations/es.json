@@ -563,7 +563,8 @@
         "profile": "Perfil",
         "security": "Seguridad",
         "notifications": "Notificaciones",
-        "preferences": "Preferencias"
+        "preferences": "Preferencias",
+        "reviews": "Reseñas"
       },
       "profile": {
         "title": "Información Personal",
@@ -727,6 +728,13 @@
           "24h": "24 horas",
           "12h": "12 horas (AM/PM)"
         }
+      },
+      "reviews": {
+        "title": "Reseñas de Pedidos",
+        "loading": "Cargando reseñas...",
+        "noReviews": "No hay reseñas aún",
+        "order": "Pedido",
+        "client": "Cliente"
       }
     }
   },
@@ -1055,6 +1063,41 @@
         "customs": "En aduana",
         "delivered": "Entregado"
       }
+    },
+    "reviews": {
+      "rate": "Calificar",
+      "alreadyRated": "Ya calificado",
+      "error": {
+        "title": "Error",
+        "ratingRequired": "Por favor selecciona una calificación",
+        "submitFailed": "No se pudo enviar la reseña"
+      },
+      "success": {
+        "title": "Mensaje enviado",
+        "description": "Tu reseña ha sido registrada exitosamente"
+      },
+      "modal": {
+        "title": "Calificar Pedido",
+        "subtitle": "Pedido",
+        "rating": "Calificación",
+        "star": "estrella",
+        "stars": "estrellas",
+        "reviewText": "Escribe tu reseña (opcional)",
+        "reviewPlaceholder": "Comparte tu experiencia con este pedido...",
+        "characters": "caracteres",
+        "cancel": "Cancelar",
+        "submit": "Enviar Reseña",
+        "submitting": "Enviando..."
+      },
+      "viewModal": {
+        "title": "Tu Reseña",
+        "subtitle": "Pedido",
+        "rating": "Tu Calificación",
+        "reviewText": "Tu Reseña",
+        "date": "Fecha",
+        "loading": "Cargando reseña...",
+        "close": "Cerrar"
+      }
     }
   },
   "common": {
@@ -1086,7 +1129,8 @@
         "profile": "Perfil",
         "security": "Seguridad",
         "notifications": "Notificaciones",
-        "preferences": "Preferencias"
+        "preferences": "Preferencias",
+        "reviews": "Reseñas"
       },
       "profile": {
         "title": "Información Personal",
