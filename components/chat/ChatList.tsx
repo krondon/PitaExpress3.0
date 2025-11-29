@@ -135,18 +135,51 @@ export function ChatList({ onSelectConversation, selectedUserId, currentUserId }
 
             const conversationsList = Array.from(conversationsMap.values());
 
-            // 4. Enriquecer con nombres (Fallback básico)
-            // Intentamos obtener nombres de userlevel o una API si fuera posible
-            // Por ahora mantenemos la lógica de userlevel que ya existía
+            // 4. Enriquecer con nombres (Fallback mejorado)
             for (const conv of conversationsList) {
-                const { data: userData } = await supabase
-                    .from('userlevel')
-                    .select('id, user_level')
-                    .eq('id', conv.user_id)
-                    .single();
+                // Intentar buscar en tablas específicas según prioridad
+                let realName = '';
 
-                if (userData) {
-                    conv.user_name = `Usuario ${userData.user_level}`;
+                // 1. Buscar en employees (China/Venezuela/Pagos)
+                const { data: empData } = await supabase
+                    .from('employees')
+                    .select('name')
+                    .eq('user_id', conv.user_id)
+                    .single();
+                if (empData) realName = empData.name;
+
+                // 2. Si no, buscar en clients
+                if (!realName) {
+                    const { data: cliData } = await supabase
+                        .from('clients')
+                        .select('name')
+                        .eq('user_id', conv.user_id)
+                        .single();
+                    if (cliData) realName = cliData.name;
+                }
+
+                // 3. Si no, buscar en administrators
+                if (!realName) {
+                    const { data: admData } = await supabase
+                        .from('administrators')
+                        .select('name')
+                        .eq('user_id', conv.user_id)
+                        .single();
+                    if (admData) realName = admData.name;
+                }
+
+                // 4. Si encontramos nombre real, usarlo. Si no, usar fallback de nivel
+                if (realName) {
+                    conv.user_name = realName;
+                } else {
+                    const { data: userData } = await supabase
+                        .from('userlevel')
+                        .select('user_level')
+                        .eq('id', conv.user_id)
+                        .single();
+                    if (userData) {
+                        conv.user_name = `Usuario ${userData.user_level}`;
+                    }
                 }
             }
 
