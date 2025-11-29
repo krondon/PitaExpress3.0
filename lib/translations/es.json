@@ -3164,5 +3164,27 @@
         "description": "Pedido {{orderId}} asignado"
       }
     }
+  },
+  "chat": {
+    "admin": {
+      "title": "Chat con {{name}}",
+      "subtitle": "Comunícate directamente con el administrador",
+      "role": "Administrador del Sistema"
+    },
+    "china": {
+      "title": "Chat con {{name}}",
+      "subtitle": "Usuario China"
+    },
+    "list": {
+      "title": "Chat",
+      "subtitle": "Gestiona tus conversaciones con usuarios de China",
+      "activeConversations": "Conversaciones Activas",
+      "selectConversation": "Selecciona una conversación para comenzar a chatear"
+    },
+    "notFound": {
+      "title": "No se encontró el administrador",
+      "message": "No se pudo conectar con el administrador"
+    },
+    "loading": "Cargando chat..."
   }
 }

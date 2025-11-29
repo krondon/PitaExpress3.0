@@ -16,6 +16,7 @@ import { MessageSquare, Loader2, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { ChatMessage } from '@/lib/types/chat';
 import { useTheme } from 'next-themes';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function ChinaChatPage() {
     const [sidebarExpanded, setSidebarExpanded] = useState(true);
@@ -26,6 +27,7 @@ export default function ChinaChatPage() {
     const [adminName, setAdminName] = useState<string>('Administrador');
     const [loadingAdmin, setLoadingAdmin] = useState(true);
     const { theme } = useTheme();
+    const { t } = useTranslation();
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -131,7 +133,7 @@ export default function ChinaChatPage() {
             <div className={`min-h-screen flex items-center justify-center ${mounted && theme === 'dark' ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50'}`}>
                 <div className="text-center">
                     <div className={`animate-spin rounded-full h-12 w-12 border-b-2 ${mounted && theme === 'dark' ? 'border-blue-400' : 'border-blue-600'} mx-auto`}></div>
-                    <p className={`mt-4 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>Cargando chat...</p>
+                    <p className={`mt-4 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>{t('chat.loading')}</p>
                 </div>
             </div>
         );
@@ -144,10 +146,10 @@ export default function ChinaChatPage() {
                     <CardContent className="p-8 text-center">
                         <MessageSquare className={`w-16 h-16 ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-slate-400'} mx-auto mb-4`} />
                         <h3 className={`text-xl font-semibold mb-2 ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-700'}`}>
-                            No se encontró el administrador
+                            {t('chat.notFound.title')}
                         </h3>
                         <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}>
-                            No se pudo conectar con el administrador
+                            {t('chat.notFound.message')}
                         </p>
                     </CardContent>
                 </Card>
@@ -170,8 +172,8 @@ export default function ChinaChatPage() {
                 <Header
                     notifications={unreadCount}
                     onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    title={`💬 Chat con ${adminName}`}
-                    subtitle="Comunícate directamente con el administrador"
+                    title={t('chat.admin.title', { name: adminName })}
+                    subtitle={t('chat.admin.subtitle')}
                     notificationsItems={notificationsList}
                     onMarkAllAsRead={async () => {
                         await markAllAsRead();
@@ -191,7 +193,7 @@ export default function ChinaChatPage() {
                                     </div>
                                     <div>
                                         <CardTitle className={`text-base font-semibold ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{adminName}</CardTitle>
-                                        <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>Administrador del Sistema</p>
+                                        <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('chat.admin.role')}</p>
                                     </div>
                                 </div>
                             </CardHeader>

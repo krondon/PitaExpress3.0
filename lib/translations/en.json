@@ -7,12 +7,12 @@
       "confirmPassword": "Confirm Password",
       "fullName": "Full Name",
       "fullNamePlaceholder": "Your name",
-  "fieldRequired": "This field is required",
-  "maxLengthExceeded": "Must not exceed {{max}} characters",
-  "descriptionMax": "Description must not exceed {{max}} characters",
-  "moneyMaxDigits": "No more than {{max}} integer digits",
-  "moneyInvalidFormat": "Invalid amount format (use up to 2 decimals)",
-  "moneyRequired": "Amount is required",
+      "fieldRequired": "This field is required",
+      "maxLengthExceeded": "Must not exceed {{max}} characters",
+      "descriptionMax": "Description must not exceed {{max}} characters",
+      "moneyMaxDigits": "No more than {{max}} integer digits",
+      "moneyInvalidFormat": "Invalid amount format (use up to 2 decimals)",
+      "moneyRequired": "Amount is required",
       "emailPlaceholder": "user@email.com",
       "passwordPlaceholder": "********",
       "login": "Login",
@@ -21,7 +21,7 @@
       "loadingRegister": "Creating account...",
       "forgotPassword": "Forgot your password?",
       "passwordRequired": "Password is required",
-  "fillRequiredFields": "Please fill in the required fields.",
+      "fillRequiredFields": "Please fill in the required fields.",
       "invalidEmail": "Invalid email",
       "invalidEmailAlt": "Email is not valid.",
       "nameInvalid": "Name must have at least 3 letters and valid characters only.",
@@ -107,10 +107,22 @@
   },
   "passwordResetSide": {
     "slides": [
-      { "title": "Guaranteed Security", "desc": "Your information is protected with bank-level encryption" },
-      { "title": "Immediate Access", "desc": "Reset your password without waiting for verification codes" },
-      { "title": "Email Recovery", "desc": "Use your email for secure access" },
-      { "title": "Simple Process", "desc": "Reset your password in just 2 steps" }
+      {
+        "title": "Guaranteed Security",
+        "desc": "Your information is protected with bank-level encryption"
+      },
+      {
+        "title": "Immediate Access",
+        "desc": "Reset your password without waiting for verification codes"
+      },
+      {
+        "title": "Email Recovery",
+        "desc": "Use your email for secure access"
+      },
+      {
+        "title": "Simple Process",
+        "desc": "Reset your password in just 2 steps"
+      }
     ]
   },
   "notifications": {
@@ -190,75 +202,75 @@
       "support": "Support",
       "satisfaction": "Satisfaction",
       "channels": {
-  "chatTitle": "Live Chat",
-  "chatDesc": "Chat with our support team in real time",
-  "available": "Available",
-  "phoneTitle": "Phone",
-  "phoneDesc": "Call us directly for immediate assistance",
-  "emailTitle": "Email",
-  "emailDesc": "Send us an email and we will reply within 24 hours"
+        "chatTitle": "Live Chat",
+        "chatDesc": "Chat with our support team in real time",
+        "available": "Available",
+        "phoneTitle": "Phone",
+        "phoneDesc": "Call us directly for immediate assistance",
+        "emailTitle": "Email",
+        "emailDesc": "Send us an email and we will reply within 24 hours"
       },
-  "schedule": {
-  "faq": {
-  "chatTitle": "Support Chat",
-  "agentOnline": "{{name}} - Online",
-        "title": "Frequently Asked Questions",
-        "subtitle": "Find quick answers to the most common questions",
-        "placeholder": "Search in frequently asked questions...",
-        "tags": {
-          "tracking": "Tracking",
-          "envío": "Shipping",
-          "seguimiento": "Tracking",
-          "entrega": "Delivery",
-          "tiempo": "Time",
-          "pago": "Payment",
-          "tarjeta": "Card",
-          "paypal": "PayPal",
-          "transferencia": "Transfer",
-          "devolución": "Return",
-          "reembolso": "Refund",
-          "producto": "Product",
-          "contraseña": "Password",
-          "cuenta": "Account",
-          "seguridad": "Security",
-          "factura": "Invoice",
-          "facturación": "Billing",
-          "pdf": "PDF"
+      "schedule": {
+        "faq": {
+          "chatTitle": "Support Chat",
+          "agentOnline": "{{name}} - Online",
+          "title": "Frequently Asked Questions",
+          "subtitle": "Find quick answers to the most common questions",
+          "placeholder": "Search in frequently asked questions...",
+          "tags": {
+            "tracking": "Tracking",
+            "envío": "Shipping",
+            "seguimiento": "Tracking",
+            "entrega": "Delivery",
+            "tiempo": "Time",
+            "pago": "Payment",
+            "tarjeta": "Card",
+            "paypal": "PayPal",
+            "transferencia": "Transfer",
+            "devolución": "Return",
+            "reembolso": "Refund",
+            "producto": "Product",
+            "contraseña": "Password",
+            "cuenta": "Account",
+            "seguridad": "Security",
+            "factura": "Invoice",
+            "facturación": "Billing",
+            "pdf": "PDF"
+          },
+          "all": "All",
+          "categories": {
+            "tracking": "Tracking",
+            "shipping": "Shipping",
+            "payments": "Payments",
+            "returns": "Returns",
+            "account": "Account",
+            "billing": "Billing"
+          },
+          "q1": {
+            "question": "How can I track my package?",
+            "answer": "You can track your package in several ways:\n\n1. Enter the tracking number on our tracking page\n2. Click the link you received by email\n3. Use our mobile app\n4. Ask in the live chat\n\nThe tracking number has the format TRK123456789 and you receive it within 24 hours after shipping. If you can't find it, check your spam folder."
+          },
+          "q2": {
+            "question": "How long does delivery take?",
+            "answer": "Delivery times vary depending on the destination and shipping type:\n\n• National: 24-48h\n• International: 3-10 business days\n• Express: 1-3 business days\n• Economy: 5-15 business days\n\nTimes may vary due to customs, weather, or special events."
+          },
+          "q3": {
+            "question": "What payment methods do you accept?",
+            "answer": "We accept multiple payment methods for your convenience:\n\n• Credit/debit cards (Visa, MasterCard, American Express)\n• PayPal\n• Bank transfers\n• Mobile Payment\n• Cryptocurrencies (Bitcoin, Ethereum)\n• Cash on delivery (national shipments only)\n\nAll payments are processed securely with SSL encryption."
+          },
+          "q4": {
+            "question": "How do I return a product?",
+            "answer": "To return a product, follow these steps:\n\n1. Go to 'My Orders' in your account\n2. Select the product you want to return\n3. Click on 'Request Return'\n4. Complete the form with the reason\n5. Print the return label\n6. Send the product within 7 days\n\nReturns are free if the product arrived damaged or is different from what you ordered."
+          },
+          "q5": {
+            "question": "How do I change my password?",
+            "answer": "To change your password:\n\n1. Log in to your account\n2. Go to 'Settings' → 'Security'\n3. Click on 'Change Password'\n4. Enter your current password\n5. Enter the new password\n6. Confirm the new password\n7. Click 'Save Changes'\n\nYou will receive a confirmation email when the change is successful."
+          },
+          "q6": {
+            "question": "How do I get my invoice?",
+            "answer": "To get your invoice:\n\n1. Go to 'My Orders'\n2. Select the specific order\n3. Click on 'Download Invoice'\n4. The invoice will be downloaded as a PDF\n\nYou can also request invoices by email by sending your order number to facturacion@morna.com\n\nInvoices are available 24 hours after payment confirmation."
+          }
         },
-        "all": "All",
-        "categories": {
-          "tracking": "Tracking",
-          "shipping": "Shipping",
-          "payments": "Payments",
-          "returns": "Returns",
-          "account": "Account",
-          "billing": "Billing"
-        },
-        "q1": {
-          "question": "How can I track my package?",
-          "answer": "You can track your package in several ways:\n\n1. Enter the tracking number on our tracking page\n2. Click the link you received by email\n3. Use our mobile app\n4. Ask in the live chat\n\nThe tracking number has the format TRK123456789 and you receive it within 24 hours after shipping. If you can't find it, check your spam folder."
-        },
-        "q2": {
-          "question": "How long does delivery take?",
-          "answer": "Delivery times vary depending on the destination and shipping type:\n\n• National: 24-48h\n• International: 3-10 business days\n• Express: 1-3 business days\n• Economy: 5-15 business days\n\nTimes may vary due to customs, weather, or special events."
-        },
-        "q3": {
-          "question": "What payment methods do you accept?",
-          "answer": "We accept multiple payment methods for your convenience:\n\n• Credit/debit cards (Visa, MasterCard, American Express)\n• PayPal\n• Bank transfers\n• Mobile Payment\n• Cryptocurrencies (Bitcoin, Ethereum)\n• Cash on delivery (national shipments only)\n\nAll payments are processed securely with SSL encryption."
-        },
-        "q4": {
-          "question": "How do I return a product?",
-          "answer": "To return a product, follow these steps:\n\n1. Go to 'My Orders' in your account\n2. Select the product you want to return\n3. Click on 'Request Return'\n4. Complete the form with the reason\n5. Print the return label\n6. Send the product within 7 days\n\nReturns are free if the product arrived damaged or is different from what you ordered."
-        },
-        "q5": {
-          "question": "How do I change my password?",
-          "answer": "To change your password:\n\n1. Log in to your account\n2. Go to 'Settings' → 'Security'\n3. Click on 'Change Password'\n4. Enter your current password\n5. Enter the new password\n6. Confirm the new password\n7. Click 'Save Changes'\n\nYou will receive a confirmation email when the change is successful."
-        },
-        "q6": {
-          "question": "How do I get my invoice?",
-          "answer": "To get your invoice:\n\n1. Go to 'My Orders'\n2. Select the specific order\n3. Click on 'Download Invoice'\n4. The invoice will be downloaded as a PDF\n\nYou can also request invoices by email by sending your order number to facturacion@morna.com\n\nInvoices are available 24 hours after payment confirmation."
-        }
-      },
         "title": "Support Hours",
         "weekdays": "Monday to Friday",
         "saturday": "Saturdays",
@@ -396,8 +408,8 @@
           "confirm": "Confirm your new password"
         }
       }
-  },
-  "quickActions": {
+    },
+    "quickActions": {
       "title": "Quick Actions",
       "subtitle": "Quickly access the most used functions",
       "newOrder": "Create New Order",
@@ -408,66 +420,66 @@
       "supportDesc": "Get help when you need it",
       "payments": "My Payments",
       "paymentsDesc": "Manage your transactions"
-  },
-    "recentOrders": {
-    "payments": {
-      "title": "Payment History",
-      "subtitle": "View and manage all your completed payments",
-      "dashboard": "Payments Dashboard",
-      "totalPayments": "Total Payments",
-      "totalPaid": "Total Paid",
-      "paid": "Paid",
-      "paidDesc": "Successful transactions",
-      "pending": "Pending",
-      "pendingDesc": "Awaiting confirmation",
-      "processing": "Processing",
-      "processingDesc": "In process",
-      "failed": "Failed",
-      "failedDesc": "Failed transactions",
-      "filtersTitle": "Filters & Search",
-      "filtersSubtitle": "Quickly find your transactions",
-      "searchPlaceholder": "Search by product, order or payment ID...",
-      "status": "Status",
-      "allStatuses": "All statuses",
-      "paidStatus": "Paid",
-      "pendingStatus": "Pending",
-      "processingStatus": "Processing",
-      "failedStatus": "Failed",
-      "refundedStatus": "Refunded",
-      "method": "Method",
-      "allMethods": "All methods",
-      "pago_movil": "Pago Móvil",
-      "transfer": "Transfer",
-      "binance": "Binance USDT",
-      "zelle": "Zelle",
-      "paypal": "PayPal",
-      "card": "Card",
-      "date": "Date",
-      "allDates": "All dates",
-      "today": "Today",
-      "week": "This week",
-      "month": "This month",
-      "transactions": "Transactions",
-      "amount": "Amount:",
-      "methodLabel": "Method:",
-      "paymentDate": "Payment date:",
-      "confirmed": "Confirmed:",
-      "paymentDetails": "Payment Details:",
-      "bank": "Bank:",
-      "account": "Account:",
-      "phone": "Phone:",
-      "wallet": "Wallet:",
-      "email": "Email:",
-      "reference": "Reference:",
-      "viewDetails": "View Details",
-      "retry": "Retry",
-      "noTransactions": "No transactions",
-      "noPayments": "No payments available or no matches with the applied filters."
     },
+    "recentOrders": {
+      "payments": {
+        "title": "Payment History",
+        "subtitle": "View and manage all your completed payments",
+        "dashboard": "Payments Dashboard",
+        "totalPayments": "Total Payments",
+        "totalPaid": "Total Paid",
+        "paid": "Paid",
+        "paidDesc": "Successful transactions",
+        "pending": "Pending",
+        "pendingDesc": "Awaiting confirmation",
+        "processing": "Processing",
+        "processingDesc": "In process",
+        "failed": "Failed",
+        "failedDesc": "Failed transactions",
+        "filtersTitle": "Filters & Search",
+        "filtersSubtitle": "Quickly find your transactions",
+        "searchPlaceholder": "Search by product, order or payment ID...",
+        "status": "Status",
+        "allStatuses": "All statuses",
+        "paidStatus": "Paid",
+        "pendingStatus": "Pending",
+        "processingStatus": "Processing",
+        "failedStatus": "Failed",
+        "refundedStatus": "Refunded",
+        "method": "Method",
+        "allMethods": "All methods",
+        "pago_movil": "Pago Móvil",
+        "transfer": "Transfer",
+        "binance": "Binance USDT",
+        "zelle": "Zelle",
+        "paypal": "PayPal",
+        "card": "Card",
+        "date": "Date",
+        "allDates": "All dates",
+        "today": "Today",
+        "week": "This week",
+        "month": "This month",
+        "transactions": "Transactions",
+        "amount": "Amount:",
+        "methodLabel": "Method:",
+        "paymentDate": "Payment date:",
+        "confirmed": "Confirmed:",
+        "paymentDetails": "Payment Details:",
+        "bank": "Bank:",
+        "account": "Account:",
+        "phone": "Phone:",
+        "wallet": "Wallet:",
+        "email": "Email:",
+        "reference": "Reference:",
+        "viewDetails": "View Details",
+        "retry": "Retry",
+        "noTransactions": "No transactions",
+        "noPayments": "No payments available or no matches with the applied filters."
+      },
       "title": "My Orders",
       "subtitle": "View and manage all your placed orders",
       "noOrders": "You have no orders registered.",
-  "emptyHint": "Orders will appear here when they are created",
+      "emptyHint": "Orders will appear here when they are created",
       "status": "Status:",
       "budget": "Budget",
       "details": "View details",
@@ -487,16 +499,16 @@
         "quoted": "Quoted",
         "processing": "Processing",
         "shipped": "Shipped",
-  "delivered": "Delivered",
-  "cancelled": "Cancelled",
-  "paymentValidated": "Payment validated",
-  "paymentRejected": "Payment rejected",
-  "packagingBox": "Packaging (box)",
-  "packagingContainer": "Packaging (container)",
-  "sentFromChina": "Sent from China",
-  "inCustoms": "In customs",
-  "arriving": "Arriving",
-  "inStore": "Product in store"
+        "delivered": "Delivered",
+        "cancelled": "Cancelled",
+        "paymentValidated": "Payment validated",
+        "paymentRejected": "Payment rejected",
+        "packagingBox": "Packaging (box)",
+        "packagingContainer": "Packaging (container)",
+        "sentFromChina": "Sent from China",
+        "inCustoms": "In customs",
+        "arriving": "Arriving",
+        "inStore": "Product in store"
       },
       "actions": {
         "view": "View details",
@@ -506,8 +518,7 @@
         "download": "Download PDF"
       },
       "progress": "Order progress",
-      "estimatedDelivery": "Estimated delivery"
-      ,
+      "estimatedDelivery": "Estimated delivery",
       "modal": {
         "detailsTitle": "Order details",
         "detailsSubtitle": "Full information and order documents",
@@ -530,8 +541,8 @@
         "productDescription": "Product Description",
         "productDescriptionPlaceholder": "Describe in detail the product you want to import...",
         "quantity": "Quantity",
-  "invalidQuantity": "Quantity must be greater than zero.",
-  "quantityRangeHint": "Valid quantity: {{min}}–{{max}}.",
+        "invalidQuantity": "Quantity must be greater than zero.",
+        "quantityRangeHint": "Valid quantity: {{min}}–{{max}}.",
         "specifications": "Technical Specifications",
         "specificationsPlaceholder": "Color, size, model, specific features, etc.",
         "requestType": "Request Type",
@@ -561,16 +572,16 @@
         "express": "Express delivery",
         "estimatedBudget": "Estimated Budget (USD)",
         "estimatedBudgetPlaceholder": "E.g.: 500",
-  "invalidBudget": "Estimated budget must be a valid amount.",
-  "max7DigitsHint": "(max 7 digits)",
+        "invalidBudget": "Estimated budget must be a valid amount.",
+        "max7DigitsHint": "(max 7 digits)",
         "summaryTitle": "Order Summary",
         "almostReady": "Almost ready!",
         "reviewMessage": "Your request will be reviewed by our team and you will receive a quote within the next 48 hours.",
         "transitioning": "Transitioning...",
         "previous": "Previous",
         "next": "Next",
-  "createOrder": "Create Order",
-  "creatingOrder": "Creating order...",
+        "createOrder": "Create Order",
+        "creatingOrder": "Creating order...",
         "dialogDescription": "Follow the steps to create your import request",
         "stepTitles": {
           "productInfo": "Product Information",
@@ -665,8 +676,7 @@
       }
     }
   },
-
-  "sidebar":{
+  "sidebar": {
     "dashboard": "Dashboard",
     "users": "Users",
     "usuarios": "Users",
@@ -689,7 +699,6 @@
     "dashboardChina": "China Dashboard",
     "dashboardVzla": "Venezuela Dashboard"
   },
-
   "admin": {
     "configuration": {
       "title": "Configuration",
@@ -779,17 +788,17 @@
         "emailDesc": "Receive important notifications via email",
         "push": "Push notifications",
         "pushDesc": "Receive push notifications in the browser",
-  "critical": "Critical alerts",
-  "criticalDesc": "Notifications about critical system issues",
-  "marketing": "Marketing notifications",
-  "marketingDesc": "Special offers and promotional content",
-  "orders": "Order notifications",
-  "ordersDesc": "Updates about your order status",
-  "dailyReports": "Daily reports",
-  "dailyReportsDesc": "Receive daily activity summaries",
-  "systemUpdates": "System updates",
-  "systemUpdatesDesc": "Notifications about new features and updates",
-  "saveButton": "Save preferences"
+        "critical": "Critical alerts",
+        "criticalDesc": "Notifications about critical system issues",
+        "marketing": "Marketing notifications",
+        "marketingDesc": "Special offers and promotional content",
+        "orders": "Order notifications",
+        "ordersDesc": "Updates about your order status",
+        "dailyReports": "Daily reports",
+        "dailyReportsDesc": "Receive daily activity summaries",
+        "systemUpdates": "System updates",
+        "systemUpdatesDesc": "Notifications about new features and updates",
+        "saveButton": "Save preferences"
       },
       "security": {
         "title": "Security Settings",
@@ -826,7 +835,6 @@
         "subtitle": "Customize your application experience",
         "regional": {
           "title": "Regional Settings"
-
         },
         "theme": {
           "title": "Application theme",
@@ -970,7 +978,7 @@
         "Cliente": "Client",
         "Empleado China": "China Employee",
         "Empleado Vzla": "Venezuela Employee",
-  "Pagos": "Payments Validator",
+        "Pagos": "Payments Validator",
         "Admin": "Admin"
       },
       "status": {
@@ -980,7 +988,7 @@
       "form": {
         "newUser": "New User",
         "createUser": "Create User",
-        "editUser": "Edit User", 
+        "editUser": "Edit User",
         "description": "Define the role, status and contact details.",
         "fullName": "Full name",
         "email": "Email",
@@ -990,11 +998,11 @@
         "password": "Password",
         "passwordPlaceholder": "Optional — set an initial password",
         "passwordMax50": "Password must not exceed 50 characters.",
-  "changePassword": "Change password",
-  "changePasswordPlaceholder": "Leave blank to keep current password",
-  "deleteUser": "Delete User",
-  "confirmDelete": "Confirm Deletion",
-  "delete": "Delete",
+        "changePassword": "Change password",
+        "changePasswordPlaceholder": "Leave blank to keep current password",
+        "deleteUser": "Delete User",
+        "confirmDelete": "Confirm Deletion",
+        "delete": "Delete",
         "role": "Role",
         "selectRole": "Select role",
         "cancel": "Cancel",
@@ -1014,12 +1022,12 @@
         "changesSaved": "Changes saved",
         "changesSavedDesc": "User information has been updated.",
         "errorSaving": "Error saving",
-  "couldNotSave": "Could not save",
-  "userDeleted": "User deleted",
-  "userDeletedDesc": "{{name}} was deleted. You can undo.",
-  "undo": "Undo",
-  "errorDeleting": "Error deleting",
-  "couldNotDelete": "Could not delete"
+        "couldNotSave": "Could not save",
+        "userDeleted": "User deleted",
+        "userDeletedDesc": "{{name}} was deleted. You can undo.",
+        "undo": "Undo",
+        "errorDeleting": "Error deleting",
+        "couldNotDelete": "Could not delete"
       },
       "common": {
         "loading": "Loading...",
@@ -1035,8 +1043,8 @@
     "orders": {
       "title": "Order Management",
       "subtitle": "Manage and track all orders",
-  "chinaTabLabel": "China",
-  "vzlaTabLabel": "Venezuela",
+      "chinaTabLabel": "China",
+      "vzlaTabLabel": "Venezuela",
       "listTitle": "Order List",
       "listDescription": "{{count}} orders found",
       "search": "Search orders...",
@@ -1057,14 +1065,14 @@
       },
       "table": {
         "id": "ID",
-  "date": "Date",
+        "date": "Date",
         "client": "Client",
         "description": "Description",
         "status": "Status",
-  "assignedTo": "Assigned",
-  "assigned": "Assigned",
+        "assignedTo": "Assigned",
+        "assigned": "Assigned",
         "time": "Time",
-  "days": "Days",
+        "days": "Days",
         "actions": "Actions",
         "daysElapsed": "Days elapsed"
       },
@@ -1100,7 +1108,7 @@
         "progress": "Progress",
         "currentStep": "Current step",
         "client": "Client",
-        "assignedTo": "Assigned to", 
+        "assignedTo": "Assigned to",
         "elapsedTime": "Elapsed time",
         "currentStatus": "Status",
         "orderDescription": "Description",
@@ -1132,13 +1140,13 @@
       "form": {
         "productName": "Product name",
         "productNameLabel": "Product Name",
-  "productNamePlaceholder": "E.g.: iPhone 15 Pro Max",
+        "productNamePlaceholder": "E.g.: iPhone 15 Pro Max",
         "description": "Description",
         "productDescription": "Product Description",
         "productDescriptionPlaceholder": "Describe the product...",
         "quantity": "Quantity",
-  "quantityRangeHint": "Valid quantity: {{min}}–{{max}}.",
-  "invalidQuantity": "Quantity must be greater than zero.",
+        "quantityRangeHint": "Valid quantity: {{min}}–{{max}}.",
+        "invalidQuantity": "Quantity must be greater than zero.",
         "requestType": "Request Type",
         "productLink": "Product Link",
         "productLinkDescription": "Paste the store link",
@@ -1146,9 +1154,9 @@
         "photoDescriptionDetail": "Upload a product image",
         "productUrl": "Product URL",
         "productUrlPlaceholder": "https://example.com/product",
-  "invalidUrl": "The URL is not valid.",
+        "invalidUrl": "The URL is not valid.",
         "productImage": "Product Image",
-  "productImageAlt": "Product image",
+        "productImageAlt": "Product image",
         "dragImageHere": "Drag an image here or click to select",
         "selectImage": "Select Image",
         "change": "Change",
@@ -1156,10 +1164,10 @@
         "specifications": "Specifications",
         "deliveryType": "Delivery type",
         "deliveryVenezuela": "Delivery in Venezuela",
-  "estimatedBudget": "Estimated budget",
-  "estimatedBudgetPlaceholder": "E.g.: 500",
-  "invalidBudget": "Estimated budget must be a valid amount.",
-  "max7DigitsHint": "(max 7 digits)",
+        "estimatedBudget": "Estimated budget",
+        "estimatedBudgetPlaceholder": "E.g.: 500",
+        "invalidBudget": "Estimated budget must be a valid amount.",
+        "max7DigitsHint": "(max 7 digits)",
         "estimatedBudgetUsd": "Estimated Budget (USD)",
         "selectClient": "Select a client",
         "selectDelivery": "Select how you want to receive your order",
@@ -1170,7 +1178,7 @@
         "client": "Client",
         "clientId": "Client ID",
         "userName": "User Name",
-        "daysElapsed":"Days elapsed",
+        "daysElapsed": "Days elapsed",
         "followSteps": "Follow the steps to create the order"
       },
       "steps": {
@@ -1194,24 +1202,24 @@
         "createOrder": "Create Order"
       },
       "pagination": {
-  "previous": "Previous",
-  "prev": "Previous",
-  "next": "Next",
-  "showing": "Showing",
-  "to": "to",
-  "of": "of",
-  "results": "results",
-  "perPage": "per page"
+        "previous": "Previous",
+        "prev": "Previous",
+        "next": "Next",
+        "showing": "Showing",
+        "to": "to",
+        "of": "of",
+        "results": "results",
+        "perPage": "per page"
       },
       "time": {
         "days": "{{count}} days"
       },
       "alerts": {
-  "onlyImages": "Only JPG, JPEG, PNG or WEBP images are allowed.",
-  "imageTooLarge": "The image must not exceed {{maxMB}} MB."
+        "onlyImages": "Only JPG, JPEG, PNG or WEBP images are allowed.",
+        "imageTooLarge": "The image must not exceed {{maxMB}} MB."
       },
       "messages": {
-  "createError": "Could not create the order.",
+        "createError": "Could not create the order.",
         "deleteConfirm": "Are you sure you want to delete order #{{id}}? This action can't be undone.",
         "updateError": "Could not update the order.",
         "deleteError": "Could not delete the order."
@@ -1250,7 +1258,7 @@
         "unknown": "Unknown"
       },
       "china": {
-  "tabLabel": "China",
+        "tabLabel": "China",
         "title": "Order Management",
         "subtitle": "Manage and quote customer orders",
         "pageTitle": "Orders",
@@ -1267,7 +1275,7 @@
           "processing": "Processing",
           "readyToPack": "Ready to pack",
           "inBox": "In box",
-          "inTransit":"In Transit",
+          "inTransit": "In Transit",
           "inContainer": "In container",
           "shippedVzla": "Shipped to Venezuela",
           "state": "Stat {{num}}"
@@ -1591,8 +1599,8 @@
         },
         "profitMarginTitle": "Profit Margin",
         "configurationAlert": "Exchange rates configured. Remember to save changes in <strong>Save Configuration</strong> to apply all modifications.",
-  "lastSaved": "Saved:",
-  "changeMadeBy": "Changes made by {{userName}} on {{date}}",
+        "lastSaved": "Saved:",
+        "changeMadeBy": "Changes made by {{userName}} on {{date}}",
         "rateUpdated": "Rate updated",
         "rateUpdatedDescription": "{{rate}} {{currency}} [Live API]",
         "liveApi": "Live API",
@@ -1687,15 +1695,15 @@
     "confirm": "Confirm",
     "accept": "Accept",
     "close": "Close",
-  "actionCannotBeUndone": "This action cannot be undone.",
+    "actionCannotBeUndone": "This action cannot be undone.",
     "loading": "Loading...",
     "error": "Error",
     "success": "Success",
-  "language": "Language",
-  "selectLanguage": "Select a language",
-  "chinese": "Chinese",
-  "english": "English",
-  "spanish": "Spanish",
+    "language": "Language",
+    "selectLanguage": "Select a language",
+    "chinese": "Chinese",
+    "english": "English",
+    "spanish": "Spanish",
     "cargando": "Loading...",
     "guardado": "Saved",
     "exportarPdf": "Export to PDF",
@@ -1704,10 +1712,10 @@
     "configuracion": "Configuration",
     "actual": "Current",
     "sistema": "System",
-  "gestion": "Management",
-  "ajuste": "Adjust",
+    "gestion": "Management",
+    "ajuste": "Adjust",
     "dias": "days",
-  "eta": "Estimated time",
+    "eta": "Estimated time",
     "tarifa": "Rate",
     "costo": "Cost",
     "minimo": "Minimum",
@@ -1794,13 +1802,12 @@
     "actualizado": "Updated"
   },
   "header": {
-  "notifications": "Notifications",
-  "markAllAsRead": "Mark all as read",
-  "viewAll": "View all",
-  "clear": "Clear",
-  "noNotifications": "No notifications"
+    "notifications": "Notifications",
+    "markAllAsRead": "Mark all as read",
+    "viewAll": "View all",
+    "clear": "Clear",
+    "noNotifications": "No notifications"
   },
-
   "venezuela": {
     "dashboard": {
       "title": "Venezuela Dashboard",
@@ -1892,7 +1899,6 @@
         "shippingType": "Shipping Type:",
         "ordersCount": "Orders:"
       },
-      
       "deliveryTypes": {
         "office": "Office",
         "warehouse": "Warehouse"
@@ -1968,7 +1974,7 @@
           "quantity": "Quantity",
           "description": "Description",
           "specifications": "Specifications",
-          "url":"Product URL"
+          "url": "Product URL"
         },
         "placeholders": {
           "title": "Order title",
@@ -2399,7 +2405,7 @@
           "system": "System",
           "fontSize": "Font Size",
           "interfaceDensity": "Interface Density",
-          "fontSizes" : {
+          "fontSizes": {
             "small": "Small",
             "medium": "Medium",
             "large": "Large"
@@ -2494,295 +2500,293 @@
     "orderReceived": "Received",
     "orderEstimatedDelivery": "Estimated Delivery",
     "orderFinalPrice": "Final Price",
-  "orderCurrency": "Currency",
-  "quickActions": "Quick Actions",
-  "quickActionsSubtitle": "Quickly access the most used functions for China operations",
-  "quality": "Quality",
-  "qualityScore": "Quality Score"
-  ,
-  "ordersPage": {
-    "title": "Order Management",
-    "subtitle": "Manage and quote customer orders",
-    "pageTitle": "Orders",
-    "stats": {
-      "pending": "Pending",
-      "quoted": "Quoted",
-      "processing": "Processing",
-      "shipped": "Shipped"
-    },
-    "badges": {
-      "unknown": "Unknown",
-      "quoted": "Quoted",
-      "processing": "Processing",
-      "readyToPack": "Ready to pack",
-      "inBox": "In box",
-      "inContainer": "In container",
-      "shippedVzla": "Shipped to Venezuela",
-      "inVenezuela": "In Venezuela",
-      "inBoxVzla": "In Box",
-      "readyVzla": "Order Ready",
-      "delivered": "Delivered",
-      "state": "State {{num}}"
-    },
-    "boxBadges": {
-      "new": "New",
-      "packed": "Packed",
-      "inContainer": "In container",
-      "shipped": "Shipped",
-      "state": "State {{num}}"
-    },
-    "containerBadges": {
-      "new": "New",
-      "loading": "Loading",
-      "shipped": "Shipped",
-      "state": "State {{num}}"
-    },
-    "tabs": {
-      "ordersList": "Orders list",
-      "boxes": "Boxes",
-      "containers": "Containers"
-    },
-    "filters": {
-      "searchClientPlaceholder": "Search by client...",
-      "searchBoxPlaceholder": "Search by box (ID)...",
-      "searchContainerPlaceholder": "Search by container (ID)...",
-      "status": "Status",
-      "all": "All",
-      "pending": "Pending",
-      "quoted": "Quoted",
-      "processing": "Processing",
-      "shipped": "Shipped"
-    },
-    "orders": {
-      "listTitle": "Orders List",
-      "refreshing": "Refreshing...",
-      "refresh": "Refresh",
-      "order": "Order",
-      "client": "Client",
-      "qtyShort": "Qty",
-      "qtyLabel": "Qty:",
-      "view": "View",
-      "pack": "Pack",
-      "unpack": "Unpack",
-      "quote": "Quote",
-      "editQuote": "Edit",
-      "notFoundTitle": "No orders found",
-      "notFoundSubtitle": "Try adjusting the search filters",
-      "noPdfAlert": "No PDF available for this order.",
-      "pdfMissingToastTitle": "No PDF",
-      "pdfMissingToastDesc": "No PDF available for this order.",
-      "date": "Date"
-    },
-    "boxes": {
-      "title": "Boxes",
-      "create": "Create boxes",
-      "noneTitle": "No boxes created",
-      "noneSubtitle": "Create your first box with the button above.",
-      "notFoundTitle": "No boxes found",
-      "notFoundSubtitle": "Try adjusting the ID search.",
-      "ordersCount": "Orders:",
-      "pack": "Pack",
-      "send": "Send",
-      "unpack": "Unpack",
-      "viewOrders": "View orders",
-      "delete": "Delete",
-      "loading": "Loading boxes..."
-    },
-    "containers": {
-      "title": "Containers",
-      "create": "Create container",
-      "noneTitle": "No containers created",
-      "noneSubtitle": "Create your first container with the button above.",
-      "notFoundTitle": "No containers found",
-      "notFoundSubtitle": "Try adjusting the ID search.",
-      "send": "Send",
-      "viewBoxes": "View boxes",
-      "delete": "Delete",
-      "loading": "Loading containers...",
-      "sentToastTitle": "Container sent",
-      "sentToastDesc": "Container #CONT-{{id}} was marked as shipped.",
-      "sendErrorTitle": "Could not send",
-      "sendErrorDesc": "Try again later."
-    },
-    "modals": {
-      "labelWarning": {
-        "title": "Before packaging",
-        "description": "Make sure to place the label on the product before packaging.",
-        "download": "Download label",
-        "accept": "Generate and assign",
-        "generating": "Generating...",
-        "toastTitleSuccess": "Label ready",
-        "downloaded": "Label generated"
+    "orderCurrency": "Currency",
+    "quickActions": "Quick Actions",
+    "quickActionsSubtitle": "Quickly access the most used functions for China operations",
+    "quality": "Quality",
+    "qualityScore": "Quality Score",
+    "ordersPage": {
+      "title": "Order Management",
+      "subtitle": "Manage and quote customer orders",
+      "pageTitle": "Orders",
+      "stats": {
+        "pending": "Pending",
+        "quoted": "Quoted",
+        "processing": "Processing",
+        "shipped": "Shipped"
       },
-      "quote": {
-        "title": "Quote Order",
-        "summaryTitle": "Order Summary",
-        "client": "Client:",
-        "product": "Product:",
-        "quantity": "Quantity:",
-        "specifications": "Specifications:",
-        "specificationsNA": "N/A",
-        "unitPriceLabel": "Unit quotation price *",
-        "unitPricePlaceholder": "Enter unit price",
-        "shippingPriceLabel": "Shipping price *",
-        "shippingPricePlaceholder": "Enter shipping price",
-        "weightLabel": "Weight *",
-        "weightPlaceholder": "Enter weight",
-        "heightLabel": "Height *",
-        "heightPlaceholder": "Enter height",
-        "widthLabel": "Width *",
-        "widthPlaceholder": "Enter width",
-        "lengthLabel": "Length *",
-        "lengthPlaceholder": "Enter length",
-        "totalToPay": "Total to Pay",
-        "cancel": "Cancel",
-        "sendQuote": "Send Quote"
+      "badges": {
+        "unknown": "Unknown",
+        "quoted": "Quoted",
+        "processing": "Processing",
+        "readyToPack": "Ready to pack",
+        "inBox": "In box",
+        "inContainer": "In container",
+        "shippedVzla": "Shipped to Venezuela",
+        "inVenezuela": "In Venezuela",
+        "inBoxVzla": "In Box",
+        "readyVzla": "Order Ready",
+        "delivered": "Delivered",
+        "state": "State {{num}}"
       },
-      "selectContainerForBox": {
-        "title": "Select container for box #BOX-{{id}}",
-        "loading": "Loading containers...",
-        "noneTitle": "No containers available",
-        "noneSubtitle": "Create a container from the Containers tab to pack.",
-        "select": "Select"
+      "boxBadges": {
+        "new": "New",
+        "packed": "Packed",
+        "inContainer": "In container",
+        "shipped": "Shipped",
+        "state": "State {{num}}"
       },
-      "createContainer": {
-        "title": "Create container",
-        "question": "Do you want to create a new container?",
-        "creating": "Creating...",
-        "accept": "Accept",
-        "cancel": "Cancel",
-        "containerNameLabel": "Container Name",
-        "containerNamePlaceholder": "Enter container name"
+      "containerBadges": {
+        "new": "New",
+        "loading": "Loading",
+        "shipped": "Shipped",
+        "state": "State {{num}}"
       },
-      "sendContainer": {
-            "title": "Send container #CONT-{{id}}",
-            "subtitle": "Add the container's shipping information",
-            "trackingLink": "Tracking link",
-            "trackingLinkPlaceholder": "Enter the tracking link",
-            "trackingNumber": "Tracking number",
-            "trackingNumberPlaceholder": "Enter the tracking number",
-            "courierCompany": "Courier company",
-            "courierCompanyPlaceholder": "Enter the courier company",
-            "etaDate": "Estimated arrival date",
-            "cancel": "Cancel",
-            "confirm": "Send",
-            "sending": "Sending..."
-          },
-      "containerBoxes": {
-        "title": "Boxes of container #CONT-{{id}}",
-        "loading": "Loading boxes...",
-        "noneTitle": "No boxes associated to this container",
-        "noneSubtitle": "When you assign boxes to this container they will appear here.",
+      "tabs": {
+        "ordersList": "Orders list",
+        "boxes": "Boxes",
+        "containers": "Containers"
+      },
+      "filters": {
+        "searchClientPlaceholder": "Search by client...",
+        "searchBoxPlaceholder": "Search by box (ID)...",
+        "searchContainerPlaceholder": "Search by container (ID)...",
+        "status": "Status",
+        "all": "All",
+        "pending": "Pending",
+        "quoted": "Quoted",
+        "processing": "Processing",
+        "shipped": "Shipped"
+      },
+      "orders": {
+        "listTitle": "Orders List",
+        "refreshing": "Refreshing...",
+        "refresh": "Refresh",
+        "order": "Order",
+        "client": "Client",
+        "qtyShort": "Qty",
+        "qtyLabel": "Qty:",
+        "view": "View",
+        "pack": "Pack",
         "unpack": "Unpack",
-        "viewOrders": "View orders"
+        "quote": "Quote",
+        "editQuote": "Edit",
+        "notFoundTitle": "No orders found",
+        "notFoundSubtitle": "Try adjusting the search filters",
+        "noPdfAlert": "No PDF available for this order.",
+        "pdfMissingToastTitle": "No PDF",
+        "pdfMissingToastDesc": "No PDF available for this order.",
+        "date": "Date"
       },
-      "deleteContainer": {
-        "title": "Delete container",
-        "question": "Are you sure you want to delete container #CONT-{{id}}? This action can't be undone.",
-        "deleting": "Deleting...",
+      "boxes": {
+        "title": "Boxes",
+        "create": "Create boxes",
+        "noneTitle": "No boxes created",
+        "noneSubtitle": "Create your first box with the button above.",
+        "notFoundTitle": "No boxes found",
+        "notFoundSubtitle": "Try adjusting the ID search.",
+        "ordersCount": "Orders:",
+        "pack": "Pack",
+        "send": "Send",
+        "unpack": "Unpack",
+        "viewOrders": "View orders",
         "delete": "Delete",
-        "cancel": "Cancel"
+        "loading": "Loading boxes..."
       },
-      "createBox": {
-        "title": "Create box",
-        "question": "Do you want to create a new box?",
-        "creating": "Creating...",
-        "accept": "Accept",
-        "cancel": "Cancel",
-        "boxNameLabel": "Box Name",
-        "boxNamePlaceholder": "Enter box name"
-      },
-      "boxOrders": {
-        "title": "Orders of box #BOX-{{id}}",
-        "loading": "Loading orders...",
-        "noneTitle": "No orders associated to this box",
-        "noneSubtitle": "When you assign orders to this box they will appear here.",
-        "view": "View"
-      },
-      "selectBoxForOrder": {
-        "title": "Select box for order #ORD-{{id}}",
-        "loading": "Loading boxes...",
-        "noneTitle": "No boxes available",
-        "noneSubtitle": "Create a box from the Boxes tab to pack.",
-        "select": "Select",
-        "cancel": "Cancel"
-      },
-      "deleteBox": {
-        "title": "Delete box",
-        "question": "Are you sure you want to delete box #BOX-{{id}}? This action can't be undone.",
-        "deleting": "Deleting...",
+      "containers": {
+        "title": "Containers",
+        "create": "Create container",
+        "noneTitle": "No containers created",
+        "noneSubtitle": "Create your first container with the button above.",
+        "notFoundTitle": "No containers found",
+        "notFoundSubtitle": "Try adjusting the ID search.",
+        "send": "Send",
+        "viewBoxes": "View boxes",
         "delete": "Delete",
-        "cancel": "Cancel"
+        "loading": "Loading containers...",
+        "sentToastTitle": "Container sent",
+        "sentToastDesc": "Container #CONT-{{id}} was marked as shipped.",
+        "sendErrorTitle": "Could not send",
+        "sendErrorDesc": "Try again later."
+      },
+      "modals": {
+        "labelWarning": {
+          "title": "Before packaging",
+          "description": "Make sure to place the label on the product before packaging.",
+          "download": "Download label",
+          "accept": "Generate and assign",
+          "generating": "Generating...",
+          "toastTitleSuccess": "Label ready",
+          "downloaded": "Label generated"
+        },
+        "quote": {
+          "title": "Quote Order",
+          "summaryTitle": "Order Summary",
+          "client": "Client:",
+          "product": "Product:",
+          "quantity": "Quantity:",
+          "specifications": "Specifications:",
+          "specificationsNA": "N/A",
+          "unitPriceLabel": "Unit quotation price *",
+          "unitPricePlaceholder": "Enter unit price",
+          "shippingPriceLabel": "Shipping price *",
+          "shippingPricePlaceholder": "Enter shipping price",
+          "weightLabel": "Weight *",
+          "weightPlaceholder": "Enter weight",
+          "heightLabel": "Height *",
+          "heightPlaceholder": "Enter height",
+          "widthLabel": "Width *",
+          "widthPlaceholder": "Enter width",
+          "lengthLabel": "Length *",
+          "lengthPlaceholder": "Enter length",
+          "totalToPay": "Total to Pay",
+          "cancel": "Cancel",
+          "sendQuote": "Send Quote"
+        },
+        "selectContainerForBox": {
+          "title": "Select container for box #BOX-{{id}}",
+          "loading": "Loading containers...",
+          "noneTitle": "No containers available",
+          "noneSubtitle": "Create a container from the Containers tab to pack.",
+          "select": "Select"
+        },
+        "createContainer": {
+          "title": "Create container",
+          "question": "Do you want to create a new container?",
+          "creating": "Creating...",
+          "accept": "Accept",
+          "cancel": "Cancel",
+          "containerNameLabel": "Container Name",
+          "containerNamePlaceholder": "Enter container name"
+        },
+        "sendContainer": {
+          "title": "Send container #CONT-{{id}}",
+          "subtitle": "Add the container's shipping information",
+          "trackingLink": "Tracking link",
+          "trackingLinkPlaceholder": "Enter the tracking link",
+          "trackingNumber": "Tracking number",
+          "trackingNumberPlaceholder": "Enter the tracking number",
+          "courierCompany": "Courier company",
+          "courierCompanyPlaceholder": "Enter the courier company",
+          "etaDate": "Estimated arrival date",
+          "cancel": "Cancel",
+          "confirm": "Send",
+          "sending": "Sending..."
+        },
+        "containerBoxes": {
+          "title": "Boxes of container #CONT-{{id}}",
+          "loading": "Loading boxes...",
+          "noneTitle": "No boxes associated to this container",
+          "noneSubtitle": "When you assign boxes to this container they will appear here.",
+          "unpack": "Unpack",
+          "viewOrders": "View orders"
+        },
+        "deleteContainer": {
+          "title": "Delete container",
+          "question": "Are you sure you want to delete container #CONT-{{id}}? This action can't be undone.",
+          "deleting": "Deleting...",
+          "delete": "Delete",
+          "cancel": "Cancel"
+        },
+        "createBox": {
+          "title": "Create box",
+          "question": "Do you want to create a new box?",
+          "creating": "Creating...",
+          "accept": "Accept",
+          "cancel": "Cancel",
+          "boxNameLabel": "Box Name",
+          "boxNamePlaceholder": "Enter box name"
+        },
+        "boxOrders": {
+          "title": "Orders of box #BOX-{{id}}",
+          "loading": "Loading orders...",
+          "noneTitle": "No orders associated to this box",
+          "noneSubtitle": "When you assign orders to this box they will appear here.",
+          "view": "View"
+        },
+        "selectBoxForOrder": {
+          "title": "Select box for order #ORD-{{id}}",
+          "loading": "Loading boxes...",
+          "noneTitle": "No boxes available",
+          "noneSubtitle": "Create a box from the Boxes tab to pack.",
+          "select": "Select",
+          "cancel": "Cancel"
+        },
+        "deleteBox": {
+          "title": "Delete box",
+          "question": "Are you sure you want to delete box #BOX-{{id}}? This action can't be undone.",
+          "deleting": "Deleting...",
+          "delete": "Delete",
+          "cancel": "Cancel"
+        }
+      },
+      "toasts": {
+        "boxCreateErrorTitle": "Box couldn't be created",
+        "boxCreateErrorDesc": "Try again in a few seconds.",
+        "boxCreatedTitle": "Box created",
+        "boxCreatedDesc": "The box was created successfully.",
+        "boxesLoadErrorTitle": "Boxes couldn't be loaded",
+        "boxesLoadErrorDesc": "Try again later.",
+        "containerCreateErrorTitle": "Container couldn't be created",
+        "containerCreateErrorDesc": "Try again in a few seconds.",
+        "containerCreatedTitle": "Container created",
+        "containerCreatedDesc": "The container was created successfully.",
+        "containersLoadErrorTitle": "Containers couldn't be loaded",
+        "containersLoadErrorDesc": "Try again later.",
+        "containerInvalidTitle": "Invalid container",
+        "containerInvalidDesc": "Container ID couldn't be determined.",
+        "notAllowedTitle": "Not allowed",
+        "assignBoxNotAllowedDesc": "You can't assign boxes to a shipped container.",
+        "assignBoxErrorTitle": "Container not assigned",
+        "assignBoxErrorDesc": "Try again later.",
+        "boxAssignedTitle": "Box assigned",
+        "boxAssignedDesc": "Box #BOX-{{boxId}} assigned to container #CONT-{{containerId}}.",
+        "unexpectedErrorTitle": "Unexpected error",
+        "unexpectedErrorDesc": "Try again later.",
+        "boxUnpackErrorTitle": "Couldn't unpack",
+        "boxUnpackNotAllowedDesc": "You can't unpack a box from a shipped container.",
+        "boxUnpackedTitle": "Box unpacked",
+        "boxUnpackedDesc": "Orders and box #BOX-{{boxId}} released.",
+        "orderAssignBoxInvalidTitle": "Invalid box",
+        "orderAssignBoxInvalidDesc": "Box ID couldn't be determined.",
+        "orderAssignNotAllowedDesc": "You can't pack into a shipped box.",
+        "orderAssignedTitle": "Order assigned",
+        "orderAssignedDesc": "Order #ORD-{{orderId}} assigned to box {{boxId}}.",
+        "orderUnpackErrorTitle": "Couldn't unpack",
+        "orderNoBoxTitle": "Order without box",
+        "orderNoBoxDesc": "This order has no box assigned.",
+        "orderUnpackNotAllowedDesc": "You can't unpack orders from a shipped container.",
+        "orderUnpackedTitle": "Order unpacked",
+        "orderUnpackedDesc": "Order #ORD-{{orderId}} released from box.",
+        "containerSendNotAllowedDesc": "You can't delete a shipped container.",
+        "containerDeletedTitle": "Container deleted",
+        "containerDeletedDesc": "The container was deleted successfully.",
+        "containerDeleteErrorTitle": "Container couldn't be deleted",
+        "boxDeletedTitle": "Box deleted",
+        "boxDeletedDesc": "The box was deleted successfully.",
+        "boxDeleteErrorTitle": "Box couldn't be deleted",
+        "orderPdfMissingTitle": "No PDF",
+        "orderPdfMissingDesc": "No PDF available for this order.",
+        "boxDeleteIdInvalidTitle": "Couldn't delete",
+        "boxDeleteIdInvalidDesc": "Invalid box ID.",
+        "containerSentTitle": "Container sent",
+        "orderNotFoundTitle": "Order not found",
+        "orderNotFoundDesc": "The specified order could not be found.",
+        "fetchErrorTitle": "Error fetching data",
+        "shippingTypeMismatchTitle": "Shipping type incompatible",
+        "shippingTypeMultipleDesc": "The box contains orders with different shipping types.",
+        "shippingTypeMismatchDesc": "The order's shipping type does not match existing orders in the box.",
+        "tryAgainLater": "Try again later.",
+        "packEmptyBoxNotAllowed": "You can't send an empty box.",
+        "sendBoxErrorTitle": "Couldn't send box",
+        "tryAgain": "Try again.",
+        "boxSentTitle": "Box sent",
+        "boxSentDesc": "Box #BOX-{{boxId}} was marked as shipped.",
+        "orderAlreadyShipped": "This order has already been shipped and cannot be quoted."
       }
-    },
-    "toasts": {
-      "boxCreateErrorTitle": "Box couldn't be created",
-      "boxCreateErrorDesc": "Try again in a few seconds.",
-      "boxCreatedTitle": "Box created",
-      "boxCreatedDesc": "The box was created successfully.",
-      "boxesLoadErrorTitle": "Boxes couldn't be loaded",
-      "boxesLoadErrorDesc": "Try again later.",
-      "containerCreateErrorTitle": "Container couldn't be created",
-      "containerCreateErrorDesc": "Try again in a few seconds.",
-      "containerCreatedTitle": "Container created",
-      "containerCreatedDesc": "The container was created successfully.",
-      "containersLoadErrorTitle": "Containers couldn't be loaded",
-      "containersLoadErrorDesc": "Try again later.",
-      "containerInvalidTitle": "Invalid container",
-      "containerInvalidDesc": "Container ID couldn't be determined.",
-      "notAllowedTitle": "Not allowed",
-      "assignBoxNotAllowedDesc": "You can't assign boxes to a shipped container.",
-      "assignBoxErrorTitle": "Container not assigned",
-      "assignBoxErrorDesc": "Try again later.",
-      "boxAssignedTitle": "Box assigned",
-      "boxAssignedDesc": "Box #BOX-{{boxId}} assigned to container #CONT-{{containerId}}.",
-      "unexpectedErrorTitle": "Unexpected error",
-      "unexpectedErrorDesc": "Try again later.",
-      "boxUnpackErrorTitle": "Couldn't unpack",
-      "boxUnpackNotAllowedDesc": "You can't unpack a box from a shipped container.",
-      "boxUnpackedTitle": "Box unpacked",
-      "boxUnpackedDesc": "Orders and box #BOX-{{boxId}} released.",
-      "orderAssignBoxInvalidTitle": "Invalid box",
-      "orderAssignBoxInvalidDesc": "Box ID couldn't be determined.",
-      "orderAssignNotAllowedDesc": "You can't pack into a shipped box.",
-      "orderAssignedTitle": "Order assigned",
-      "orderAssignedDesc": "Order #ORD-{{orderId}} assigned to box {{boxId}}.",
-      "orderUnpackErrorTitle": "Couldn't unpack",
-      "orderNoBoxTitle": "Order without box",
-      "orderNoBoxDesc": "This order has no box assigned.",
-      "orderUnpackNotAllowedDesc": "You can't unpack orders from a shipped container.",
-      "orderUnpackedTitle": "Order unpacked",
-      "orderUnpackedDesc": "Order #ORD-{{orderId}} released from box.",
-      "containerSendNotAllowedDesc": "You can't delete a shipped container.",
-      "containerDeletedTitle": "Container deleted",
-      "containerDeletedDesc": "The container was deleted successfully.",
-      "containerDeleteErrorTitle": "Container couldn't be deleted",
-      "boxDeletedTitle": "Box deleted",
-      "boxDeletedDesc": "The box was deleted successfully.",
-      "boxDeleteErrorTitle": "Box couldn't be deleted",
-      "orderPdfMissingTitle": "No PDF",
-      "orderPdfMissingDesc": "No PDF available for this order.",
-      "boxDeleteIdInvalidTitle": "Couldn't delete",
-      "boxDeleteIdInvalidDesc": "Invalid box ID.",
-      "containerSentTitle": "Container sent",
-      "orderNotFoundTitle": "Order not found",
-      "orderNotFoundDesc": "The specified order could not be found.",
-      "fetchErrorTitle": "Error fetching data",
-      "shippingTypeMismatchTitle": "Shipping type incompatible",
-      "shippingTypeMultipleDesc": "The box contains orders with different shipping types.",
-      "shippingTypeMismatchDesc": "The order's shipping type does not match existing orders in the box.",
-      "tryAgainLater": "Try again later.",
-      "packEmptyBoxNotAllowed": "You can't send an empty box.",
-      "sendBoxErrorTitle": "Couldn't send box",
-      "tryAgain": "Try again.",
-      "boxSentTitle": "Box sent",
-      "boxSentDesc": "Box #BOX-{{boxId}} was marked as shipped.",
-      "orderAlreadyShipped": "This order has already been shipped and cannot be quoted."
     }
-  }
-  }
-
-  ,"notFound": {
+  },
+  "notFound": {
     "title": "Oops! Page not found",
     "description": "The page you're looking for doesn't exist or was moved. Don't worry, we'll help you find what you need.",
     "goBack": "Go Back",
@@ -2791,9 +2795,8 @@
     "needHelp": "Need help?",
     "contactSupport": "Contact Support",
     "searchSite": "Search the Site"
-  }
-
-  ,"errors": {
+  },
+  "errors": {
     "boundary": {
       "generic": "Error",
       "networkTitle": "Connection Error",
@@ -2870,16 +2873,45 @@
       "desc2": "Confirm, audit and monitor the verification flow."
     },
     "stats": {
-      "pending": { "label": "Pending", "help": "Awaiting validation" },
-      "completed": { "label": "Confirmed", "help": "Validated payments" },
-      "totalAmount": { "label": "Total Amount", "help": "USD processed" }
+      "pending": {
+        "label": "Pending",
+        "help": "Awaiting validation"
+      },
+      "completed": {
+        "label": "Confirmed",
+        "help": "Validated payments"
+      },
+      "totalAmount": {
+        "label": "Total Amount",
+        "help": "USD processed"
+      }
     },
     "quickActions": {
       "title": "Quick Actions",
       "subtitle": "Operational flow of the payments panel",
       "validate": "Validate Payments"
     }
+  },
+  "chat": {
+    "admin": {
+      "title": "Chat with {{name}}",
+      "subtitle": "Communicate directly with the administrator",
+      "role": "System Administrator"
+    },
+    "china": {
+      "title": "Chat with {{name}}",
+      "subtitle": "China User"
+    },
+    "list": {
+      "title": "Chat",
+      "subtitle": "Manage your conversations with China users",
+      "activeConversations": "Active Conversations",
+      "selectConversation": "Select a conversation to start chatting"
+    },
+    "notFound": {
+      "title": "Administrator not found",
+      "message": "Could not connect with the administrator"
+    },
+    "loading": "Loading chat..."
   }
 }
-
-
