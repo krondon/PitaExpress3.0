@@ -26,7 +26,7 @@ export default function AdminChatPage() {
     const router = useRouter();
     const { theme } = useTheme();
     const [mounted, setMounted] = useState(false);
-    
+
     useEffect(() => {
         setMounted(true);
     }, []);
@@ -50,6 +50,8 @@ export default function AdminChatPage() {
         sending,
         sendMessage,
         addMessage,
+        editMessage,
+        deleteMessage,
     } = useChatMessages({
         conversationUserId: selectedUserId,
         currentUserId: adminId ?? null,
@@ -197,6 +199,8 @@ export default function AdminChatPage() {
                                             isOtherUserTyping={isOtherUserTyping}
                                             otherUserName={selectedUserName}
                                             loading={loading}
+                                            onEditMessage={editMessage}
+                                            onDeleteMessage={deleteMessage}
                                         />
                                         <ChatInput
                                             onSendMessage={handleSendMessage}

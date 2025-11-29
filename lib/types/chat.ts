@@ -16,6 +16,9 @@ export interface ChatMessage {
   read: boolean;
   created_at: string;
   updated_at: string;
+  is_edited?: boolean;
+  deleted_by_sender?: boolean;
+  deleted_by_receiver?: boolean;
 }
 
 export interface ChatConversation {

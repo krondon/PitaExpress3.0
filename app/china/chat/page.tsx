@@ -27,7 +27,7 @@ export default function ChinaChatPage() {
     const [loadingAdmin, setLoadingAdmin] = useState(true);
     const { theme } = useTheme();
     const [mounted, setMounted] = useState(false);
-    
+
     useEffect(() => {
         setMounted(true);
     }, []);
@@ -78,6 +78,8 @@ export default function ChinaChatPage() {
         sending,
         sendMessage,
         addMessage,
+        editMessage,
+        deleteMessage,
     } = useChatMessages({
         conversationUserId: adminId,
         currentUserId: chinaId ?? null,
@@ -201,6 +203,8 @@ export default function ChinaChatPage() {
                                         isOtherUserTyping={isOtherUserTyping}
                                         otherUserName={adminName}
                                         loading={loading}
+                                        onEditMessage={editMessage}
+                                        onDeleteMessage={deleteMessage}
                                     />
                                     <ChatInput
                                         onSendMessage={handleSendMessage}

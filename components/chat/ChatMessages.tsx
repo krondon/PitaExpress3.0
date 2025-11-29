@@ -14,6 +14,8 @@ interface ChatMessagesProps {
     isOtherUserTyping: boolean;
     otherUserName?: string;
     loading?: boolean;
+    onEditMessage?: (id: string, newContent: string) => void;
+    onDeleteMessage?: (id: string) => void;
 }
 
 export function ChatMessages({
@@ -22,12 +24,14 @@ export function ChatMessages({
     isOtherUserTyping,
     otherUserName,
     loading,
+    onEditMessage,
+    onDeleteMessage,
 }: ChatMessagesProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const bottomRef = useRef<HTMLDivElement>(null);
     const { theme } = useTheme();
     const [mounted, setMounted] = useState(false);
-    
+
     useEffect(() => {
         setMounted(true);
     }, []);
@@ -76,6 +80,7 @@ export function ChatMessages({
                         }}
                     >
                         <MessageBubble
+                            id={msg.id}
                             message={msg.message}
                             fileUrl={msg.file_url}
                             fileName={msg.file_name}
@@ -84,6 +89,9 @@ export function ChatMessages({
                             isSent={msg.sender_id === currentUserId}
                             isRead={msg.read}
                             senderName={msg.sender_id !== currentUserId ? otherUserName : undefined}
+                            isEdited={msg.is_edited}
+                            onEdit={onEditMessage}
+                            onDelete={onDeleteMessage}
                         />
                     </div>
                 ))}

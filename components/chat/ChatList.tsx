@@ -26,7 +26,7 @@ import { Search, Loader2, MessageCircle, MoreVertical, Trash2, ChevronLeft, Chev
 import type { ChatConversation } from '@/lib/types/chat';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from 'next-themes';
 
 interface ChatListProps {
@@ -48,153 +48,180 @@ export function ChatList({ onSelectConversation, selectedUserId, currentUserId }
     const supabase = getSupabaseBrowserClient();
     const { theme } = useTheme();
     const [mounted, setMounted] = useState(false);
-    
+
     useEffect(() => {
         setMounted(true);
     }, []);
 
-    useEffect(() => {
-        const loadConversations = async () => {
-            if (!currentUserId) {
-                setConversations([]);
+    const loadConversations = useCallback(async () => {
+        if (!currentUserId) {
+            setConversations([]);
+            setLoading(false);
+            return;
+        }
+
+        try {
+            setLoading(true);
+
+            // Intentar usar la RPC nueva (v2) que trae nombres reales y filtra ocultos
+            const { data: rpcData, error: rpcError } = await supabase
+                .rpc('get_chat_conversations_v2', { current_user_id: currentUserId });
+
+            if (!rpcError && rpcData) {
+                console.log('✅ Conversaciones cargadas vía RPC v2');
+                setConversations(rpcData);
                 setLoading(false);
                 return;
             }
 
-            try {
-                setLoading(true);
+            // Fallback: Lógica manual si la RPC no existe
+            console.log('⚠️ RPC falló o no existe, usando lógica manual:', rpcError?.message);
 
-                console.log('🔍 Cargando conversaciones para admin:', currentUserId);
+            // 1. Obtener conversaciones ocultas
+            const { data: hiddenConversations } = await supabase
+                .from('chat_hidden_conversations')
+                .select('hidden_user_id, created_at')
+                .eq('user_id', currentUserId);
 
-                // Obtener conversaciones ocultas por el usuario con su fecha
-                const { data: hiddenConversations } = await supabase
-                    .from('chat_hidden_conversations')
-                    .select('hidden_user_id, created_at')
-                    .eq('user_id', currentUserId);
+            const hiddenMap = new Map(
+                hiddenConversations?.map(h => [h.hidden_user_id, new Date(h.created_at)]) || []
+            );
 
-                const hiddenMap = new Map(
-                    hiddenConversations?.map(h => [h.hidden_user_id, new Date(h.created_at)]) || []
-                );
-                console.log('🙈 Conversaciones ocultas:', hiddenMap.size);
+            // 2. Obtener mensajes
+            const { data: messages, error: messagesError } = await supabase
+                .from('chat_messages')
+                .select('*')
+                .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`)
+                .order('created_at', { ascending: false });
 
-                // Obtener todos los mensajes donde el admin es sender o receiver
-                const { data: messages, error: messagesError } = await supabase
-                    .from('chat_messages')
-                    .select('*')
-                    .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`)
-                    .order('created_at', { ascending: false });
+            if (messagesError) throw messagesError;
 
-                if (messagesError) {
-                    console.error('❌ Error loading messages:', messagesError);
-                    setConversations([]);
-                    setLoading(false);
-                    return;
+            // 3. Agrupar y filtrar
+            const conversationsMap = new Map<string, ChatConversation>();
+
+            for (const msg of messages || []) {
+                const otherUserId = msg.sender_id === currentUserId ? msg.receiver_id : msg.sender_id;
+
+                // Verificar si está oculta
+                const hiddenDate = hiddenMap.get(otherUserId);
+                if (hiddenDate) {
+                    // Si el mensaje es anterior a la fecha de ocultamiento, lo ignoramos
+                    if (new Date(msg.created_at) <= hiddenDate) {
+                        continue;
+                    }
+                    // Si es posterior, se muestra (NO borramos el registro hidden, solo mostramos lo nuevo)
                 }
 
-                console.log('📨 Mensajes obtenidos:', messages?.length);
+                if (!conversationsMap.has(otherUserId)) {
+                    // Contar no leídos (solo de mensajes visibles)
+                    const unreadCount = (messages || []).filter(m =>
+                        m.sender_id === otherUserId &&
+                        m.receiver_id === currentUserId &&
+                        !m.read &&
+                        (!hiddenDate || new Date(m.created_at) > hiddenDate)
+                    ).length;
 
-                // Agrupar por usuario (China)
-                const conversationsMap = new Map<string, ChatConversation>();
-
-                for (const msg of messages || []) {
-                    const chinaUserId = msg.sender_id === currentUserId ? msg.receiver_id : msg.sender_id;
-
-                    // Verificar si está oculta y si el último mensaje es más reciente que el ocultado
-                    const hiddenDate = hiddenMap.get(chinaUserId);
-                    if (hiddenDate) {
-                        const lastMessageDate = new Date(msg.created_at);
-                        // Si el último mensaje es anterior al ocultado, saltar esta conversación
-                        if (lastMessageDate <= hiddenDate) {
-                            continue;
-                        }
-                        // Si hay mensajes nuevos después de ocultar, des-ocultar automáticamente
-                        console.log('🔓 Des-ocultando conversación con mensajes nuevos:', chinaUserId);
-                        supabase
-                            .from('chat_hidden_conversations')
-                            .delete()
-                            .eq('user_id', currentUserId)
-                            .eq('hidden_user_id', chinaUserId)
-                            .then(() => console.log('✅ Conversación des-ocultada'));
-                    }
-
-                    if (!conversationsMap.has(chinaUserId)) {
-                        // Contar mensajes no leídos
-                        const unreadCount = (messages || []).filter(
-                            m => m.sender_id === chinaUserId && m.receiver_id === currentUserId && !m.read
-                        ).length;
-
-                        conversationsMap.set(chinaUserId, {
-                            user_id: chinaUserId,
-                            user_email: '',
-                            user_name: 'Usuario',
-                            last_message: msg.message,
-                            last_message_time: msg.created_at,
-                            unread_count: unreadCount,
-                            last_file_url: msg.file_url,
-                        });
-                    }
+                    conversationsMap.set(otherUserId, {
+                        user_id: otherUserId,
+                        user_email: '',
+                        user_name: 'Cargando...', // Placeholder
+                        last_message: msg.message,
+                        last_message_time: msg.created_at,
+                        unread_count: unreadCount,
+                        last_file_url: msg.file_url,
+                    });
                 }
-
-                const conversationsList = Array.from(conversationsMap.values());
-
-                // Obtener información de usuarios desde userlevel
-                for (const conv of conversationsList) {
-                    const { data: userData } = await supabase
-                        .from('userlevel')
-                        .select('id, user_level')
-                        .eq('id', conv.user_id)
-                        .single();
-
-                    if (userData) {
-                        conv.user_name = `Usuario ${userData.user_level}`;
-                    }
-                }
-
-                console.log('✅ Conversaciones procesadas:', conversationsList);
-                setConversations(conversationsList);
-            } catch (error) {
-                console.error('❌ Exception loading conversations:', error);
-                setConversations([]);
-            } finally {
-                setLoading(false);
             }
-        };
 
-        loadConversations();
-        const interval = setInterval(loadConversations, 30000);
-        return () => clearInterval(interval);
+            const conversationsList = Array.from(conversationsMap.values());
+
+            // 4. Enriquecer con nombres (Fallback básico)
+            // Intentamos obtener nombres de userlevel o una API si fuera posible
+            // Por ahora mantenemos la lógica de userlevel que ya existía
+            for (const conv of conversationsList) {
+                const { data: userData } = await supabase
+                    .from('userlevel')
+                    .select('id, user_level')
+                    .eq('id', conv.user_id)
+                    .single();
+
+                if (userData) {
+                    conv.user_name = `Usuario ${userData.user_level}`;
+                }
+            }
+
+            setConversations(conversationsList);
+
+        } catch (error) {
+            console.error('❌ Error loading conversations:', error);
+            setConversations([]);
+        } finally {
+            setLoading(false);
+        }
     }, [currentUserId, supabase]);
 
-    // Función para ocultar conversación (solo para el usuario actual)
+    useEffect(() => {
+        loadConversations();
+
+        // Suscribirse a cambios en mensajes para recargar la lista
+        const channel = supabase
+            .channel('chat_list_updates')
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'chat_messages',
+                filter: `receiver_id=eq.${currentUserId}`
+            }, () => {
+                loadConversations();
+            })
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'chat_messages',
+                filter: `sender_id=eq.${currentUserId}`
+            }, () => {
+                loadConversations();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [loadConversations, currentUserId, supabase]);
+
+    // Función para ocultar conversación
     const handleDeleteConversation = async () => {
         if (!conversationToDelete || !currentUserId) return;
 
         try {
             setDeleting(true);
 
-            // Insertar en tabla de conversaciones ocultas
+            // Upsert para actualizar la fecha si ya existe, o insertar si no
+            // Usamos upsert para "reiniciar" la fecha de ocultamiento a AHORA
             const { error } = await supabase
                 .from('chat_hidden_conversations')
-                .insert({
+                .upsert({
                     user_id: currentUserId,
                     hidden_user_id: conversationToDelete,
-                });
+                    created_at: new Date().toISOString() // Importante: actualizar fecha
+                }, { onConflict: 'user_id, hidden_user_id' });
 
-            if (error) {
-                console.error('Error hiding conversation:', error);
-                return;
-            }
+            if (error) throw error;
 
-            // Actualizar lista local (remover de la vista)
+            // Actualizar lista local
             setConversations(prev => prev.filter(conv => conv.user_id !== conversationToDelete));
 
-            // Resetear página si es necesario
+            // Si la conversación seleccionada es la que borramos, deseleccionar
+            if (selectedUserId === conversationToDelete) {
+                // Opcional: notificar al padre para deseleccionar
+            }
+
+            // Resetear página
             const newTotalPages = Math.ceil((conversations.length - 1) / ITEMS_PER_PAGE);
             if (currentPage > newTotalPages && newTotalPages > 0) {
                 setCurrentPage(newTotalPages);
             }
 
-            console.log('✅ Conversación ocultada');
         } catch (error) {
             console.error('Error hiding conversation:', error);
         } finally {
@@ -215,7 +242,6 @@ export function ChatList({ onSelectConversation, selectedUserId, currentUserId }
     const endIndex = startIndex + ITEMS_PER_PAGE;
     const paginatedConversations = filteredConversations.slice(startIndex, endIndex);
 
-    // Resetear página cuando cambia el filtro
     useEffect(() => {
         setCurrentPage(1);
     }, [searchQuery]);
@@ -333,7 +359,7 @@ export function ChatList({ onSelectConversation, selectedUserId, currentUserId }
                                                 }}
                                             >
                                                 <Trash2 className="mr-2 h-4 w-4" />
-                                                Eliminar conversación
+                                                Eliminar chat
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
@@ -379,10 +405,10 @@ export function ChatList({ onSelectConversation, selectedUserId, currentUserId }
             <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>¿Eliminar conversación?</AlertDialogTitle>
+                        <AlertDialogTitle>¿Eliminar chat?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Esta acción eliminará permanentemente todos los mensajes de esta conversación.
-                            No se puede deshacer.
+                            Esta acción ocultará el historial actual de esta conversación.
+                            Si vuelves a hablar con este usuario, se iniciará un chat limpio.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

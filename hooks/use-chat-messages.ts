@@ -32,6 +32,17 @@ export function useChatMessages({ conversationUserId, currentUserId, currentUser
             }
             setError(null);
 
+            // 1. Obtener fecha de ocultamiento (si existe)
+            const { data: hiddenData } = await supabase
+                .from('chat_hidden_conversations')
+                .select('created_at')
+                .eq('user_id', currentUserId)
+                .eq('hidden_user_id', conversationUserId)
+                .single();
+
+            const hiddenSince = hiddenData?.created_at ? new Date(hiddenData.created_at) : null;
+
+            // 2. Obtener mensajes
             const { data, error: fetchError } = await supabase
                 .from('chat_messages')
                 .select('*')
@@ -42,7 +53,19 @@ export function useChatMessages({ conversationUserId, currentUserId, currentUser
                 throw fetchError;
             }
 
-            setMessages(data || []);
+            // 3. Filtrar mensajes
+            const filteredMessages = (data || []).filter(msg => {
+                // Filtrar si fue eliminado por el usuario actual
+                if (msg.sender_id === currentUserId && msg.deleted_by_sender) return false;
+                if (msg.receiver_id === currentUserId && msg.deleted_by_receiver) return false;
+
+                // Filtrar si es anterior a la fecha de ocultamiento
+                if (hiddenSince && new Date(msg.created_at) <= hiddenSince) return false;
+
+                return true;
+            });
+
+            setMessages(filteredMessages);
         } catch (err) {
             console.error('Error loading messages:', err);
             setError(err instanceof Error ? err.message : 'Error desconocido');
@@ -80,12 +103,13 @@ export function useChatMessages({ conversationUserId, currentUserId, currentUser
                 read: false,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
-            };
+                is_edited: false,
+            } as ChatMessage;
 
-            // Agregar mensaje optimísticamente (aparece instantáneamente)
+            // Agregar mensaje optimísticamente
             setMessages(prev => [...prev, optimisticMessage]);
 
-            // Guardar en BD en segundo plano
+            // Guardar en BD
             const { data: newMessage, error: insertError } = await supabase
                 .from('chat_messages')
                 .insert({
@@ -104,12 +128,11 @@ export function useChatMessages({ conversationUserId, currentUserId, currentUser
                 .single();
 
             if (insertError) {
-                // Si falla, quitar el mensaje optimista
                 setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
                 throw insertError;
             }
 
-            // Reemplazar mensaje temporal con el real (tiene ID de BD)
+            // Reemplazar mensaje temporal
             setMessages(prev =>
                 prev.map(msg => msg.id === optimisticMessage.id ? newMessage : msg)
             );
@@ -123,6 +146,60 @@ export function useChatMessages({ conversationUserId, currentUserId, currentUser
             setSending(false);
         }
     }, [currentUserId, currentUserRole, supabase]);
+
+    // Editar mensaje
+    const editMessage = useCallback(async (messageId: string, newContent: string) => {
+        try {
+            // Optimista
+            setMessages(prev => prev.map(msg =>
+                msg.id === messageId ? { ...msg, message: newContent, is_edited: true } : msg
+            ));
+
+            const { error } = await supabase
+                .from('chat_messages')
+                .update({ message: newContent, is_edited: true })
+                .eq('id', messageId);
+
+            if (error) throw error;
+            return true;
+        } catch (err) {
+            console.error('Error editing message:', err);
+            loadMessages(); // Recargar para asegurar consistencia
+            return false;
+        }
+    }, [supabase, loadMessages]);
+
+    // Eliminar mensaje (para mí)
+    const deleteMessage = useCallback(async (messageId: string) => {
+        if (!currentUserId) return false;
+
+        try {
+            // Optimista: quitar de la lista
+            setMessages(prev => prev.filter(msg => msg.id !== messageId));
+
+            const msg = messages.find(m => m.id === messageId);
+            if (!msg) return false;
+
+            const updateData: any = {};
+            if (msg.sender_id === currentUserId) {
+                updateData.deleted_by_sender = true;
+            } else {
+                updateData.deleted_by_receiver = true;
+            }
+
+            const { error } = await supabase
+                .from('chat_messages')
+                .update(updateData)
+                .eq('id', messageId);
+
+            if (error) throw error;
+            return true;
+        } catch (err) {
+            console.error('Error deleting message:', err);
+            loadMessages();
+            return false;
+        }
+    }, [currentUserId, messages, supabase, loadMessages]);
 
     // Marcar mensajes como leídos
     const markAsRead = useCallback(async (conversationUserId: string) => {
@@ -141,7 +218,6 @@ export function useChatMessages({ conversationUserId, currentUserId, currentUser
                 return;
             }
 
-            // Actualizar mensajes localmente
             setMessages(prev =>
                 prev.map(msg =>
                     msg.sender_id === conversationUserId && !msg.read
@@ -154,13 +230,10 @@ export function useChatMessages({ conversationUserId, currentUserId, currentUser
         }
     }, [currentUserId, supabase]);
 
-    // Agregar mensaje recibido por Realtime (sin refetch)
+    // Agregar mensaje recibido por Realtime
     const addMessage = useCallback((message: ChatMessage) => {
         setMessages(prev => {
-            // Evitar duplicados
-            if (prev.some(m => m.id === message.id)) {
-                return prev;
-            }
+            if (prev.some(m => m.id === message.id)) return prev;
             return [...prev, message];
         });
     }, []);
@@ -183,6 +256,8 @@ export function useChatMessages({ conversationUserId, currentUserId, currentUser
         sending,
         error,
         sendMessage,
+        editMessage,
+        deleteMessage,
         markAsRead,
         addMessage,
         refetch: loadMessages,
