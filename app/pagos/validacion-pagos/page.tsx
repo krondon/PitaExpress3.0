@@ -232,8 +232,14 @@ const PaymentDetailsModal: React.FC<{
   payment: Payment | null;
 }> = ({ isOpen, onClose, payment }) => {
   const { t } = useTranslation();
+  const { theme } = useTheme();
   const [isClosing, setIsClosing] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -261,6 +267,8 @@ const PaymentDetailsModal: React.FC<{
 
   if (!isOpen || !payment) return null;
 
+  const isDark = mounted && theme === 'dark';
+
   return (
     <div 
       className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-all duration-300 ${
@@ -268,28 +276,74 @@ const PaymentDetailsModal: React.FC<{
       }`}
       onClick={handleBackdropClick}
     >
-      <div className={`bg-white rounded-lg p-6 max-w-2xl w-full shadow-xl transition-all duration-300 transform ${
-        isClosing ? 'scale-95 opacity-0' : (isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0')
-      }`}>
+      <div
+        className={`rounded-lg p-6 max-w-2xl w-full shadow-xl border transition-all duration-300 transform ${
+          isDark
+            ? 'bg-slate-900 border-slate-700 text-slate-50'
+            : 'bg-white border-gray-200 text-gray-900'
+        } ${
+          isClosing
+            ? 'scale-95 opacity-0'
+            : isVisible
+              ? 'scale-100 opacity-100'
+              : 'scale-95 opacity-0'
+        }`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex justify-between items-start">
           <div>
-            <h3 className="text-xl font-bold text-gray-900">{t('venezuela.pagos.modal.details.title')}</h3>
-            <p className="text-sm text-gray-500">{payment.id}</p>
+            <h3 className={`text-xl font-bold ${isDark ? 'text-slate-50' : 'text-gray-900'}`}>
+              {t('venezuela.pagos.modal.details.title')}
+            </h3>
+            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+              {payment.id}
+            </p>
           </div>
-          <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
+          <button
+            onClick={handleClose}
+            className={`transition-colors ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-gray-400 hover:text-gray-600'}`}
+          >
             <X size={24} />
           </button>
         </div>
         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-semibold text-gray-800 mb-2">{t('venezuela.pagos.modal.details.clientInfo')}</h4>
-            <p><span className="font-medium">{t('venezuela.pagos.modal.details.fields.user')}</span> {payment.usuario}</p>
-            <p><span className="font-medium">{t('venezuela.pagos.modal.details.fields.productId')}</span> {payment.idProducto}</p>
+          <div
+            className={`p-4 rounded-lg ${
+              isDark
+                ? 'bg-slate-800 text-slate-100'
+                : 'bg-gray-50 text-gray-800'
+            }`}
+          >
+            <h4 className={`font-semibold mb-2 ${isDark ? 'text-slate-100' : 'text-gray-800'}`}>
+              {t('venezuela.pagos.modal.details.clientInfo')}
+            </h4>
+            <p className={isDark ? 'text-slate-200' : 'text-gray-700'}>
+              <span className="font-medium">
+                {t('venezuela.pagos.modal.details.fields.user')}
+              </span>{' '}
+              {payment.usuario}
+            </p>
+            <p className={isDark ? 'text-slate-200' : 'text-gray-700'}>
+              <span className="font-medium">
+                {t('venezuela.pagos.modal.details.fields.productId')}
+              </span>{' '}
+              {payment.idProducto}
+            </p>
           </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-semibold text-gray-800 mb-2">{t('venezuela.pagos.modal.details.paymentInfo')}</h4>
-            <div className="flex items-center gap-2">
-              <span className="font-medium">{t('venezuela.pagos.modal.details.fields.amount')}</span>
+          <div
+            className={`p-4 rounded-lg ${
+              isDark
+                ? 'bg-slate-800 text-slate-100'
+                : 'bg-gray-50 text-gray-800'
+            }`}
+          >
+            <h4 className={`font-semibold mb-2 ${isDark ? 'text-slate-100' : 'text-gray-800'}`}>
+              {t('venezuela.pagos.modal.details.paymentInfo')}
+            </h4>
+            <div className={`flex items-center gap-2 ${isDark ? 'text-slate-200' : 'text-gray-700'}`}>
+              <span className="font-medium">
+                {t('venezuela.pagos.modal.details.fields.amount')}
+              </span>
               <PriceDisplay 
                 amount={payment.monto} 
                 currency="USD"
@@ -298,14 +352,47 @@ const PaymentDetailsModal: React.FC<{
                 emphasizeBolivars={true}
               />
             </div>
-            <p><span className="font-medium">{t('venezuela.pagos.modal.details.fields.date')}</span> {new Date(payment.fecha).toLocaleDateString('es-ES')}</p>
-            <p><span className="font-medium">{t('venezuela.pagos.modal.details.fields.reference')}</span> {payment.referencia}</p>
-            <p><span className="font-medium">{t('venezuela.pagos.modal.details.fields.method')}</span> {payment.metodo}</p>
+            <p className={isDark ? 'text-slate-200' : 'text-gray-700'}>
+              <span className="font-medium">
+                {t('venezuela.pagos.modal.details.fields.date')}
+              </span>{' '}
+              {new Date(payment.fecha).toLocaleDateString('es-ES')}
+            </p>
+            <p className={isDark ? 'text-slate-200' : 'text-gray-700'}>
+              <span className="font-medium">
+                {t('venezuela.pagos.modal.details.fields.reference')}
+              </span>{' '}
+              {payment.referencia}
+            </p>
+            <p className={isDark ? 'text-slate-200' : 'text-gray-700'}>
+              <span className="font-medium">
+                {t('venezuela.pagos.modal.details.fields.method')}
+              </span>{' '}
+              {payment.metodo}
+            </p>
           </div>
-          <div className="md:col-span-2 bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-semibold text-gray-800 mb-2">{t('venezuela.pagos.modal.details.additionalDetails')}</h4>
-            <p><span className="font-medium">{t('venezuela.pagos.modal.details.fields.destination')}</span> {payment.destino}</p>
-            <p><span className="font-medium">{t('venezuela.pagos.modal.details.fields.description')}</span> {payment.descripcion}</p>
+          <div
+            className={`md:col-span-2 p-4 rounded-lg ${
+              isDark
+                ? 'bg-slate-800 text-slate-100'
+                : 'bg-gray-50 text-gray-800'
+            }`}
+          >
+            <h4 className={`font-semibold mb-2 ${isDark ? 'text-slate-100' : 'text-gray-800'}`}>
+              {t('venezuela.pagos.modal.details.additionalDetails')}
+            </h4>
+            <p className={isDark ? 'text-slate-200' : 'text-gray-700'}>
+              <span className="font-medium">
+                {t('venezuela.pagos.modal.details.fields.destination')}
+              </span>{' '}
+              {payment.destino}
+            </p>
+            <p className={isDark ? 'text-slate-200' : 'text-gray-700'}>
+              <span className="font-medium">
+                {t('venezuela.pagos.modal.details.fields.description')}
+              </span>{' '}
+              {payment.descripcion}
+            </p>
           </div>
         </div>
       </div>

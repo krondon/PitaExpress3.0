@@ -23,7 +23,8 @@ import {
   Sun,
   Moon,
   Save,
-  Star
+  Star,
+  RefreshCw
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/lib/LanguageContext';
@@ -936,20 +937,75 @@ function AdminReviewsSection() {
   const [mounted, setMounted] = useState(false);
   const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
+  const { toast } = useToast();
+  const supabase = getSupabaseBrowserClient();
 
   useEffect(() => {
     setMounted(true);
     fetchReviews();
+
+    // Configurar suscripción en tiempo real para nuevas reseñas
+    const channel = supabase
+      .channel('admin-reviews-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Escuchar INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'order_reviews'
+        },
+        (payload) => {
+          console.log('🔄 Nueva reseña detectada en tiempo real:', payload);
+          
+          // Mostrar notificación si es una nueva reseña (INSERT)
+          if (payload.eventType === 'INSERT') {
+            toast({
+              title: t('admin.configuration.reviews.newReviewNotification', { 
+                fallback: 'Nueva reseña recibida' 
+              }),
+              description: t('admin.configuration.reviews.refreshingList', { 
+                fallback: 'Actualizando lista...' 
+              }),
+              duration: 2000,
+            });
+          }
+          
+          // Refrescar las reseñas cuando hay cambios
+          fetchReviews(false); // false = no mostrar loading completo
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Estado de suscripción Realtime (reviews):', status);
+      });
+
+    // Cleanup al desmontar
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  const fetchReviews = async () => {
+  const fetchReviews = async (showFullLoading = true) => {
     try {
-      setLoading(true);
-      const response = await fetch('/api/admin/reviews');
+      if (showFullLoading) {
+        setLoading(true);
+      } else {
+        setRefreshing(true);
+      }
+      
+      const response = await fetch('/api/admin/reviews', {
+        cache: 'no-store', // Evitar cache
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
+      
       if (response.ok) {
         const data = await response.json();
         // La API devuelve { success: true, reviews: [...], count: ... }
         setReviews(data.reviews || data || []);
+        setLastUpdateTime(new Date());
       } else {
         console.error('Error fetching reviews');
         setReviews([]);
@@ -959,7 +1015,12 @@ function AdminReviewsSection() {
       setReviews([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const handleRefresh = () => {
+    fetchReviews(false); // No mostrar loading completo, solo el spinner del botón
   };
 
   const renderStars = (rating: number) => {
@@ -983,10 +1044,37 @@ function AdminReviewsSection() {
   return (
     <Card className="bg-white/80 backdrop-blur-sm border-slate-200 dark:bg-slate-800/80 dark:border-slate-700">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Star className="w-5 h-5" />
-          {t('admin.configuration.reviews.title', { fallback: 'Reseñas de clientes' })}
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <CardTitle className="flex items-center gap-2">
+              <Star className="w-5 h-5" />
+              {t('admin.configuration.reviews.title', { fallback: 'Reseñas de clientes' })}
+            </CardTitle>
+            {lastUpdateTime && !refreshing && (
+              <span className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                {t('admin.configuration.reviews.lastUpdate', { 
+                  fallback: 'Actualizado',
+                  time: lastUpdateTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+                })}
+              </span>
+            )}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={refreshing || loading}
+            className="gap-2"
+          >
+            <RefreshCw 
+              className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`}
+            />
+            {refreshing 
+              ? t('admin.configuration.reviews.refreshing', { fallback: 'Actualizando...' })
+              : t('admin.configuration.reviews.refresh', { fallback: 'Actualizar' })
+            }
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {loading ? (
