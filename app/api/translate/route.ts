@@ -23,10 +23,19 @@ export async function POST(request: Request) {
             forceTo: true // Forzar traducción incluso si el ISO no es estándar estricto
         });
 
+        // Manejar diferentes tipos de respuesta
+        const translatedText = Array.isArray(res)
+            ? res[0]?.text || text
+            : (res as any).text || text;
+
+        const fromLang = Array.isArray(res)
+            ? res[0]?.from?.language?.iso || 'unknown'
+            : (res as any).from?.language?.iso || 'unknown';
+
         return NextResponse.json({
             original: text,
-            translated: res.text,
-            from: res.from.language.iso,
+            translated: translatedText,
+            from: fromLang,
             to: targetLang
         });
 
