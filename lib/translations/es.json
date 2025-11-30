@@ -2539,702 +2539,486 @@
         "brandLine": "PITA | Sistema de Logística y Pedidos",
         "contactLine": "info@pita.com   |   +58 424-1234567   |   www.pita.com",
         "generatedAt": "Generado:",
-        "pageOf": "Página {{current}} de {{total}}",
-        "titles": {
-          "monthlySummary": "Resumen Mensual",
-          "ordersSummary": "Resumen de Pedidos",
-          "satisfaction": "Satisfacción del Cliente"
-        },
-        "table": {
-          "field": "Campo",
-          "value": "Valor"
-        },
-        "fields": {
-          "period": "Período",
-          "revenue": "Ingresos",
-          "totalOrders": "Total Pedidos",
-          "completed": "Completados",
-          "satisfaction": "Satisfacción",
-          "delivered": "Entregados",
-          "inTransit": "En Tránsito",
-          "averageValue": "Valor Promedio"
-        },
-        "charts": {
-          "orderStates": "Estados de Pedidos",
-          "monthlyTrend": "Tendencia Mensual",
-          "satisfactionDistribution": "Distribución de Satisfacción"
-        }
-      },
-      "statuses": {
-        "delivered": "Entregado",
-        "inTransit": "En Tránsito",
-        "pending": "Pendiente"
-      },
-      "cards": {
-        "keyMetrics": "Métricas Clave"
+        "pageOf": "Página {{current}} de {{total}}"
       }
     },
-    "configuracion": {
-      "title": "Configuración",
-      "subtitle": "Gestiona tu perfil, seguridad y preferencias",
-      "tabs": {
-        "perfil": "Perfil",
-        "seguridad": "Seguridad",
-        "notificaciones": "Notificaciones",
-        "preferencias": "Preferencias"
-      },
-      "profile": {
-        "title": "Información Personal",
-        "fields": {
-          "name": "Nombre completo",
-          "email": "Correo electrónico",
-          "phone": "Teléfono"
+    "chinese": {
+      "title": "Dashboard Chino",
+      "subtitle": "Gestiona y rastrea envíos desde China",
+      "welcome": "¡Bienvenido de vuelta, aquí tienes un resumen de tu actividad",
+      "panel": "Panel de Control - Empleado China",
+      "manage": "Gestiona envíos, pedidos y comunicaciones con clientes",
+      "activeShipments": "Envíos Activos",
+      "totalOrders": "Total Pedidos",
+      "ordersPlaced": "Pedidos realizados",
+      "inTransit": "En Tránsito",
+      "activeShipmentsShort": "Envíos activos",
+      "totalHandled": "Total Gestionados",
+      "totalInvestment": "Inversión total",
+      "completed": "Completados",
+      "ordersDelivered": "Pedidos entregados",
+      "newOrder": "Nuevo Pedido",
+      "processOrder": "Procesar Pedido",
+      "prepareShipment": "Preparar Envío",
+      "recentOrders": "Pedidos Recientes",
+      "recentOrdersSubtitle": "Últimos pedidos procesados",
+      "noOrders": "No hay pedidos para mostrar",
+      "client": "Cliente",
+      "status": "Estado",
+      "product": "Producto",
+      "description": "Descripción",
+      "quantity": "Cantidad",
+      "priority": "Prioridad",
+      "supplier": "Proveedor",
+      "receivedDate": "Fecha de Recepción",
+      "estimatedDelivery": "Entrega Estimada",
+      "finalPrice": "Precio Final",
+      "currency": "Moneda",
+      "actions": "Acciones",
+      "high": "Alta",
+      "medium": "Media",
+      "low": "Baja",
+      "pending": "Pendiente",
+      "processing": "Procesando",
+      "shipped": "Enviado",
+      "completedStatus": "Completado",
+      "orderId": "ID Pedido",
+      "state": "Estado",
+      "clientLabel": "Cliente",
+      "orderProduct": "Producto",
+      "orderStatus": "Estado del Pedido",
+      "orderPriority": "Prioridad",
+      "orderSupplier": "Proveedor",
+      "orderReceived": "Recibido",
+      "orderEstimatedDelivery": "Entrega Estimada",
+      "orderFinalPrice": "Precio Final",
+      "orderCurrency": "Moneda",
+      "quickActions": "Acciones Rápidas",
+      "quickActionsSubtitle": "Accede rápidamente a las funciones más utilizadas para operaciones en China",
+      "quality": "Calidad",
+      "qualityscore": "Puntuación de Calidad",
+      "ordersPage": {
+        "title": "Gestión de Pedidos",
+        "subtitle": "Gestiona y cotiza pedidos de clientes",
+        "pageTitle": "Pedidos",
+        "stats": {
+          "pending": "Pendientes",
+          "quoted": "Cotizados",
+          "processing": "Procesando",
+          "shipped": "Enviados"
         },
-        "placeholders": {
-          "name": "Tu nombre completo",
-          "email": "tu@email.com",
-          "phone": "+58 412-123-4567"
+        "badges": {
+          "unknown": "Desconocido",
+          "pending": "Pendiente",
+          "quoted": "Cotizado",
+          "processing": "Procesando",
+          "readyToPack": "Listo para empaquetar",
+          "inBox": "En caja",
+          "inContainer": "En contenedor",
+          "shippedVzla": "Enviado a Venezuela",
+          "inVenezuela": "En Venezuela",
+          "inBoxVzla": "En Caja",
+          "readyVzla": "Pedido Listo",
+          "delivered": "Entregado",
+          "state": "Estado {{num}}",
+          "cancelled": "Cancelado",
+          "alternativeSent": "Alternativa Enviada",
+          "alternativeAccepted": "Alternativa Aceptada",
+          "alternativeRejected": "Alternativa Rechazada"
         },
-        "saveButton": "Guardar cambios",
-        "profilePicture": {
-          "title": "Foto de Perfil",
-          "altText": "Foto de perfil",
-          "uploadButton": "Cambiar foto",
-          "deleteButton": "Eliminar foto"
+        "boxBadges": {
+          "new": "Nueva",
+          "packed": "Empaquetada",
+          "inContainer": "En contenedor",
+          "shipped": "Enviada",
+          "state": "Estado {{num}}"
         },
-        "accountInfo": {
-          "title": "Información de la Cuenta",
-          "role": "Rol",
-          "status": "Estado",
-          "active": "Activo",
-          "memberSince": "Miembro desde",
-          "lastLogin": "Último acceso",
-          "months": {
-            "Enero": "Enero",
-            "Febrero": "Febrero",
-            "Marzo": "Marzo",
-            "Abril": "Abril",
-            "Mayo": "Mayo",
-            "Junio": "Junio",
-            "Julio": "Julio",
-            "Agosto": "Agosto",
-            "Septiembre": "Septiembre",
-            "Octubre": "Octubre",
-            "Noviembre": "Noviembre",
-            "Diciembre": "Diciembre"
-          }
-        }
-      },
-      "password": {
-        "title": "Cambiar Contraseña",
-        "fields": {
-          "current": "Contraseña actual",
-          "new": "Nueva contraseña",
-          "confirm": "Confirmar nueva contraseña"
+        "containerBadges": {
+          "new": "Nuevo",
+          "loading": "Cargando",
+          "shipped": "Enviado",
+          "state": "Estado {{num}}"
         },
-        "placeholders": {
-          "current": "Ingresa tu contraseña actual",
-          "new": "Ingresa tu nueva contraseña",
-          "confirm": "Confirma tu nueva contraseña"
+        "tabs": {
+          "ordersList": "Lista de pedidos",
+          "boxes": "Cajas",
+          "containers": "Contenedores"
         },
-        "saveButton": "Cambiar contraseña"
-      },
-      "security": {
-        "title": "Configuración de Seguridad",
-        "twoFactor": "Autenticación de dos factores",
-        "twoFactorDesc": "Añade una capa extra de seguridad a tu cuenta",
-        "activeSessions": "Sesiones activas",
-        "devicesConnected": "{{count}} dispositivos conectados",
-        "viewAllSessions": "Ver todas las sesiones",
-        "lastAccessIP": "IP del último acceso",
-        "saveButton": "Guardar configuración",
-        "recentActivity": {
-          "title": "Actividad Reciente",
-          "loginSuccess": "Inicio de sesión exitoso",
-          "passwordChange": "Cambio de contraseña",
-          "newDevice": "Nuevo dispositivo detectado"
-        }
-      },
-      "notifications": {
-        "title": "Preferencias de Notificaciones",
-        "email": "Notificaciones por email",
-        "emailDesc": "Recibir actualizaciones importantes por correo electrónico",
-        "push": "Notificaciones push",
-        "pushDesc": "Recibir notificaciones en tiempo real en tu navegador",
-        "critical": "Alertas críticas",
-        "criticalDesc": "Notificaciones urgentes sobre el sistema",
-        "orders": "Notificaciones de pedidos",
-        "ordersDesc": "Actualizaciones sobre pedidos y envíos",
-        "systemUpdates": "Actualizaciones del sistema",
-        "systemUpdatesDesc": "Notificaciones sobre nuevas versiones y mejoras",
-        "saveButton": "Guardar preferencias"
-      },
-      "preferences": {
-        "regional": {
-          "title": "Configuración Regional"
-        },
-        "timezone": {
-          "label": "Zona horaria",
-          "placeholder": "Selecciona tu zona horaria"
-        },
-        "dateFormat": {
-          "label": "Formato de fecha",
-          "placeholder": "Selecciona el formato"
-        },
-        "timeFormat": {
-          "label": "Formato de hora",
-          "placeholder": "Selecciona el formato",
-          "24h": "24 horas",
-          "12h": "12 horas (AM/PM)"
-        },
-        "appearance": {
-          "title": "Apariencia"
-        },
-        "theme": {
-          "label": "Tema",
-          "light": "Claro",
-          "dark": "Oscuro",
-          "system": "Sistema",
-          "fontSize": "Tamaño de Fuente",
-          "interfaceDensity": "Densidad de la Interfaz",
-          "fontSizes": {
-            "small": "Pequeño",
-            "medium": "Mediano",
-            "large": "Grande"
-          },
-          "densities": {
-            "comfortable": "Cómoda",
-            "compact": "Compacta",
-            "spacious": "Espaciosa"
+        "filters": {
+          "searchClientPlaceholder": "Buscar por cliente...",
+          "searchBoxPlaceholder": "Buscar por caja (ID)...",
+          "searchContainerPlaceholder": "Buscar por contenedor (ID)...",
+          "status": {
+            "all": "Todos",
+            "pending": "Pendiente",
+            "quoted": "Cotizado",
+            "processing": "Procesando",
+            "shipped": "Enviado",
+            "cancelled": "Cancelado",
+            "alternativeSent": "Alternativa Enviada",
+            "alternativeAccepted": "Alternativa Aceptada",
+            "alternativeRejected": "Alternativa Rechazada"
           }
         },
-        "fontSize": {
-          "label": "Tamaño de fuente",
-          "small": "Pequeño",
-          "medium": "Mediano",
-          "large": "Grande"
-        },
-        "density": {
-          "label": "Densidad de la interfaz",
-          "comfortable": "Cómoda",
-          "compact": "Compacta",
-          "spacious": "Espaciosa"
-        }
-      },
-      "messages": {
-        "profileUpdated": "Perfil actualizado",
-        "profileUpdatedDesc": "Los cambios se han guardado correctamente.",
-        "passwordUpdated": "Contraseña actualizada",
-        "passwordUpdatedDesc": "Tu contraseña se ha cambiado exitosamente.",
-        "passwordMismatch": "Las contraseñas no coinciden.",
-        "notificationsUpdated": "Notificaciones actualizadas",
-        "notificationsUpdatedDesc": "Tus preferencias de notificación se han guardado.",
-        "securityUpdated": "Configuración de seguridad actualizada",
-        "securityUpdatedDesc": "Los cambios de seguridad se han aplicado."
-      }
-    },
-    "quickActions": {
-      "title": "Acciones Rápidas",
-      "subtitle": "Accede rápidamente a las funciones más utilizadas",
-      "reviewOrder": "Revisar Pedido",
-      "chatSupport": "Chat de Soporte",
-      "updateTracking": "Actualizar Seguimiento",
-      "validatePayment": "Validar Pago"
-    }
-  },
-  "paymentsDashboard": {
-    "title": "Panel de Pagos",
-    "subtitle": "Supervisión y validación global de pagos",
-    "hero": {
-      "title": "Validación de Pagos",
-      "desc1": "Control centralizado de pagos pendientes y confirmados.",
-      "desc2": "Confirma, audita y monitorea el flujo de verificación."
-    },
-    "stats": {
-      "pending": {
-        "label": "Pendientes",
-        "help": "A la espera de validación"
-      },
-      "completed": {
-        "label": "Confirmados",
-        "help": "Pagos validados"
-      },
-      "totalAmount": {
-        "label": "Monto Total",
-        "help": "USD procesados"
-      }
-    },
-    "quickActions": {
-      "title": "Acciones Rápidas",
-      "subtitle": "Flujo operativo del panel de pagos",
-      "validate": "Validar Pagos"
-    }
-  },
-  "chinese": {
-    "title": "Dashboard Chino",
-    "subtitle": "Gestiona y rastrea envíos desde China",
-    "welcome": "¡Bienvenido de vuelta, aquí tienes un resumen de tu actividad",
-    "panel": "Panel de Control - Empleado China",
-    "manage": "Gestiona envíos, pedidos y comunicaciones con clientes",
-    "activeShipments": "Envíos Activos",
-    "totalOrders": "Total Pedidos",
-    "ordersPlaced": "Pedidos realizados",
-    "inTransit": "En Tránsito",
-    "activeShipmentsShort": "Envíos activos",
-    "totalHandled": "Total Gestionados",
-    "totalInvestment": "Inversión total",
-    "completed": "Completados",
-    "ordersDelivered": "Pedidos entregados",
-    "newOrder": "Nuevo Pedido",
-    "processOrder": "Procesar Pedido",
-    "prepareShipment": "Preparar Envío",
-    "recentOrders": "Pedidos Recientes",
-    "recentOrdersSubtitle": "Últimos pedidos procesados",
-    "noOrders": "No hay pedidos para mostrar",
-    "client": "Cliente",
-    "status": "Estado",
-    "product": "Producto",
-    "description": "Descripción",
-    "quantity": "Cantidad",
-    "priority": "Prioridad",
-    "supplier": "Proveedor",
-    "receivedDate": "Fecha de Recepción",
-    "estimatedDelivery": "Entrega Estimada",
-    "finalPrice": "Precio Final",
-    "currency": "Moneda",
-    "actions": "Acciones",
-    "high": "Alta",
-    "medium": "Media",
-    "low": "Baja",
-    "pending": "Pendiente",
-    "processing": "Procesando",
-    "shipped": "Enviado",
-    "completedStatus": "Completado",
-    "orderId": "ID Pedido",
-    "state": "Estado",
-    "clientLabel": "Cliente",
-    "orderProduct": "Producto",
-    "orderStatus": "Estado del Pedido",
-    "orderPriority": "Prioridad",
-    "orderSupplier": "Proveedor",
-    "orderReceived": "Recibido",
-    "orderEstimatedDelivery": "Entrega Estimada",
-    "orderFinalPrice": "Precio Final",
-    "orderCurrency": "Moneda",
-    "quickActions": "Acciones Rápidas",
-    "quickActionsSubtitle": "Accede rápidamente a las funciones más utilizadas para operaciones en China",
-    "quality": "Calidad",
-    "qualityscore": "Puntuación de Calidad",
-    "ordersPage": {
-      "title": "Gestión de Pedidos",
-      "subtitle": "Gestiona y cotiza pedidos de clientes",
-      "pageTitle": "Pedidos",
-      "stats": {
-        "pending": "Pendientes",
-        "quoted": "Cotizados",
-        "processing": "Procesando",
-        "shipped": "Enviados"
-      },
-      "badges": {
-        "unknown": "Desconocido",
-        "pending": "Pendiente",
-        "quoted": "Cotizado",
-        "processing": "Procesando",
-        "readyToPack": "Listo para empaquetar",
-        "inBox": "En caja",
-        "inContainer": "En contenedor",
-        "shippedVzla": "Enviado a Venezuela",
-        "inVenezuela": "En Venezuela",
-        "inBoxVzla": "En Caja",
-        "readyVzla": "Pedido Listo",
-        "delivered": "Entregado",
-        "state": "Estado {{num}}",
-        "cancelled": "Cancelado"
-      },
-      "boxBadges": {
-        "new": "Nueva",
-        "packed": "Empaquetada",
-        "inContainer": "En contenedor",
-        "shipped": "Enviada",
-        "state": "Estado {{num}}"
-      },
-      "containerBadges": {
-        "new": "Nuevo",
-        "loading": "Cargando",
-        "shipped": "Enviado",
-        "state": "Estado {{num}}"
-      },
-      "tabs": {
-        "ordersList": "Lista de pedidos",
-        "boxes": "Cajas",
-        "containers": "Contenedores"
-      },
-      "filters": {
-        "searchClientPlaceholder": "Buscar por cliente...",
-        "searchBoxPlaceholder": "Buscar por caja (ID)...",
-        "searchContainerPlaceholder": "Buscar por contenedor (ID)...",
-        "status": "Estado",
-        "all": "Todos",
-        "pending": "Pendiente",
-        "quoted": "Cotizado",
-        "processing": "Procesando",
-        "shipped": "Enviado",
-        "cancelled": "Cancelado"
-      },
-      "orders": {
-        "listTitle": "Lista de Pedidos",
-        "refreshing": "Actualizando...",
-        "refresh": "Actualizar",
-        "order": "Pedido",
-        "client": "Cliente",
-        "qtyShort": "Cant",
-        "qtyLabel": "Cant:",
-        "view": "Ver",
-        "pack": "Empaquetar",
-        "unpack": "Desempaquetar",
-        "quote": "Cotizar",
-        "editQuote": "Editar",
-        "notFoundTitle": "No se encontraron pedidos",
-        "notFoundSubtitle": "Intenta ajustar los filtros de búsqueda",
-        "noPdfAlert": "No hay PDF disponible para este pedido.",
-        "pdfMissingToastTitle": "No PDF",
-        "pdfMissingToastDesc": "No hay PDF disponible para este pedido.",
-        "date": "Fecha"
-      },
-      "boxes": {
-        "title": "Cajas",
-        "create": "Crear cajas",
-        "noneTitle": "No hay cajas creadas",
-        "noneSubtitle": "Crea tu primera caja con el botón de arriba.",
-        "notFoundTitle": "No se encontraron cajas",
-        "notFoundSubtitle": "Intenta ajustar la búsqueda por ID.",
-        "ordersCount": "Pedidos:",
-        "pack": "Empaquetar",
-        "send": "Enviar",
-        "unpack": "Desempaquetar",
-        "viewOrders": "Ver pedidos",
-        "delete": "Eliminar",
-        "loading": "Cargando cajas..."
-      },
-      "containers": {
-        "title": "Contenedores",
-        "create": "Crear contenedor",
-        "noneTitle": "No hay contenedores creados",
-        "noneSubtitle": "Crea tu primer contenedor con el botón de arriba.",
-        "notFoundTitle": "No se encontraron contenedores",
-        "notFoundSubtitle": "Intenta ajustar la búsqueda por ID.",
-        "send": "Enviar",
-        "viewBoxes": "Ver cajas",
-        "delete": "Eliminar",
-        "loading": "Cargando contenedores...",
-        "sentToastTitle": "Contenedor enviado",
-        "sentToastDesc": "Contenedor #CONT-{{id}} fue marcado como enviado.",
-        "sendErrorTitle": "No se pudo enviar",
-        "sendErrorDesc": "Intenta de nuevo más tarde."
-      },
-      "modals": {
-        "labelWarning": {
-          "title": "Antes de empaquetar",
-          "description": "Asegúrate de poner la etiqueta al producto antes de empaquetar.",
-          "download": "Descargar etiqueta",
-          "accept": "Aceptar",
-          "generating": "Generando...",
-          "toastTitleSuccess": "Etiqueta lista",
-          "downloaded": "Etiqueta generada"
-        },
-        "quote": {
-          "title": "Cotizar Pedido",
-          "summaryTitle": "Resumen del Pedido",
-          "client": "Cliente:",
-          "product": "Producto:",
-          "quantity": "Cantidad:",
-          "specifications": "Especificaciones:",
-          "specificationsNA": "N/A",
-          "unitPriceLabel": "Precio de cotización unitario *",
-          "unitPricePlaceholder": "Ingresa el precio unitario",
-          "shippingPriceLabel": "Precio de envío *",
-          "shippingPricePlaceholder": "Ingresa el precio de envío",
-          "weightLabel": "Peso *",
-          "weightPlaceholder": "Ingresa el peso",
-          "heightLabel": "Altura *",
-          "heightPlaceholder": "Ingresa la altura",
-          "widthLabel": "Anchura *",
-          "widthPlaceholder": "Ingresa la anchura",
-          "lengthLabel": "Largo *",
-          "lengthPlaceholder": "Ingresa el largo",
-          "totalToPay": "Total a Pagar",
-          "cancel": "Cancelar",
-          "sendQuote": "Enviar Cotización",
-          "validation": {
-            "maxDigits": "Máx 7 dígitos enteros",
-            "enterPrice": "Ingresa un precio mayor a 0",
-            "enterValidPrice": "Ingresa un precio válido",
-            "enterHeight": "Ingresa una altura mayor a 0",
-            "enterWidth": "Ingresa una anchura mayor a 0",
-            "enterLength": "Ingresa un largo mayor a 0",
-            "enterWeight": "Ingresa un peso mayor a 0"
-          }
-        },
-        "selectContainerForBox": {
-          "title": "Seleccionar contenedor para caja #BOX-{{id}}",
-          "loading": "Cargando contenedores...",
-          "noneTitle": "No hay contenedores disponibles",
-          "noneSubtitle": "Crea un contenedor desde la pestaña Contenedores para empaquetar.",
-          "select": "Seleccionar"
-        },
-        "createContainer": {
-          "title": "Crear contenedor",
-          "question": "¿Quieres crear un nuevo contenedor?",
-          "creating": "Creando...",
-          "accept": "Aceptar",
-          "cancel": "Cancelar",
-          "containerNameLabel": "Nombre del contenedor",
-          "containerNamePlaceholder": "Ingresa el nombre del contenedor"
-        },
-        "sendContainer": {
-          "title": "Enviar contenedor #CONT-{{id}}",
-          "subtitle": "Agrega la información de envío del contenedor",
-          "trackingLink": "Link de seguimiento",
-          "trackingLinkPlaceholder": "Ingrese el link de seguimiento",
-          "trackingNumber": "Número de seguimiento",
-          "trackingNumberPlaceholder": "Ingrese el número de seguimiento",
-          "courierCompany": "Empresa de encomienda",
-          "courierCompanyPlaceholder": "Ingrese la empresa de encomienda",
-          "etaDate": "Fecha estimada de llegada",
-          "cancel": "Cancelar",
-          "confirm": "Enviar",
-          "sending": "Enviando..."
-        },
-        "containerBoxes": {
-          "title": "Cajas del contenedor #CONT-{{id}}",
-          "loading": "Cargando cajas...",
-          "noneTitle": "No hay cajas asociadas a este contenedor",
-          "noneSubtitle": "Cuando asignes cajas a este contenedor aparecerán aquí.",
+        "orders": {
+          "listTitle": "Lista de Pedidos",
+          "refreshing": "Actualizando...",
+          "refresh": "Actualizar",
+          "order": "Pedido",
+          "client": "Cliente",
+          "qtyShort": "Cant",
+          "qtyLabel": "Cant:",
+          "view": "Ver",
+          "pack": "Empaquetar",
           "unpack": "Desempaquetar",
-          "viewOrders": "Ver pedidos"
+          "quote": "Cotizar",
+          "editQuote": "Editar",
+          "notFoundTitle": "No se encontraron pedidos",
+          "notFoundSubtitle": "Intenta ajustar los filtros de búsqueda",
+          "noPdfAlert": "No hay PDF disponible para este pedido.",
+          "pdfMissingToastTitle": "No PDF",
+          "pdfMissingToastDesc": "No hay PDF disponible para este pedido.",
+          "date": "Fecha",
+          "proposeAlternative": "Alternativa"
         },
-        "deleteContainer": {
-          "title": "Eliminar contenedor",
-          "question": "¿Estás seguro de que quieres eliminar el contenedor #CONT-{{id}}? Esta acción no se puede deshacer.",
-          "deleting": "Eliminando...",
+        "tooltips": {
+          "proposeAlternative": "Proponer alternativa"
+        },
+        "boxes": {
+          "title": "Cajas",
+          "create": "Crear cajas",
+          "noneTitle": "No hay cajas creadas",
+          "noneSubtitle": "Crea tu primera caja con el botón de arriba.",
+          "notFoundTitle": "No se encontraron cajas",
+          "notFoundSubtitle": "Intenta ajustar la búsqueda por ID.",
+          "ordersCount": "Pedidos:",
+          "pack": "Empaquetar",
+          "send": "Enviar",
+          "unpack": "Desempaquetar",
+          "viewOrders": "Ver pedidos",
           "delete": "Eliminar",
-          "cancel": "Cancelar"
+          "loading": "Cargando cajas..."
         },
-        "createBox": {
-          "title": "Crear caja",
-          "question": "¿Quieres crear una nueva caja?",
-          "creating": "Creando...",
-          "accept": "Aceptar",
-          "cancel": "Cancelar",
-          "boxNameLabel": "Nombre de la caja",
-          "boxNamePlaceholder": "Ingresa el nombre de la caja"
+        "containers": {
+          "title": "Contenedores",
+          "create": "Crear contenedor",
+          "noneTitle": "No hay contenedores creados",
+          "noneSubtitle": "Crea tu primer contenedor con el botón de arriba.",
+          "notFoundTitle": "No se encontraron contenedores",
+          "notFoundSubtitle": "Intenta ajustar la búsqueda por ID.",
+          "send": "Enviar",
+          "viewBoxes": "Ver cajas",
+          "delete": "Eliminar",
+          "loading": "Cargando contenedores...",
+          "sentToastTitle": "Contenedor enviado",
+          "sentToastDesc": "Contenedor #CONT-{{id}} fue marcado como enviado.",
+          "sendErrorTitle": "No se pudo enviar",
+          "sendErrorDesc": "Intenta de nuevo más tarde."
         },
-        "boxOrders": {
-          "title": "Pedidos de la caja #BOX-{{id}}",
-          "loading": "Cargando pedidos...",
-          "noneTitle": "No hay pedidos asociados a esta caja",
-          "noneSubtitle": "Cuando asignes pedidos a esta caja aparecerán aquí.",
-          "view": "Ver"
-        },
-        "selectBoxForOrder": {
-          "title": "Seleccionar caja para pedido #ORD-{{id}}",
-          "loading": "Cargando cajas...",
-          "noneTitle": "No hay cajas disponibles",
-          "noneSubtitle": "Crea una caja desde la pestaña Cajas para empaquetar.",
-          "select": "Seleccionar",
-          "cancel": "Cancelar"
-        },
-        "proposeAlternative": {
-          "title": "Proponer Alternativa",
-          "subtitle": "Pedido #{{id}} - {{client}}",
-          "rejectionReasonTitle": "Motivo del rechazo anterior:",
-          "originalProductTitle": "Producto original solicitado:",
-          "productNameLabel": "Nombre del Producto Alternativo",
-          "productNamePlaceholder": "Ej: Samsung S25 Ultra",
-          "descriptionLabel": "Descripción / Razón",
-          "descriptionPlaceholder": "Explica por qué propones esta alternativa y las diferencias con el producto original...",
-          "descriptionHelp": "Opcional: Ayuda al cliente a entender por qué esta es una buena alternativa",
-          "imageLabel": "Imagen del Producto",
-          "uploadImage": "Haz clic para subir imagen",
-          "maxSize": "Máximo 5MB",
-          "cancel": "Cancelar",
-          "submit": "Proponer Alternativa",
-          "submitting": "Enviando...",
-          "toasts": {
-            "fileTooBigTitle": "Archivo muy grande",
-            "fileTooBigDesc": "La imagen debe ser menor a 5MB",
-            "nameRequiredTitle": "Nombre requerido",
-            "nameRequiredDesc": "Debes ingresar el nombre del producto alternativo",
-            "successTitle": "Alternativa propuesta",
-            "successDesc": "Se envió \"{{name}}\" como alternativa al cliente",
-            "errorTitle": "Error",
-            "errorDesc": "No se pudo proponer la alternativa"
+        "modals": {
+          "labelWarning": {
+            "title": "Antes de empaquetar",
+            "description": "Asegúrate de poner la etiqueta al producto antes de empaquetar.",
+            "download": "Descargar etiqueta",
+            "accept": "Aceptar",
+            "generating": "Generando...",
+            "toastTitleSuccess": "Etiqueta lista",
+            "downloaded": "Etiqueta generada"
+          },
+          "quote": {
+            "title": "Cotizar Pedido",
+            "summaryTitle": "Resumen del Pedido",
+            "client": "Cliente:",
+            "product": "Producto:",
+            "quantity": "Cantidad:",
+            "specifications": "Especificaciones:",
+            "specificationsNA": "N/A",
+            "unitPriceLabel": "Precio de cotización unitario *",
+            "unitPricePlaceholder": "Ingresa el precio unitario",
+            "shippingPriceLabel": "Precio de envío *",
+            "shippingPricePlaceholder": "Ingresa el precio de envío",
+            "weightLabel": "Peso *",
+            "weightPlaceholder": "Ingresa el peso",
+            "heightLabel": "Altura *",
+            "heightPlaceholder": "Ingresa la altura",
+            "widthLabel": "Anchura *",
+            "widthPlaceholder": "Ingresa la anchura",
+            "lengthLabel": "Largo *",
+            "lengthPlaceholder": "Ingresa el largo",
+            "totalToPay": "Total a Pagar",
+            "cancel": "Cancelar",
+            "sendQuote": "Enviar Cotización",
+            "validation": {
+              "maxDigits": "Máx 7 dígitos enteros",
+              "enterPrice": "Ingresa un precio mayor a 0",
+              "enterValidPrice": "Ingresa un precio válido",
+              "enterHeight": "Ingresa una altura mayor a 0",
+              "enterWidth": "Ingresa una anchura mayor a 0",
+              "enterLength": "Ingresa un largo mayor a 0",
+              "enterWeight": "Ingresa un peso mayor a 0"
+            }
+          },
+          "selectContainerForBox": {
+            "title": "Seleccionar contenedor para caja #BOX-{{id}}",
+            "loading": "Cargando contenedores...",
+            "noneTitle": "No hay contenedores disponibles",
+            "noneSubtitle": "Crea un contenedor desde la pestaña Contenedores para empaquetar.",
+            "select": "Seleccionar"
+          },
+          "createContainer": {
+            "title": "Crear contenedor",
+            "question": "¿Quieres crear un nuevo contenedor?",
+            "creating": "Creando...",
+            "accept": "Aceptar",
+            "cancel": "Cancelar",
+            "containerNameLabel": "Nombre del contenedor",
+            "containerNamePlaceholder": "Ingresa el nombre del contenedor"
+          },
+          "sendContainer": {
+            "title": "Enviar contenedor #CONT-{{id}}",
+            "subtitle": "Agrega la información de envío del contenedor",
+            "trackingLink": "Link de seguimiento",
+            "trackingLinkPlaceholder": "Ingrese el link de seguimiento",
+            "trackingNumber": "Número de seguimiento",
+            "trackingNumberPlaceholder": "Ingrese el número de seguimiento",
+            "courierCompany": "Empresa de encomienda",
+            "courierCompanyPlaceholder": "Ingrese la empresa de encomienda",
+            "etaDate": "Fecha estimada de llegada",
+            "cancel": "Cancelar",
+            "confirm": "Enviar",
+            "sending": "Enviando..."
+          },
+          "containerBoxes": {
+            "title": "Cajas del contenedor #CONT-{{id}}",
+            "loading": "Cargando cajas...",
+            "noneTitle": "No hay cajas asociadas a este contenedor",
+            "noneSubtitle": "Cuando asignes cajas a este contenedor aparecerán aquí.",
+            "unpack": "Desempaquetar",
+            "viewOrders": "Ver pedidos"
+          },
+          "deleteContainer": {
+            "title": "Eliminar contenedor",
+            "question": "¿Estás seguro de que quieres eliminar el contenedor #CONT-{{id}}? Esta acción no se puede deshacer.",
+            "deleting": "Eliminando...",
+            "delete": "Eliminar",
+            "cancel": "Cancelar"
+          },
+          "createBox": {
+            "title": "Crear caja",
+            "question": "¿Quieres crear una nueva caja?",
+            "creating": "Creando...",
+            "accept": "Aceptar",
+            "cancel": "Cancelar",
+            "boxNameLabel": "Nombre de la caja",
+            "boxNamePlaceholder": "Ingresa el nombre de la caja"
+          },
+          "boxOrders": {
+            "title": "Pedidos de la caja #BOX-{{id}}",
+            "loading": "Cargando pedidos...",
+            "noneTitle": "No hay pedidos asociados a esta caja",
+            "noneSubtitle": "Cuando asignes pedidos a esta caja aparecerán aquí.",
+            "view": "Ver"
+          },
+          "selectBoxForOrder": {
+            "title": "Seleccionar caja para pedido #ORD-{{id}}",
+            "loading": "Cargando cajas...",
+            "noneTitle": "No hay cajas disponibles",
+            "noneSubtitle": "Crea una caja desde la pestaña Cajas para empaquetar.",
+            "select": "Seleccionar",
+            "cancel": "Cancelar"
+          },
+          "proposeAlternative": {
+            "title": "Proponer Alternativa",
+            "subtitle": "Pedido #{{id}} - {{client}}",
+            "rejectionReasonTitle": "Motivo del rechazo anterior:",
+            "originalProductTitle": "Producto original solicitado:",
+            "productNameLabel": "Nombre del Producto Alternativo",
+            "productNamePlaceholder": "Ej: Samsung S25 Ultra",
+            "descriptionLabel": "Descripción / Razón",
+            "descriptionPlaceholder": "Explica por qué propones esta alternativa y las diferencias con el producto original...",
+            "descriptionHelp": "Opcional: Ayuda al cliente a entender por qué esta es una buena alternativa",
+            "imageLabel": "Imagen del Producto",
+            "uploadImage": "Haz clic para subir imagen",
+            "maxSize": "Máximo 5MB",
+            "cancel": "Cancelar",
+            "submit": "Proponer Alternativa",
+            "submitting": "Enviando...",
+            "toasts": {
+              "fileTooBigTitle": "Archivo muy grande",
+              "fileTooBigDesc": "La imagen debe ser menor a 5MB",
+              "nameRequiredTitle": "Nombre requerido",
+              "nameRequiredDesc": "Debes ingresar el nombre del producto alternativo",
+              "successTitle": "Alternativa propuesta",
+              "successDesc": "Se envió \"{{name}}\" como alternativa al cliente",
+              "errorTitle": "Error",
+              "errorDesc": "No se pudo proponer la alternativa"
+            }
+          },
+          "cancelOrder": {
+            "confirm": "¿Estás seguro de que quieres cancelar este pedido?"
+          },
+          "deleteBox": {
+            "title": "Eliminar caja",
+            "question": "¿Estás seguro de que quieres eliminar la caja #BOX-{{id}}? Esta acción no se puede deshacer.",
+            "deleting": "Eliminando...",
+            "delete": "Eliminar",
+            "cancel": "Cancelar"
           }
         },
-        "cancelOrder": {
-          "confirm": "¿Estás seguro de que quieres cancelar este pedido?"
+        "toasts": {
+          "boxCreateErrorTitle": "La caja no se pudo crear",
+          "boxCreateErrorDesc": "Intenta de nuevo en unos segundos.",
+          "boxCreatedTitle": "Caja creada",
+          "boxCreatedDesc": "La caja se creó exitosamente.",
+          "boxesLoadErrorTitle": "Las cajas no se pudieron cargar",
+          "boxesLoadErrorDesc": "Intenta de nuevo más tarde.",
+          "containerCreateErrorTitle": "El contenedor no se pudo crear",
+          "containerCreateErrorDesc": "Intenta de nuevo en unos segundos.",
+          "containerCreatedTitle": "Contenedor creado",
+          "containerCreatedDesc": "El contenedor se creó exitosamente.",
+          "containersLoadErrorTitle": "Los contenedores no se pudieron cargar",
+          "containersLoadErrorDesc": "Intenta de nuevo más tarde.",
+          "containerInvalidTitle": "Contenedor inválido",
+          "containerInvalidDesc": "El ID del contenedor no se pudo determinar.",
+          "notAllowedTitle": "No permitido",
+          "assignBoxNotAllowedDesc": "No puedes asignar cajas a un contenedor enviado.",
+          "assignBoxErrorTitle": "Contenedor no asignado",
+          "assignBoxErrorDesc": "Intenta de nuevo más tarde.",
+          "boxAssignedTitle": "Caja asignada",
+          "boxAssignedDesc": "Caja #BOX-{{boxId}} asignada al contenedor #CONT-{{containerId}}.",
+          "unexpectedErrorTitle": "Error inesperado",
+          "unexpectedErrorDesc": "Intenta de nuevo más tarde.",
+          "boxUnpackErrorTitle": "No se pudo desempaquetar",
+          "boxUnpackNotAllowedDesc": "No puedes desempaquetar una caja de un contenedor enviado.",
+          "boxUnpackedTitle": "Caja desempaquetada",
+          "boxUnpackedDesc": "Pedidos y caja #BOX-{{boxId}} liberados.",
+          "orderAssignBoxInvalidTitle": "Caja inválida",
+          "orderAssignBoxInvalidDesc": "El ID de la caja no se pudo determinar.",
+          "orderAssignNotAllowedDesc": "No puedes empaquetar en una caja enviada.",
+          "orderAssignedTitle": "Pedido asignado",
+          "orderAssignedDesc": "Pedido #ORD-{{orderId}} asignado a caja {{boxId}}.",
+          "orderUnpackErrorTitle": "No se pudo desempaquetar",
+          "orderNoBoxTitle": "Pedido sin caja",
+          "orderNoBoxDesc": "Este pedido no tiene caja asignada.",
+          "orderUnpackNotAllowedDesc": "No puedes desempaquetar pedidos de un contenedor enviado.",
+          "orderUnpackedTitle": "Pedido desempaquetado",
+          "orderUnpackedDesc": "Pedido #ORD-{{orderId}} liberado de la caja.",
+          "containerSendNotAllowedDesc": "No puedes eliminar un contenedor enviado.",
+          "containerDeletedTitle": "Contenedor eliminado",
+          "containerDeletedDesc": "El contenedor se eliminó exitosamente.",
+          "containerDeleteErrorTitle": "El contenedor no se pudo eliminar",
+          "boxDeletedTitle": "Caja eliminada",
+          "boxDeletedDesc": "La caja se eliminó exitosamente.",
+          "boxDeleteErrorTitle": "La caja no se pudo eliminar",
+          "orderPdfMissingTitle": "No PDF",
+          "orderPdfMissingDesc": "No hay PDF disponible para este pedido.",
+          "boxDeleteIdInvalidTitle": "No se pudo eliminar",
+          "boxDeleteIdInvalidDesc": "ID de caja inválido.",
+          "containerDeleteIdInvalidDesc": "ID de contenedor inválido.",
+          "containerSentTitle": "Contenedor enviado",
+          "orderNotFoundTitle": "Pedido no encontrado",
+          "orderNotFoundDesc": "El pedido especificado no se pudo encontrar.",
+          "fetchErrorTitle": "Error al obtener datos",
+          "shippingTypeMismatchTitle": "Tipo de envío incompatible",
+          "shippingTypeMultipleDesc": "La caja contiene pedidos con diferentes tipos de envío.",
+          "shippingTypeMismatchDesc": "El tipo de envío del pedido no coincide con los pedidos existentes en la caja.",
+          "tryAgainLater": "Intenta de nuevo más tarde.",
+          "packEmptyBoxNotAllowed": "No puedes enviar una caja vacía.",
+          "sendBoxErrorTitle": "No se pudo enviar la caja",
+          "tryAgain": "Intenta de nuevo.",
+          "boxSentTitle": "Caja enviada",
+          "boxSentDesc": "La caja #BOX-{{boxId}} fue marcada como enviada.",
+          "orderAlreadyShipped": "Este pedido ya ha sido enviado y no puede ser cotizado.",
+          "orderCancelled": "Pedido cancelado",
+          "orderCancelledDesc": "El pedido ha sido marcado como cancelado."
         },
-        "deleteBox": {
-          "title": "Eliminar caja",
-          "question": "¿Estás seguro de que quieres eliminar la caja #BOX-{{id}}? Esta acción no se puede deshacer.",
-          "deleting": "Eliminando...",
-          "delete": "Eliminar",
-          "cancel": "Cancelar"
+        "pagination": {
+          "showing": "Mostrando {{start}} a {{end}} de {{total}} pedidos",
+          "previous": "Anterior",
+          "next": "Siguiente",
+          "pageInfo": "Página {{current}} de {{total}}"
+        }
+      }
+    },
+    "paymentsValidation": {
+      "loadingPage": "Cargando página...",
+      "noResults": "Sin resultados",
+      "pagination": {
+        "showing": "Mostrando {{from}}-{{to}} de {{total}}",
+        "page": "Página {{current}} / {{total}}",
+        "previous": "Anterior",
+        "next": "Siguiente"
+      }
+    },
+    "notifications": {
+      "client": {
+        "orderCreated": {
+          "title": "Actualización de pedido",
+          "description": "Tu pedido #{{orderId}} ha sido creado"
+        },
+        "quoteReady": {
+          "title": "Tu cotización está lista",
+          "description": "Tu cotización del pedido #{{orderId}} está lista"
+        },
+        "orderStatusChanged": {
+          "title": "Actualización de pedido",
+          "description": "Tu pedido cambió de estado"
+        },
+        "paymentReviewed": {
+          "title": "Resultado de pago",
+          "descApproved": "Tu pago del pedido #{{orderId}} fue aprobado",
+          "descRejected": "Tu pago del pedido #{{orderId}} fue rechazado",
+          "descReviewed": "Tu pago del pedido #{{orderId}} fue revisado"
         }
       },
-      "toasts": {
-        "boxCreateErrorTitle": "La caja no se pudo crear",
-        "boxCreateErrorDesc": "Intenta de nuevo en unos segundos.",
-        "boxCreatedTitle": "Caja creada",
-        "boxCreatedDesc": "La caja se creó exitosamente.",
-        "boxesLoadErrorTitle": "Las cajas no se pudieron cargar",
-        "boxesLoadErrorDesc": "Intenta de nuevo más tarde.",
-        "containerCreateErrorTitle": "El contenedor no se pudo crear",
-        "containerCreateErrorDesc": "Intenta de nuevo en unos segundos.",
-        "containerCreatedTitle": "Contenedor creado",
-        "containerCreatedDesc": "El contenedor se creó exitosamente.",
-        "containersLoadErrorTitle": "Los contenedores no se pudieron cargar",
-        "containersLoadErrorDesc": "Intenta de nuevo más tarde.",
-        "containerInvalidTitle": "Contenedor inválido",
-        "containerInvalidDesc": "El ID del contenedor no se pudo determinar.",
-        "notAllowedTitle": "No permitido",
-        "assignBoxNotAllowedDesc": "No puedes asignar cajas a un contenedor enviado.",
-        "assignBoxErrorTitle": "Contenedor no asignado",
-        "assignBoxErrorDesc": "Intenta de nuevo más tarde.",
-        "boxAssignedTitle": "Caja asignada",
-        "boxAssignedDesc": "Caja #BOX-{{boxId}} asignada al contenedor #CONT-{{containerId}}.",
-        "unexpectedErrorTitle": "Error inesperado",
-        "unexpectedErrorDesc": "Intenta de nuevo más tarde.",
-        "boxUnpackErrorTitle": "No se pudo desempaquetar",
-        "boxUnpackNotAllowedDesc": "No puedes desempaquetar una caja de un contenedor enviado.",
-        "boxUnpackedTitle": "Caja desempaquetada",
-        "boxUnpackedDesc": "Pedidos y caja #BOX-{{boxId}} liberados.",
-        "orderAssignBoxInvalidTitle": "Caja inválida",
-        "orderAssignBoxInvalidDesc": "El ID de la caja no se pudo determinar.",
-        "orderAssignNotAllowedDesc": "No puedes empaquetar en una caja enviada.",
-        "orderAssignedTitle": "Pedido asignado",
-        "orderAssignedDesc": "Pedido #ORD-{{orderId}} asignado a caja {{boxId}}.",
-        "orderUnpackErrorTitle": "No se pudo desempaquetar",
-        "orderNoBoxTitle": "Pedido sin caja",
-        "orderNoBoxDesc": "Este pedido no tiene caja asignada.",
-        "orderUnpackNotAllowedDesc": "No puedes desempaquetar pedidos de un contenedor enviado.",
-        "orderUnpackedTitle": "Pedido desempaquetado",
-        "orderUnpackedDesc": "Pedido #ORD-{{orderId}} liberado de la caja.",
-        "containerSendNotAllowedDesc": "No puedes eliminar un contenedor enviado.",
-        "containerDeletedTitle": "Contenedor eliminado",
-        "containerDeletedDesc": "El contenedor se eliminó exitosamente.",
-        "containerDeleteErrorTitle": "El contenedor no se pudo eliminar",
-        "boxDeletedTitle": "Caja eliminada",
-        "boxDeletedDesc": "La caja se eliminó exitosamente.",
-        "boxDeleteErrorTitle": "La caja no se pudo eliminar",
-        "orderPdfMissingTitle": "No PDF",
-        "orderPdfMissingDesc": "No hay PDF disponible para este pedido.",
-        "boxDeleteIdInvalidTitle": "No se pudo eliminar",
-        "boxDeleteIdInvalidDesc": "ID de caja inválido.",
-        "containerDeleteIdInvalidDesc": "ID de contenedor inválido.",
-        "containerSentTitle": "Contenedor enviado",
-        "orderNotFoundTitle": "Pedido no encontrado",
-        "orderNotFoundDesc": "El pedido especificado no se pudo encontrar.",
-        "fetchErrorTitle": "Error al obtener datos",
-        "shippingTypeMismatchTitle": "Tipo de envío incompatible",
-        "shippingTypeMultipleDesc": "La caja contiene pedidos con diferentes tipos de envío.",
-        "shippingTypeMismatchDesc": "El tipo de envío del pedido no coincide con los pedidos existentes en la caja.",
-        "tryAgainLater": "Intenta de nuevo más tarde.",
-        "packEmptyBoxNotAllowed": "No puedes enviar una caja vacía.",
-        "sendBoxErrorTitle": "No se pudo enviar la caja",
-        "tryAgain": "Intenta de nuevo.",
-        "boxSentTitle": "Caja enviada",
-        "boxSentDesc": "La caja #BOX-{{boxId}} fue marcada como enviada.",
-        "orderAlreadyShipped": "Este pedido ya ha sido enviado y no puede ser cotizado.",
-        "orderCancelled": "Pedido cancelado",
-        "orderCancelledDesc": "El pedido ha sido marcado como cancelado."
+      "china": {
+        "newOrderForQuote": {
+          "title": "Nuevo pedido para cotización",
+          "description": "Pedido #{{orderId}} requiere cotización"
+        },
+        "orderRequiresAttention": {
+          "title": "Pedido requiere atención",
+          "description": "Pedido #{{orderId}} pendiente para gestión en China"
+        },
+        "readyToPack": {
+          "title": "Listo para empaquetar",
+          "description": "El producto #{{orderId}} está listo para empaquetar"
+        }
       },
-      "pagination": {
-        "showing": "Mostrando {{start}} a {{end}} de {{total}} pedidos",
-        "previous": "Anterior",
-        "next": "Siguiente",
-        "pageInfo": "Página {{current}} de {{total}}"
+      "pagos": {
+        "newAssignedOrder": {
+          "title": "Nuevo pedido asignado",
+          "description": "Pedido {{orderId}} asignado para validación de pago"
+        }
+      },
+      "venezuela": {
+        "newAssignedOrder": {
+          "title": "Nuevo pedido asignado",
+          "description": "Pedido {{orderId}} asignado"
+        }
       }
+    },
+    "chat": {
+      "admin": {
+        "title": "Chat con {{name}}",
+        "subtitle": "Comunícate directamente con el administrador",
+        "role": "Administrador del Sistema"
+      },
+      "china": {
+        "title": "Chat con {{name}}",
+        "subtitle": "Usuario China"
+      },
+      "list": {
+        "title": "Chat",
+        "subtitle": "Gestiona tus conversaciones con usuarios de China",
+        "activeConversations": "Conversaciones Activas",
+        "selectConversation": "Selecciona una conversación para comenzar a chatear"
+      },
+      "notFound": {
+        "title": "No se encontró el administrador",
+        "message": "No se pudo conectar con el administrador"
+      },
+      "loading": "Cargando chat..."
     }
-  },
-  "paymentsValidation": {
-    "loadingPage": "Cargando página...",
-    "noResults": "Sin resultados",
-    "pagination": {
-      "showing": "Mostrando {{from}}-{{to}} de {{total}}",
-      "page": "Página {{current}} / {{total}}",
-      "previous": "Anterior",
-      "next": "Siguiente"
-    }
-  },
-  "notifications": {
-    "client": {
-      "orderCreated": {
-        "title": "Actualización de pedido",
-        "description": "Tu pedido #{{orderId}} ha sido creado"
-      },
-      "quoteReady": {
-        "title": "Tu cotización está lista",
-        "description": "Tu cotización del pedido #{{orderId}} está lista"
-      },
-      "orderStatusChanged": {
-        "title": "Actualización de pedido",
-        "description": "Tu pedido cambió de estado"
-      },
-      "paymentReviewed": {
-        "title": "Resultado de pago",
-        "descApproved": "Tu pago del pedido #{{orderId}} fue aprobado",
-        "descRejected": "Tu pago del pedido #{{orderId}} fue rechazado",
-        "descReviewed": "Tu pago del pedido #{{orderId}} fue revisado"
-      }
-    },
-    "china": {
-      "newOrderForQuote": {
-        "title": "Nuevo pedido para cotización",
-        "description": "Pedido #{{orderId}} requiere cotización"
-      },
-      "orderRequiresAttention": {
-        "title": "Pedido requiere atención",
-        "description": "Pedido #{{orderId}} pendiente para gestión en China"
-      },
-      "readyToPack": {
-        "title": "Listo para empaquetar",
-        "description": "El producto #{{orderId}} está listo para empaquetar"
-      }
-    },
-    "pagos": {
-      "newAssignedOrder": {
-        "title": "Nuevo pedido asignado",
-        "description": "Pedido {{orderId}} asignado para validación de pago"
-      }
-    },
-    "venezuela": {
-      "newAssignedOrder": {
-        "title": "Nuevo pedido asignado",
-        "description": "Pedido {{orderId}} asignado"
-      }
-    }
-  },
-  "chat": {
-    "admin": {
-      "title": "Chat con {{name}}",
-      "subtitle": "Comunícate directamente con el administrador",
-      "role": "Administrador del Sistema"
-    },
-    "china": {
-      "title": "Chat con {{name}}",
-      "subtitle": "Usuario China"
-    },
-    "list": {
-      "title": "Chat",
-      "subtitle": "Gestiona tus conversaciones con usuarios de China",
-      "activeConversations": "Conversaciones Activas",
-      "selectConversation": "Selecciona una conversación para comenzar a chatear"
-    },
-    "notFound": {
-      "title": "No se encontró el administrador",
-      "message": "No se pudo conectar con el administrador"
-    },
-    "loading": "Cargando chat..."
   }
 }

@@ -1854,21 +1854,21 @@ export default function PedidosChina() {
                                 if (pedido.alternativeStatus === 'pending') {
                                   return (
                                     <Badge className="hidden sm:inline-block bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700">
-                                      Alternativa Enviada
+                                      {t('chinese.ordersPage.badges.alternativeSent')}
                                     </Badge>
                                   );
                                 }
                                 if (pedido.alternativeStatus === 'accepted') {
                                   return (
                                     <Badge className="hidden sm:inline-block bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700">
-                                      Alternativa Aceptada
+                                      {t('chinese.ordersPage.badges.alternativeAccepted')}
                                     </Badge>
                                   );
                                 }
                                 if (pedido.alternativeStatus === 'rejected') {
                                   return (
                                     <Badge className="hidden sm:inline-block bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700">
-                                      Alternativa Rechazada
+                                      {t('chinese.ordersPage.badges.alternativeRejected')}
                                     </Badge>
                                   );
                                 }
@@ -2019,10 +2019,10 @@ export default function PedidosChina() {
                                       onClick={() => setModalPropAlternativa({ open: true, pedido })}
                                       size="sm"
                                       className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700"
-                                      title="Proponer alternativa"
+                                      title={t('chinese.ordersPage.tooltips.proposeAlternative')}
                                     >
                                       <Send className="h-4 w-4" />
-                                      <span className="hidden sm:inline">Alternativa</span>
+                                      <span className="hidden sm:inline">{t('chinese.ordersPage.orders.proposeAlternative')}</span>
                                     </Button>
                                   )}
                                 </>

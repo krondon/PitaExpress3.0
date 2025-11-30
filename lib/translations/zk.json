@@ -2525,7 +2525,10 @@
         "readyVzla": "订单准备就绪",
         "delivered": "已交付",
         "state": "状态 {{num}}",
-        "cancelled": "已取消"
+        "cancelled": "已取消",
+        "alternativeSent": "替代方案已发送",
+        "alternativeAccepted": "替代方案已接受",
+        "alternativeRejected": "替代方案已拒绝"
       },
       "boxBadges": {
         "new": "新建",
@@ -2575,7 +2578,11 @@
         "noPdfAlert": "此订单无可用 PDF。",
         "pdfMissingToastTitle": "无 PDF",
         "pdfMissingToastDesc": "此订单无可用 PDF。",
-        "date": "日期"
+        "date": "日期",
+        "proposeAlternative": "替代方案"
+      },
+      "tooltips": {
+        "proposeAlternative": "提出替代方案"
       },
       "boxes": {
         "title": "箱子",

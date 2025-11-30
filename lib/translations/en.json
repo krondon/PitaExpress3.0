@@ -2535,7 +2535,10 @@
         "readyVzla": "Order Ready",
         "delivered": "Delivered",
         "state": "State {{num}}",
-        "cancelled": "Cancelled"
+        "cancelled": "Cancelled",
+        "alternativeSent": "Alternative Sent",
+        "alternativeAccepted": "Alternative Accepted",
+        "alternativeRejected": "Alternative Rejected"
       },
       "boxBadges": {
         "new": "New",
@@ -2559,13 +2562,17 @@
         "searchClientPlaceholder": "Search by client...",
         "searchBoxPlaceholder": "Search by box (ID)...",
         "searchContainerPlaceholder": "Search by container (ID)...",
-        "status": "Status",
-        "all": "All",
-        "pending": "Pending",
-        "quoted": "Quoted",
-        "processing": "Processing",
-        "shipped": "Shipped",
-        "cancelled": "Cancelled"
+        "status": {
+          "all": "All",
+          "pending": "Pending",
+          "quoted": "Quoted",
+          "processing": "Processing",
+          "shipped": "Shipped",
+          "cancelled": "Cancelled",
+          "alternativeSent": "Alternative Sent",
+          "alternativeAccepted": "Alternative Accepted",
+          "alternativeRejected": "Alternative Rejected"
+        }
       },
       "orders": {
         "listTitle": "Orders List",
