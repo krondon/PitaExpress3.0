@@ -2071,7 +2071,12 @@ export default function PedidosChina() {
                   {totalOrders > 0 && (
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
                       <div className="text-sm text-slate-500 dark:text-slate-400">
-                        Mostrando <span className="font-medium">{((currentPage - 1) * ITEMS_PER_PAGE) + 1}</span> a <span className="font-medium">{Math.min(currentPage * ITEMS_PER_PAGE, totalOrders)}</span> de <span className="font-medium">{totalOrders}</span> pedidos
+                        {t('chinese.ordersPage.pagination.showing', {
+                          start: ((currentPage - 1) * ITEMS_PER_PAGE) + 1,
+                          end: Math.min(currentPage * ITEMS_PER_PAGE, totalOrders),
+                          total: totalOrders,
+                          defaultValue: `Mostrando ${((currentPage - 1) * ITEMS_PER_PAGE) + 1} a ${Math.min(currentPage * ITEMS_PER_PAGE, totalOrders)} de ${totalOrders} pedidos`
+                        })}
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
@@ -2081,11 +2086,15 @@ export default function PedidosChina() {
                           disabled={currentPage === 1 || loading}
                           className="h-9"
                         >
-                          Anterior
+                          {t('chinese.ordersPage.pagination.previous', { defaultValue: 'Anterior' })}
                         </Button>
                         <div className="flex items-center gap-1 px-2">
                           <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                            Página {currentPage} de {totalPages}
+                            {t('chinese.ordersPage.pagination.pageInfo', {
+                              current: currentPage,
+                              total: totalPages,
+                              defaultValue: `Página ${currentPage} de ${totalPages}`
+                            })}
                           </span>
                         </div>
                         <Button
@@ -2095,7 +2104,7 @@ export default function PedidosChina() {
                           disabled={currentPage === totalPages || loading}
                           className="h-9"
                         >
-                          Siguiente
+                          {t('chinese.ordersPage.pagination.next', { defaultValue: 'Siguiente' })}
                         </Button>
                       </div>
                     </div>
@@ -2570,7 +2579,7 @@ export default function PedidosChina() {
                         setModalCotizar(prev => ({ ...prev, precioUnitario: numero, precioUnitarioInput: cleaned }));
                       }}
                     />
-                    <p className={`mt-1 text-xs ${modalCotizar.precioUnitario && modalCotizar.precioUnitario > 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.precioUnitario && modalCotizar.precioUnitario > 0 ? 'Máx 7 dígitos enteros' : 'Ingresa un precio mayor a 0'}</p>
+                    <p className={`mt-1 text-xs ${modalCotizar.precioUnitario && modalCotizar.precioUnitario > 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.precioUnitario && modalCotizar.precioUnitario > 0 ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterPrice', { defaultValue: 'Ingresa un precio mayor a 0' })}</p>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -2596,7 +2605,7 @@ export default function PedidosChina() {
                         setModalCotizar(prev => ({ ...prev, precioEnvio: numero, precioEnvioInput: cleaned }));
                       }}
                     />
-                    <p className={`mt-1 text-xs ${modalCotizar.precioEnvio !== undefined && modalCotizar.precioEnvio >= 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.precioEnvio !== undefined && modalCotizar.precioEnvio >= 0 ? 'Máx 7 dígitos enteros' : 'Ingresa un precio válido'}</p>
+                    <p className={`mt-1 text-xs ${modalCotizar.precioEnvio !== undefined && modalCotizar.precioEnvio >= 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.precioEnvio !== undefined && modalCotizar.precioEnvio >= 0 ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterValidPrice', { defaultValue: 'Ingresa un precio válido' })}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
@@ -2623,7 +2632,7 @@ export default function PedidosChina() {
                         }}
                       />
                       <span className={`absolute right-3 top-3 text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>cm</span>
-                      <p className={`mt-1 text-xs ${modalCotizar.altura && modalCotizar.altura > 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.altura && modalCotizar.altura > 0 ? 'Máx 7 dígitos enteros' : 'Ingresa una altura mayor a 0'}</p>
+                      <p className={`mt-1 text-xs ${modalCotizar.altura && modalCotizar.altura > 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.altura && modalCotizar.altura > 0 ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterHeight', { defaultValue: 'Ingresa una altura mayor a 0' })}</p>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -2649,7 +2658,7 @@ export default function PedidosChina() {
                         }}
                       />
                       <span className={`absolute right-3 top-3 text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>cm</span>
-                      <p className={`mt-1 text-xs ${modalCotizar.anchura && modalCotizar.anchura > 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.anchura && modalCotizar.anchura > 0 ? 'Máx 7 dígitos enteros' : 'Ingresa una anchura mayor a 0'}</p>
+                      <p className={`mt-1 text-xs ${modalCotizar.anchura && modalCotizar.anchura > 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.anchura && modalCotizar.anchura > 0 ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterWidth', { defaultValue: 'Ingresa una anchura mayor a 0' })}</p>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -2675,7 +2684,7 @@ export default function PedidosChina() {
                         }}
                       />
                       <span className={`absolute right-3 top-3 text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>cm</span>
-                      <p className={`mt-1 text-xs ${modalCotizar.largo && modalCotizar.largo > 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.largo && modalCotizar.largo > 0 ? 'Máx 7 dígitos enteros' : 'Ingresa un largo mayor a 0'}</p>
+                      <p className={`mt-1 text-xs ${modalCotizar.largo && modalCotizar.largo > 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.largo && modalCotizar.largo > 0 ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterLength', { defaultValue: 'Ingresa un largo mayor a 0' })}</p>
                     </div>
                   </div>
                 </div>
@@ -2702,7 +2711,7 @@ export default function PedidosChina() {
                       }}
                     />
                     <span className={`absolute right-3 top-3 text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>kg</span>
-                    <p className={`mt-1 text-xs ${modalCotizar.peso && modalCotizar.peso > 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.peso && modalCotizar.peso > 0 ? 'Máx 7 dígitos enteros' : 'Ingresa un peso mayor a 0'}</p>
+                    <p className={`mt-1 text-xs ${modalCotizar.peso && modalCotizar.peso > 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.peso && modalCotizar.peso > 0 ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterWeight', { defaultValue: 'Ingresa un peso mayor a 0' })}</p>
                   </div>
                 </div>
                 <div className="space-y-2">

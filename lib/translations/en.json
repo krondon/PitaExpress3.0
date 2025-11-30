@@ -2534,7 +2534,8 @@
         "inBoxVzla": "In Box",
         "readyVzla": "Order Ready",
         "delivered": "Delivered",
-        "state": "State {{num}}"
+        "state": "State {{num}}",
+        "cancelled": "Cancelled"
       },
       "boxBadges": {
         "new": "New",
@@ -2563,7 +2564,8 @@
         "pending": "Pending",
         "quoted": "Quoted",
         "processing": "Processing",
-        "shipped": "Shipped"
+        "shipped": "Shipped",
+        "cancelled": "Cancelled"
       },
       "orders": {
         "listTitle": "Orders List",
@@ -2648,7 +2650,16 @@
           "lengthPlaceholder": "Enter length",
           "totalToPay": "Total to Pay",
           "cancel": "Cancel",
-          "sendQuote": "Send Quote"
+          "sendQuote": "Send Quote",
+          "validation": {
+            "maxDigits": "Max 7 integer digits",
+            "enterPrice": "Enter a price greater than 0",
+            "enterValidPrice": "Enter a valid price",
+            "enterHeight": "Enter a height greater than 0",
+            "enterWidth": "Enter a width greater than 0",
+            "enterLength": "Enter a length greater than 0",
+            "enterWeight": "Enter a weight greater than 0"
+          }
         },
         "selectContainerForBox": {
           "title": "Select container for box #BOX-{{id}}",
@@ -2718,6 +2729,36 @@
           "noneSubtitle": "Create a box from the Boxes tab to pack.",
           "select": "Select",
           "cancel": "Cancel"
+        },
+        "proposeAlternative": {
+          "title": "Propose Alternative",
+          "subtitle": "Order #{{id}} - {{client}}",
+          "rejectionReasonTitle": "Reason for previous rejection:",
+          "originalProductTitle": "Original product requested:",
+          "productNameLabel": "Alternative Product Name",
+          "productNamePlaceholder": "Ex: Samsung S25 Ultra",
+          "descriptionLabel": "Description / Reason",
+          "descriptionPlaceholder": "Explain why you propose this alternative and the differences with the original product...",
+          "descriptionHelp": "Optional: Helps the client understand why this is a good alternative",
+          "imageLabel": "Product Image",
+          "uploadImage": "Click to upload image",
+          "maxSize": "Max 5MB",
+          "cancel": "Cancel",
+          "submit": "Propose Alternative",
+          "submitting": "Sending...",
+          "toasts": {
+            "fileTooBigTitle": "File too large",
+            "fileTooBigDesc": "Image must be smaller than 5MB",
+            "nameRequiredTitle": "Name required",
+            "nameRequiredDesc": "You must enter the alternative product name",
+            "successTitle": "Alternative proposed",
+            "successDesc": "\"{{name}}\" was sent as an alternative to the client",
+            "errorTitle": "Error",
+            "errorDesc": "Could not propose alternative"
+          }
+        },
+        "cancelOrder": {
+          "confirm": "Are you sure you want to cancel this order?"
         },
         "deleteBox": {
           "title": "Delete box",
@@ -2789,7 +2830,15 @@
         "tryAgain": "Try again.",
         "boxSentTitle": "Box sent",
         "boxSentDesc": "Box #BOX-{{boxId}} was marked as shipped.",
-        "orderAlreadyShipped": "This order has already been shipped and cannot be quoted."
+        "orderAlreadyShipped": "This order has already been shipped and cannot be quoted.",
+        "orderCancelled": "Order cancelled",
+        "orderCancelledDesc": "The order has been marked as cancelled."
+      },
+      "pagination": {
+        "showing": "Showing {{start}} to {{end}} of {{total}} orders",
+        "previous": "Previous",
+        "next": "Next",
+        "pageInfo": "Page {{current}} of {{total}}"
       }
     }
   },

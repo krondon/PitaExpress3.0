@@ -566,13 +566,6 @@
         "preferences": "Preferencias",
         "reviews": "Reseñas"
       },
-      "reviews": {
-        "title": "Reseñas de clientes",
-        "loading": "Cargando reseñas...",
-        "noReviews": "No hay reseñas aún",
-        "order": "Pedido",
-        "client": "Cliente"
-      },
       "profile": {
         "title": "Información Personal",
         "fields": {
@@ -2855,7 +2848,8 @@
         "inBoxVzla": "En Caja",
         "readyVzla": "Pedido Listo",
         "delivered": "Entregado",
-        "state": "Estado {{num}}"
+        "state": "Estado {{num}}",
+        "cancelled": "Cancelado"
       },
       "boxBadges": {
         "new": "Nueva",
@@ -2884,7 +2878,8 @@
         "pending": "Pendiente",
         "quoted": "Cotizado",
         "processing": "Procesando",
-        "shipped": "Enviado"
+        "shipped": "Enviado",
+        "cancelled": "Cancelado"
       },
       "orders": {
         "listTitle": "Lista de Pedidos",
@@ -2969,7 +2964,16 @@
           "lengthPlaceholder": "Ingresa el largo",
           "totalToPay": "Total a Pagar",
           "cancel": "Cancelar",
-          "sendQuote": "Enviar Cotización"
+          "sendQuote": "Enviar Cotización",
+          "validation": {
+            "maxDigits": "Máx 7 dígitos enteros",
+            "enterPrice": "Ingresa un precio mayor a 0",
+            "enterValidPrice": "Ingresa un precio válido",
+            "enterHeight": "Ingresa una altura mayor a 0",
+            "enterWidth": "Ingresa una anchura mayor a 0",
+            "enterLength": "Ingresa un largo mayor a 0",
+            "enterWeight": "Ingresa un peso mayor a 0"
+          }
         },
         "selectContainerForBox": {
           "title": "Seleccionar contenedor para caja #BOX-{{id}}",
@@ -3039,6 +3043,36 @@
           "noneSubtitle": "Crea una caja desde la pestaña Cajas para empaquetar.",
           "select": "Seleccionar",
           "cancel": "Cancelar"
+        },
+        "proposeAlternative": {
+          "title": "Proponer Alternativa",
+          "subtitle": "Pedido #{{id}} - {{client}}",
+          "rejectionReasonTitle": "Motivo del rechazo anterior:",
+          "originalProductTitle": "Producto original solicitado:",
+          "productNameLabel": "Nombre del Producto Alternativo",
+          "productNamePlaceholder": "Ej: Samsung S25 Ultra",
+          "descriptionLabel": "Descripción / Razón",
+          "descriptionPlaceholder": "Explica por qué propones esta alternativa y las diferencias con el producto original...",
+          "descriptionHelp": "Opcional: Ayuda al cliente a entender por qué esta es una buena alternativa",
+          "imageLabel": "Imagen del Producto",
+          "uploadImage": "Haz clic para subir imagen",
+          "maxSize": "Máximo 5MB",
+          "cancel": "Cancelar",
+          "submit": "Proponer Alternativa",
+          "submitting": "Enviando...",
+          "toasts": {
+            "fileTooBigTitle": "Archivo muy grande",
+            "fileTooBigDesc": "La imagen debe ser menor a 5MB",
+            "nameRequiredTitle": "Nombre requerido",
+            "nameRequiredDesc": "Debes ingresar el nombre del producto alternativo",
+            "successTitle": "Alternativa propuesta",
+            "successDesc": "Se envió \"{{name}}\" como alternativa al cliente",
+            "errorTitle": "Error",
+            "errorDesc": "No se pudo proponer la alternativa"
+          }
+        },
+        "cancelOrder": {
+          "confirm": "¿Estás seguro de que quieres cancelar este pedido?"
         },
         "deleteBox": {
           "title": "Eliminar caja",
@@ -3111,7 +3145,15 @@
         "tryAgain": "Intenta de nuevo.",
         "boxSentTitle": "Caja enviada",
         "boxSentDesc": "La caja #BOX-{{boxId}} fue marcada como enviada.",
-        "orderAlreadyShipped": "Este pedido ya ha sido enviado y no puede ser cotizado."
+        "orderAlreadyShipped": "Este pedido ya ha sido enviado y no puede ser cotizado.",
+        "orderCancelled": "Pedido cancelado",
+        "orderCancelledDesc": "El pedido ha sido marcado como cancelado."
+      },
+      "pagination": {
+        "showing": "Mostrando {{start}} a {{end}} de {{total}} pedidos",
+        "previous": "Anterior",
+        "next": "Siguiente",
+        "pageInfo": "Página {{current}} de {{total}}"
       }
     }
   },

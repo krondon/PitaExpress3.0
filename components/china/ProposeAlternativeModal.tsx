@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { X, ImageIcon, Send, Upload } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface ProposeAlternativeModalProps {
     isOpen: boolean;
@@ -26,6 +27,7 @@ export default function ProposeAlternativeModal({
     pedido,
     onSuccess,
 }: ProposeAlternativeModalProps) {
+    const { t } = useTranslation();
     const [altProductName, setAltProductName] = useState('');
     const [altDescription, setAltDescription] = useState('');
 
@@ -57,7 +59,10 @@ export default function ProposeAlternativeModal({
         const file = e.target.files?.[0];
         if (file) {
             if (file.size > 5 * 1024 * 1024) {
-                toast({ title: 'Archivo muy grande', description: 'La imagen debe ser menor a 5MB' });
+                toast({
+                    title: t('chinese.ordersPage.modals.proposeAlternative.toasts.fileTooBigTitle', { defaultValue: 'Archivo muy grande' }),
+                    description: t('chinese.ordersPage.modals.proposeAlternative.toasts.fileTooBigDesc', { defaultValue: 'La imagen debe ser menor a 5MB' })
+                });
                 return;
             }
             setAltImageFile(file);
@@ -67,7 +72,10 @@ export default function ProposeAlternativeModal({
     const handleSubmit = async () => {
         if (!pedido) return;
         if (!altProductName.trim()) {
-            toast({ title: 'Nombre requerido', description: 'Debes ingresar el nombre del producto alternativo' });
+            toast({
+                title: t('chinese.ordersPage.modals.proposeAlternative.toasts.nameRequiredTitle', { defaultValue: 'Nombre requerido' }),
+                description: t('chinese.ordersPage.modals.proposeAlternative.toasts.nameRequiredDesc', { defaultValue: 'Debes ingresar el nombre del producto alternativo' })
+            });
             return;
         }
 
@@ -118,8 +126,8 @@ export default function ProposeAlternativeModal({
             }
 
             toast({
-                title: 'Alternativa propuesta',
-                description: `Se envió "${altProductName}" como alternativa al cliente`
+                title: t('chinese.ordersPage.modals.proposeAlternative.toasts.successTitle', { defaultValue: 'Alternativa propuesta' }),
+                description: t('chinese.ordersPage.modals.proposeAlternative.toasts.successDesc', { name: altProductName, defaultValue: `Se envió "${altProductName}" como alternativa al cliente` })
             });
 
             handleClose();
@@ -127,8 +135,8 @@ export default function ProposeAlternativeModal({
         } catch (error: any) {
             console.error('Error proposing alternative:', error);
             toast({
-                title: 'Error',
-                description: error.message || 'No se pudo proponer la alternativa'
+                title: t('chinese.ordersPage.modals.proposeAlternative.toasts.errorTitle', { defaultValue: 'Error' }),
+                description: error.message || t('chinese.ordersPage.modals.proposeAlternative.toasts.errorDesc', { defaultValue: 'No se pudo proponer la alternativa' })
             });
         } finally {
             setCreating(false);
@@ -152,8 +160,8 @@ export default function ProposeAlternativeModal({
                 <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-t-2xl z-10">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h2 className="text-2xl font-bold">Proponer Alternativa</h2>
-                            <p className="text-blue-100 text-sm mt-1">Pedido #{pedido?.id} - {pedido?.cliente}</p>
+                            <h2 className="text-2xl font-bold">{t('chinese.ordersPage.modals.proposeAlternative.title', { defaultValue: 'Proponer Alternativa' })}</h2>
+                            <p className="text-blue-100 text-sm mt-1">{t('chinese.ordersPage.modals.proposeAlternative.subtitle', { id: pedido?.id, client: pedido?.cliente, defaultValue: `Pedido #${pedido?.id} - ${pedido?.cliente}` })}</p>
                         </div>
                         <button
                             onClick={handleClose}
@@ -170,7 +178,7 @@ export default function ProposeAlternativeModal({
                     {pedido?.alternativeRejectionReason && (
                         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-4 animate-in slide-in-from-top-2">
                             <p className="text-sm font-bold text-red-800 dark:text-red-300 mb-1">
-                                Motivo del rechazo anterior:
+                                {t('chinese.ordersPage.modals.proposeAlternative.rejectionReasonTitle', { defaultValue: 'Motivo del rechazo anterior:' })}
                             </p>
                             <p className="text-sm text-red-700 dark:text-red-200 italic">
                                 "{pedido.alternativeRejectionReason}"
@@ -180,35 +188,35 @@ export default function ProposeAlternativeModal({
 
                     {/* Producto Original */}
                     <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4">
-                        <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">Producto original solicitado:</p>
+                        <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">{t('chinese.ordersPage.modals.proposeAlternative.originalProductTitle', { defaultValue: 'Producto original solicitado:' })}</p>
                         <p className="text-lg font-semibold text-yellow-900 dark:text-yellow-200 mt-1">{pedido?.producto}</p>
                     </div>
 
                     {/* Nombre del Producto Alternativo */}
                     <div className="space-y-2">
                         <Label className="text-sm font-semibold flex items-center gap-2">
-                            <span>Nombre del Producto Alternativo</span>
+                            <span>{t('chinese.ordersPage.modals.proposeAlternative.productNameLabel', { defaultValue: 'Nombre del Producto Alternativo' })}</span>
                             <span className="text-red-500">*</span>
                         </Label>
                         <Input
                             value={altProductName}
                             onChange={(e) => setAltProductName(e.target.value)}
-                            placeholder="Ej: Samsung S25 Ultra"
+                            placeholder={t('chinese.ordersPage.modals.proposeAlternative.productNamePlaceholder', { defaultValue: 'Ej: Samsung S25 Ultra' })}
                             className="h-12"
                         />
                     </div>
 
                     {/* Descripción */}
                     <div className="space-y-2">
-                        <Label className="text-sm font-semibold">Descripción / Razón</Label>
+                        <Label className="text-sm font-semibold">{t('chinese.ordersPage.modals.proposeAlternative.descriptionLabel', { defaultValue: 'Descripción / Razón' })}</Label>
                         <Textarea
                             value={altDescription}
                             onChange={(e) => setAltDescription(e.target.value)}
-                            placeholder="Explica por qué propones esta alternativa y las diferencias con el producto original..."
+                            placeholder={t('chinese.ordersPage.modals.proposeAlternative.descriptionPlaceholder', { defaultValue: 'Explica por qué propones esta alternativa y las diferencias con el producto original...' })}
                             rows={4}
                             className="resize-none"
                         />
-                        <p className="text-xs text-slate-500">Opcional: Ayuda al cliente a entender por qué esta es una buena alternativa</p>
+                        <p className="text-xs text-slate-500">{t('chinese.ordersPage.modals.proposeAlternative.descriptionHelp', { defaultValue: 'Opcional: Ayuda al cliente a entender por qué esta es una buena alternativa' })}</p>
                     </div>
 
 
@@ -217,7 +225,7 @@ export default function ProposeAlternativeModal({
                     <div className="space-y-2">
                         <Label className="text-sm font-semibold flex items-center gap-2">
                             <ImageIcon className="h-4 w-4" />
-                            Imagen del Producto
+                            {t('chinese.ordersPage.modals.proposeAlternative.imageLabel', { defaultValue: 'Imagen del Producto' })}
                         </Label>
                         <input
                             ref={fileInputRef}
@@ -246,8 +254,8 @@ export default function ProposeAlternativeModal({
                                 className="w-full h-32 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg hover:border-blue-500 dark:hover:border-blue-400 transition-colors flex flex-col items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400"
                             >
                                 <Upload className="h-8 w-8" />
-                                <span className="text-sm font-medium">Haz clic para subir imagen</span>
-                                <span className="text-xs">Máximo 5MB</span>
+                                <span className="text-sm font-medium">{t('chinese.ordersPage.modals.proposeAlternative.uploadImage', { defaultValue: 'Haz clic para subir imagen' })}</span>
+                                <span className="text-xs">{t('chinese.ordersPage.modals.proposeAlternative.maxSize', { defaultValue: 'Máximo 5MB' })}</span>
                             </button>
                         )}
                     </div>
@@ -261,7 +269,7 @@ export default function ProposeAlternativeModal({
                         disabled={creating}
                         className="flex-1"
                     >
-                        Cancelar
+                        {t('chinese.ordersPage.modals.proposeAlternative.cancel', { defaultValue: 'Cancelar' })}
                     </Button>
                     <Button
                         onClick={handleSubmit}
@@ -271,12 +279,12 @@ export default function ProposeAlternativeModal({
                         {creating ? (
                             <>
                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                Enviando...
+                                {t('chinese.ordersPage.modals.proposeAlternative.submitting', { defaultValue: 'Enviando...' })}
                             </>
                         ) : (
                             <>
                                 <Send className="h-4 w-4 mr-2" />
-                                Proponer Alternativa
+                                {t('chinese.ordersPage.modals.proposeAlternative.submit', { defaultValue: 'Proponer Alternativa' })}
                             </>
                         )}
                     </Button>

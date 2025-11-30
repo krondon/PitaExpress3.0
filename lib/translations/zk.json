@@ -2524,7 +2524,8 @@
         "inBoxVzla": "在箱中",
         "readyVzla": "订单准备就绪",
         "delivered": "已交付",
-        "state": "状态 {{num}}"
+        "state": "状态 {{num}}",
+        "cancelled": "已取消"
       },
       "boxBadges": {
         "new": "新建",
@@ -2553,7 +2554,8 @@
         "pending": "待处理",
         "quoted": "已报价",
         "processing": "处理中",
-        "shipped": "已发货"
+        "shipped": "已发货",
+        "cancelled": "已取消"
       },
       "orders": {
         "listTitle": "订单列表",
@@ -2638,7 +2640,16 @@
           "lengthPlaceholder": "输入长度",
           "totalToPay": "应付总额",
           "cancel": "取消",
-          "sendQuote": "发送报价"
+          "sendQuote": "发送报价",
+          "validation": {
+            "maxDigits": "最多7位整数",
+            "enterPrice": "请输入大于0的价格",
+            "enterValidPrice": "请输入有效价格",
+            "enterHeight": "请输入大于0的高度",
+            "enterWidth": "请输入大于0的宽度",
+            "enterLength": "请输入大于0的长度",
+            "enterWeight": "请输入大于0的重量"
+          }
         },
         "selectContainerForBox": {
           "title": "为箱 #BOX-{{id}} 选择集装箱",
@@ -2708,6 +2719,36 @@
           "noneSubtitle": "在箱子标签中创建一个箱子以打包。",
           "select": "选择",
           "cancel": "取消"
+        },
+        "proposeAlternative": {
+          "title": "提出替代方案",
+          "subtitle": "订单 #{{id}} - {{client}}",
+          "rejectionReasonTitle": "先前拒绝的原因：",
+          "originalProductTitle": "原始请求产品：",
+          "productNameLabel": "替代产品名称",
+          "productNamePlaceholder": "例如：三星 S25 Ultra",
+          "descriptionLabel": "描述 / 原因",
+          "descriptionPlaceholder": "解释为什么您提出此替代方案以及与原始产品的区别...",
+          "descriptionHelp": "可选：帮助客户理解为什么这是一个好的替代方案",
+          "imageLabel": "产品图片",
+          "uploadImage": "点击上传图片",
+          "maxSize": "最大 5MB",
+          "cancel": "取消",
+          "submit": "提出替代方案",
+          "submitting": "发送中...",
+          "toasts": {
+            "fileTooBigTitle": "文件太大",
+            "fileTooBigDesc": "图片必须小于 5MB",
+            "nameRequiredTitle": "需要名称",
+            "nameRequiredDesc": "您必须输入替代产品名称",
+            "successTitle": "已提出替代方案",
+            "successDesc": "已向客户发送 \"{{name}}\" 作为替代方案",
+            "errorTitle": "错误",
+            "errorDesc": "无法提出替代方案"
+          }
+        },
+        "cancelOrder": {
+          "confirm": "您确定要取消此订单吗？"
         },
         "deleteBox": {
           "title": "删除箱子",
@@ -2780,7 +2821,15 @@
         "tryAgain": "重试。",
         "boxSentTitle": "箱子已发送",
         "boxSentDesc": "箱子 #BOX-{{boxId}} 已被标记为已发货。",
-        "orderAlreadyShipped": "此订单已发货，无法报价。"
+        "orderAlreadyShipped": "此订单已发货，无法报价。",
+        "orderCancelled": "订单已取消",
+        "orderCancelledDesc": "订单已被标记为取消。"
+      },
+      "pagination": {
+        "showing": "显示 {{start}} 到 {{end}} 共 {{total}} 个订单",
+        "previous": "上一页",
+        "next": "下一页",
+        "pageInfo": "第 {{current}} 页，共 {{total}} 页"
       }
     }
   },
