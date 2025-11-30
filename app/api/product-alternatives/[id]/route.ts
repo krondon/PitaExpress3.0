@@ -118,6 +118,20 @@ export async function PATCH(
 
                         // Preparar datos para el PDF
                         // Usamos el NUEVO nombre y la NUEVA imagen, pero mantenemos descripción/specs originales
+
+                        // Extraer URL del producto original (suele estar en links[0])
+                        let originalUrl = fullOrder.productUrl || '-';
+                        if (Array.isArray(fullOrder.links) && fullOrder.links.length > 0) {
+                            originalUrl = fullOrder.links[0];
+                        } else if (typeof fullOrder.links === 'string') {
+                            try {
+                                const parsedLinks = JSON.parse(fullOrder.links);
+                                if (Array.isArray(parsedLinks) && parsedLinks.length > 0) originalUrl = parsedLinks[0];
+                            } catch {
+                                // ignore
+                            }
+                        }
+
                         const pdfData = {
                             orderId: fullOrder.id,
                             clientId: fullOrder.client_id,
@@ -128,8 +142,8 @@ export async function PATCH(
                             productName: alternative.alternative_product_name, // NUEVO NOMBRE
                             quantity: fullOrder.quantity || 1,
                             description: fullOrder.description || '-', // ORIGINAL
-                            specifications: fullOrder.specifications || '-', // ORIGINAL
-                            productUrl: fullOrder.productUrl || '-', // ORIGINAL
+                            specifications: fullOrder.specifications || fullOrder.description || '-', // ORIGINAL (Fallback a description si specs está vacío)
+                            productUrl: originalUrl, // ORIGINAL
                             productImageUrl: alternative.alternative_image_url || null // NUEVA IMAGEN (si hay)
                         };
 
