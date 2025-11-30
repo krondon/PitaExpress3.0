@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Toaster } from '@/components/ui/toaster';
 import { toast } from '@/hooks/use-toast';
+import ProposeAlternativeModal from '@/components/china/ProposeAlternativeModal';
 // PDF
 import jsPDF from 'jspdf';
 
@@ -42,7 +43,8 @@ import {
   Calendar,
   Tag,
   Trash2,
-  List
+  List,
+  Send
 } from 'lucide-react';
 import { Boxes } from 'lucide-react';
 
@@ -81,6 +83,7 @@ interface Pedido {
   width?: number | null;
   long?: number | null;
   weight?: number | null;
+  hasAlternative?: boolean;
 }
 
 interface BoxItem {
@@ -105,18 +108,18 @@ interface ContainerItem {
 }
 
 // Utilidad para convertir un SVG público a PNG DataURL para incrustar en PDF
-async function svgToPngDataUrl(path: string, size=120): Promise<string>{
+async function svgToPngDataUrl(path: string, size = 120): Promise<string> {
   const resp = await fetch(path);
   const svgText = await resp.text();
   const blob = new Blob([svgText], { type: 'image/svg+xml' });
   const blobUrl = URL.createObjectURL(blob);
   try {
-    const img = await new Promise<HTMLImageElement>((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=blobUrl; });
+    const img = await new Promise<HTMLImageElement>((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = blobUrl; });
     const canvas = document.createElement('canvas');
     canvas.width = size; canvas.height = size;
-    const ctx = canvas.getContext('2d'); if(!ctx) throw new Error('Canvas no soportado');
-    ctx.clearRect(0,0,size,size);
-    ctx.drawImage(img,0,0,size,size);
+    const ctx = canvas.getContext('2d'); if (!ctx) throw new Error('Canvas no soportado');
+    ctx.clearRect(0, 0, size, size);
+    ctx.drawImage(img, 0, 0, size, size);
     return canvas.toDataURL('image/png');
   } finally { URL.revokeObjectURL(blobUrl); }
 }
@@ -136,13 +139,13 @@ export default function PedidosChina() {
   // Mapear state numérico a texto usado en China
   function mapStateToEstado(state: number): Pedido['estado'] {
     // Rango solicitado para la vista China:
-    // 2: pendiente
+    // 1-2: pendiente (pedidos nuevos y recibidos)
     // 3-4: procesando (3 se mostrará como cotizado donde aplique)
     // 5-8: enviado
     if (state >= 5 && state <= 8) return 'enviado';
     if (state === 4) return 'procesando';
     if (state === 3) return 'cotizado';
-    if (state === 2) return 'pendiente';
+    if (state === 1 || state === 2) return 'pendiente'; // Estados 1 y 2 son pendientes
     // Fallback: cualquier otro se considera pendiente aquí
     return 'pendiente';
   }
@@ -154,17 +157,17 @@ export default function PedidosChina() {
     // Colores utilitarios tailwind para Badges
     const base = 'border';
     if (s <= 0 || isNaN(s)) return { label: t('chinese.ordersPage.badges.unknown'), className: `${base} ${isDark ? 'bg-gray-800 text-gray-300 border-gray-700' : 'bg-gray-100 text-gray-800 border-gray-200'}` };
-    if (s === 3) return { label: t('chinese.ordersPage.badges.quoted'), className: `${base} ${isDark ? 'bg-blue-900/30 text-blue-300 border-blue-700' : 'bg-blue-100 text-blue-800 border-blue-200'}` };
+    if (s === 1 || s === 2) return { label: t('chinese.ordersPage.badges.pending'), className: `${base} ${isDark ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700' : 'bg-yellow-100 text-yellow-800 border-yellow-200'}` }; // Estados 1 y 2 son pendientes
     if (s === 4) return { label: t('chinese.ordersPage.badges.processing'), className: `${base} ${isDark ? 'bg-purple-900/30 text-purple-300 border-purple-700' : 'bg-purple-100 text-purple-800 border-purple-200'}` };
     if (s === 5) return { label: t('chinese.ordersPage.badges.readyToPack'), className: `${base} ${isDark ? 'bg-amber-900/30 text-amber-300 border-amber-700' : 'bg-amber-100 text-amber-800 border-amber-200'}` };
     if (s === 6) return { label: t('chinese.ordersPage.badges.inBox'), className: `${base} ${isDark ? 'bg-indigo-900/30 text-indigo-300 border-indigo-700' : 'bg-indigo-100 text-indigo-800 border-indigo-200'}` };
-  if (s === 7 || s === 8) return { label: t('chinese.ordersPage.badges.inContainer'), className: `${base} ${isDark ? 'bg-cyan-900/30 text-cyan-300 border-cyan-700' : 'bg-cyan-100 text-cyan-800 border-cyan-200'}` };
-  if (s === 9) return { label: t('chinese.ordersPage.badges.shippedVzla'), className: `${base} ${isDark ? 'bg-green-900/30 text-green-300 border-green-700' : 'bg-green-100 text-green-800 border-green-200'}` };
-  if (s === 10) return { label: t('chinese.ordersPage.badges.inVenezuela'), className: `${base} ${isDark ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700' : 'bg-yellow-100 text-yellow-800 border-yellow-200'}` };
-  if (s === 11) return { label: t('chinese.ordersPage.badges.inBoxVzla'), className: `${base} ${isDark ? 'bg-orange-900/30 text-orange-300 border-orange-700' : 'bg-orange-100 text-orange-800 border-orange-200'}` };
-  if (s === 12) return { label: t('chinese.ordersPage.badges.readyVzla'), className: `${base} ${isDark ? 'bg-lime-900/30 text-lime-300 border-lime-700' : 'bg-lime-100 text-lime-800 border-lime-200'}` };
-  if (s === 13) return { label: t('chinese.ordersPage.badges.delivered'), className: `${base} ${isDark ? 'bg-emerald-900/30 text-emerald-300 border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-200'}` };
-  if (s > 13) return { label: t('chinese.ordersPage.badges.shippedVzla'), className: `${base} ${isDark ? 'bg-green-900/30 text-green-300 border-green-700' : 'bg-green-100 text-green-800 border-green-200'}` };
+    if (s === 7 || s === 8) return { label: t('chinese.ordersPage.badges.inContainer'), className: `${base} ${isDark ? 'bg-cyan-900/30 text-cyan-300 border-cyan-700' : 'bg-cyan-100 text-cyan-800 border-cyan-200'}` };
+    if (s === 9) return { label: t('chinese.ordersPage.badges.shippedVzla'), className: `${base} ${isDark ? 'bg-green-900/30 text-green-300 border-green-700' : 'bg-green-100 text-green-800 border-green-200'}` };
+    if (s === 10) return { label: t('chinese.ordersPage.badges.inVenezuela'), className: `${base} ${isDark ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700' : 'bg-yellow-100 text-yellow-800 border-yellow-200'}` };
+    if (s === 11) return { label: t('chinese.ordersPage.badges.inBoxVzla'), className: `${base} ${isDark ? 'bg-orange-900/30 text-orange-300 border-orange-700' : 'bg-orange-100 text-orange-800 border-orange-200'}` };
+    if (s === 12) return { label: t('chinese.ordersPage.badges.readyVzla'), className: `${base} ${isDark ? 'bg-lime-900/30 text-lime-300 border-lime-700' : 'bg-lime-100 text-lime-800 border-lime-200'}` };
+    if (s === 13) return { label: t('chinese.ordersPage.badges.delivered'), className: `${base} ${isDark ? 'bg-emerald-900/30 text-emerald-300 border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-200'}` };
+    if (s > 13) return { label: t('chinese.ordersPage.badges.shippedVzla'), className: `${base} ${isDark ? 'bg-green-900/30 text-green-300 border-green-700' : 'bg-green-100 text-green-800 border-green-200'}` };
     return { label: t('chinese.ordersPage.badges.state', { num: s }), className: `${base} ${isDark ? 'bg-gray-800 text-gray-300 border-gray-700' : 'bg-gray-100 text-gray-800 border-gray-200'}` };
   }
 
@@ -203,7 +206,7 @@ export default function PedidosChina() {
         setLoading(false);
         return;
       }
-      const res = await fetch(`/china/pedidos/api/orders?asignedEChina=${empleadoId}`);
+      const res = await fetch(`/china/pedidos/api/orders?asignedEChina=${empleadoId}`, { cache: 'no-store' });
       const data = await res.json();
       if (!Array.isArray(data)) {
         setPedidos([]);
@@ -211,6 +214,7 @@ export default function PedidosChina() {
         return;
       }
       console.debug('[PedidosChina] fetched raw orders count:', data.length);
+      console.debug('[PedidosChina] Orders with alternatives:', data.filter((o: any) => o.hasAlternative).map((o: any) => o.id));
       setPedidos(
         data
           .map((order: any) => {
@@ -236,6 +240,7 @@ export default function PedidosChina() {
               shippingType: order.shippingType || '',
               totalQuote: order.totalQuote ?? null,
               numericState: typeof order.state === 'number' ? order.state : undefined,
+              hasAlternative: order.hasAlternative,
             } as Pedido;
           })
       );
@@ -243,6 +248,9 @@ export default function PedidosChina() {
       setLoading(false);
     }
   }
+  // Modal proponer alternativa
+  const [modalPropAlternativa, setModalPropAlternativa] = useState<{ open: boolean; pedido?: Pedido }>({ open: false });
+
   const [modalCotizar, setModalCotizar] = useState<{
     open: boolean,
     pedido?: Pedido,
@@ -274,7 +282,7 @@ export default function PedidosChina() {
     largoInput: '',
     pesoInput: '',
   });
-  const [modalDetalle, setModalDetalle] = useState<{open: boolean, pedido?: Pedido}>({open: false});
+  const [modalDetalle, setModalDetalle] = useState<{ open: boolean, pedido?: Pedido }>({ open: false });
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -315,7 +323,7 @@ export default function PedidosChina() {
   const modalCotizarRef = useRef<HTMLDivElement>(null);
   const modalDetalleRef = useRef<HTMLDivElement>(null);
   const modalCrearCajaRef = useRef<HTMLDivElement>(null);
-  const [modalCrearCaja, setModalCrearCaja] = useState<{open: boolean}>({ open: false });
+  const [modalCrearCaja, setModalCrearCaja] = useState<{ open: boolean }>({ open: false });
   const modalEliminarCajaRef = useRef<HTMLDivElement>(null);
   const [modalEliminarCaja, setModalEliminarCaja] = useState<{ open: boolean; box?: BoxItem }>({ open: false });
   const [isModalEliminarCajaClosing, setIsModalEliminarCajaClosing] = useState(false);
@@ -333,7 +341,7 @@ export default function PedidosChina() {
   const [isModalEmpaquetarClosing, setIsModalEmpaquetarClosing] = useState(false);
   // Modal Etiqueta antes de confirmar asignación a caja
   const modalEtiquetaRef = useRef<HTMLDivElement>(null);
-  const [modalEtiqueta, setModalEtiqueta] = useState<{ open: boolean; pedidoId?: number; box?: BoxItem }>( { open: false } );
+  const [modalEtiqueta, setModalEtiqueta] = useState<{ open: boolean; pedidoId?: number; box?: BoxItem }>({ open: false });
   const [isModalEtiquetaClosing, setIsModalEtiquetaClosing] = useState(false);
   const [generatingLabel, setGeneratingLabel] = useState(false);
 
@@ -381,8 +389,8 @@ export default function PedidosChina() {
   useEffect(() => { modalVerPedidosContIdRef.current = modalVerPedidosCont.containerId; }, [modalVerPedidosCont.containerId]);
 
   useEffect(() => {
-  setMounted(true);
-  fetchPedidos();
+    setMounted(true);
+    fetchPedidos();
   }, []);
 
   // NUEVO: suscripción realtime (refetch cuando evento relevante)
@@ -474,9 +482,9 @@ export default function PedidosChina() {
     return () => {
       if (boxesTimer) clearTimeout(boxesTimer);
       if (containersTimer) clearTimeout(containersTimer);
-  supabase.removeChannel(boxesChannel);
-  supabase.removeChannel(containersChannel);
-  supabase.removeChannel(ordersChannel);
+      supabase.removeChannel(boxesChannel);
+      supabase.removeChannel(containersChannel);
+      supabase.removeChannel(ordersChannel);
     };
   }, []);
 
@@ -515,8 +523,8 @@ export default function PedidosChina() {
     modalEmpaquetarCaja.open,
     modalCrearContenedor.open,
     modalEliminarContenedor.open,
-  modalVerPedidosCont.open,
-  modalEnviarContenedor.open,
+    modalVerPedidosCont.open,
+    modalEnviarContenedor.open,
   ].some(Boolean);
 
   useEffect(() => {
@@ -559,7 +567,7 @@ export default function PedidosChina() {
           setOrdersByBox([]);
         }, 300);
       }
-    if (modalVerPedidosCont.open && modalVerPedidosContRef.current && !modalVerPedidosContRef.current.contains(event.target as Node)) {
+      if (modalVerPedidosCont.open && modalVerPedidosContRef.current && !modalVerPedidosContRef.current.contains(event.target as Node)) {
         setIsModalVerPedidosContClosing(true);
         setTimeout(() => {
           setModalVerPedidosCont({ open: false });
@@ -611,7 +619,7 @@ export default function PedidosChina() {
   const closeModalCotizar = () => {
     setIsModalCotizarClosing(true);
     setTimeout(() => {
-      setModalCotizar({open: false});
+      setModalCotizar({ open: false });
       setIsModalCotizarClosing(false);
     }, 300);
   };
@@ -619,14 +627,14 @@ export default function PedidosChina() {
   const closeModalDetalle = () => {
     setIsModalDetalleClosing(true);
     setTimeout(() => {
-      setModalDetalle({open: false});
+      setModalDetalle({ open: false });
       setIsModalDetalleClosing(false);
     }, 300);
   };
   const closeModalCrearCaja = () => {
     setIsModalCrearCajaClosing(true);
     setTimeout(() => {
-      setModalCrearCaja({open: false});
+      setModalCrearCaja({ open: false });
       setIsModalCrearCajaClosing(false);
     }, 300);
   };
@@ -651,8 +659,8 @@ export default function PedidosChina() {
     setTimeout(() => {
       setModalVerPedidosCont({ open: false });
       setIsModalVerPedidosContClosing(false);
-  setBoxesByContainer([]);
-  setOrderCountsByBox({});
+      setBoxesByContainer([]);
+      setOrderCountsByBox({});
     }, 300);
   };
 
@@ -665,10 +673,10 @@ export default function PedidosChina() {
   };
   const closeModalEtiqueta = () => {
     setIsModalEtiquetaClosing(true);
-    setTimeout(()=>{
+    setTimeout(() => {
       setModalEtiqueta({ open: false });
       setIsModalEtiquetaClosing(false);
-    },300);
+    }, 300);
   };
 
   const closeModalEmpaquetarCaja = () => {
@@ -756,7 +764,7 @@ export default function PedidosChina() {
         .select('*');
       if (error) {
         console.error('Error al obtener cajas:', error);
-  toast({ title: t('chinese.ordersPage.toasts.loadBoxesErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgainLater') });
+        toast({ title: t('chinese.ordersPage.toasts.loadBoxesErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgainLater') });
         return;
       }
       const list = (data || []) as BoxItem[];
@@ -826,11 +834,11 @@ export default function PedidosChina() {
         .insert([{ state: 1, creation_date, name: newContainerName.trim() }]);
       if (error) {
         console.error('Error al crear contenedor:', error);
-  toast({ title: t('chinese.ordersPage.toasts.createContainerErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgainSeconds') });
+        toast({ title: t('chinese.ordersPage.toasts.createContainerErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgainSeconds') });
         return;
       }
       closeModalCrearContenedor();
-  toast({ title: t('chinese.ordersPage.toasts.containerCreatedTitle'), description: t('chinese.ordersPage.toasts.containerCreatedDesc') });
+      toast({ title: t('chinese.ordersPage.toasts.containerCreatedTitle'), description: t('chinese.ordersPage.toasts.containerCreatedDesc') });
       fetchContainers();
     } finally {
       setCreatingContainer(false);
@@ -847,7 +855,7 @@ export default function PedidosChina() {
         .select('*');
       if (error) {
         console.error('Error al obtener contenedores:', error);
-  toast({ title: t('chinese.ordersPage.toasts.loadContainersErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgainLater') });
+        toast({ title: t('chinese.ordersPage.toasts.loadContainersErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgainLater') });
         return;
       }
       const list = (data || []) as ContainerItem[];
@@ -873,7 +881,7 @@ export default function PedidosChina() {
         .eq('container_id', containerId);
       if (error) {
         console.error('Error al obtener cajas del contenedor:', error);
-  toast({ title: t('chinese.ordersPage.toasts.loadBoxesErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgain') });
+        toast({ title: t('chinese.ordersPage.toasts.loadBoxesErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgain') });
         return;
       }
       const list = (data || []) as BoxItem[];
@@ -922,7 +930,7 @@ export default function PedidosChina() {
         .eq('box_id', boxId);
       if (error) {
         console.error('Error al obtener pedidos de la caja:', error);
-  toast({ title: t('chinese.ordersPage.toasts.loadOrdersErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgain') });
+        toast({ title: t('chinese.ordersPage.toasts.loadOrdersErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgain') });
         return;
       }
       const mapped: Pedido[] = (data || []).map((order: any) => ({
@@ -930,8 +938,8 @@ export default function PedidosChina() {
         cliente: order.clientName || order.client || '—',
         producto: order.productName || order.product || '—',
         cantidad: Number(order.quantity || 0),
-  // Si viene null/undefined asumimos 2, y ocultamos state 1
-  estado: mapStateToEstado(Number(order.state || 2)),
+        // Si viene null/undefined asumimos 2, y ocultamos state 1
+        estado: mapStateToEstado(Number(order.state || 2)),
         cotizado: Number(order.state) === 3 || (!!order.totalQuote && Number(order.totalQuote) > 0),
         precio: order.totalQuote ? Number(order.totalQuote) / Math.max(1, Number(order.quantity || 1)) : null,
         fecha: order.created_at || order.creation_date || new Date().toISOString(),
@@ -1102,7 +1110,7 @@ export default function PedidosChina() {
       if (contStateErr) {
         console.error('Error actualizando contenedor a estado 2:', contStateErr);
       }
-  toast({ title: t('chinese.ordersPage.toasts.boxAssignedTitle'), description: t('chinese.ordersPage.toasts.boxAssignedDesc', { boxId: boxId, containerId: containerId }) });
+      toast({ title: t('chinese.ordersPage.toasts.boxAssignedTitle'), description: t('chinese.ordersPage.toasts.boxAssignedDesc', { boxId: boxId, containerId: containerId }) });
       // Actualizar UI local
       setBoxes(prev => prev.map(b => {
         const id = b.box_id ?? b.boxes_id ?? b.id;
@@ -1116,8 +1124,8 @@ export default function PedidosChina() {
       }));
       closeModalEmpaquetarCaja();
     } catch (e) {
-  console.error(e);
-  toast({ title: t('chinese.ordersPage.toasts.unexpectedErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgainLater') });
+      console.error(e);
+      toast({ title: t('chinese.ordersPage.toasts.unexpectedErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgainLater') });
     }
   };
 
@@ -1157,10 +1165,10 @@ export default function PedidosChina() {
         .eq('box_id', boxId);
       if (boxErr) {
         console.error('Error al actualizar caja a estado 1:', boxErr);
-  toast({ title: t('chinese.ordersPage.toasts.unassignErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgain') });
+        toast({ title: t('chinese.ordersPage.toasts.unassignErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgain') });
         return;
       }
-  toast({ title: t('chinese.ordersPage.toasts.boxUnpackedTitle'), description: t('chinese.ordersPage.toasts.boxUnpackedDesc', { boxId }) });
+      toast({ title: t('chinese.ordersPage.toasts.boxUnpackedTitle'), description: t('chinese.ordersPage.toasts.boxUnpackedDesc', { boxId }) });
       // Actualizar estado local de cajas
       setBoxes(prev => prev.map(b => {
         const id = b.box_id ?? b.boxes_id ?? b.id;
@@ -1178,7 +1186,7 @@ export default function PedidosChina() {
       fetchPedidos();
     } catch (e) {
       console.error(e);
-  toast({ title: t('chinese.ordersPage.toasts.unexpectedErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgainLater') });
+      toast({ title: t('chinese.ordersPage.toasts.unexpectedErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgainLater') });
     }
   };
 
@@ -1234,7 +1242,7 @@ export default function PedidosChina() {
         await supabase.from('orders').update({ state: 9 }).in('box_id', boxIds as any);
       }
 
-  toast({ title: t('chinese.ordersPage.toasts.containerSentTitle') });
+      toast({ title: t('chinese.ordersPage.toasts.containerSentTitle') });
 
       // Actualizar UI local
       setContainers(prev => prev.map(c => {
@@ -1250,11 +1258,11 @@ export default function PedidosChina() {
         if (String((b as any).container_id) === String(containerId)) return { ...b, state: 4 } as any;
         return b;
       }));
-  return true;
+      return true;
     } catch (e: any) {
       console.error(e);
       toast({ title: t('chinese.ordersPage.toasts.sendErrorTitle'), description: e?.message || t('chinese.ordersPage.toasts.tryAgainLater') });
-  return false;
+      return false;
     }
   };
 
@@ -1269,9 +1277,9 @@ export default function PedidosChina() {
   };
 
   // Generar etiqueta PDF 50x35 mm
-  async function handleGenerateOrderLabelPdf(pedidoId?: number){
-    if(!pedidoId){
-  toast({ title: t('chinese.ordersPage.modals.labelWarning.toastTitleError', { defaultValue: 'Error generando' }), description: t('chinese.ordersPage.modals.labelWarning.noId', { defaultValue: 'ID de pedido no disponible' }) });
+  async function handleGenerateOrderLabelPdf(pedidoId?: number) {
+    if (!pedidoId) {
+      toast({ title: t('chinese.ordersPage.modals.labelWarning.toastTitleError', { defaultValue: 'Error generando' }), description: t('chinese.ordersPage.modals.labelWarning.noId', { defaultValue: 'ID de pedido no disponible' }) });
       return;
     }
     try {
@@ -1279,29 +1287,29 @@ export default function PedidosChina() {
       const labelH = 35; // mm
       const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [labelH, labelW] });
       const padding = 3;
-      doc.setFillColor(255,255,255); doc.rect(0,0,labelW,labelH,'F');
-      doc.setDrawColor(40,40,45); doc.setLineWidth(0.4); doc.roundedRect(0.7,0.7,labelW-1.4,labelH-1.4,2,2);
-  let logoData: string | undefined;
+      doc.setFillColor(255, 255, 255); doc.rect(0, 0, labelW, labelH, 'F');
+      doc.setDrawColor(40, 40, 45); doc.setLineWidth(0.4); doc.roundedRect(0.7, 0.7, labelW - 1.4, labelH - 1.4, 2, 2);
+      let logoData: string | undefined;
       try { logoData = await svgToPngDataUrl('/pita_icon.svg', 120); } catch { /* ignore logo errors */ }
-      doc.setFillColor(15,76,129); doc.rect(0,0,labelW,9,'F');
-      if(logoData){
-        try { doc.addImage(logoData, 'PNG', 2,1.2,7,7); } catch {/* ignore */}
+      doc.setFillColor(15, 76, 129); doc.rect(0, 0, labelW, 9, 'F');
+      if (logoData) {
+        try { doc.addImage(logoData, 'PNG', 2, 1.2, 7, 7); } catch {/* ignore */ }
       } else {
         // fallback simple
-        doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255); doc.setFontSize(6); doc.text('PITA',4.5,5,{align:'center'});
+        doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255); doc.setFontSize(6); doc.text('PITA', 4.5, 5, { align: 'center' });
       }
-      doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.text('PITA EXPRESS', labelW/2,5.2,{align:'center'});
-      const code = `#PED-${String(pedidoId).padStart(3,'0')}`;
-      doc.setFont('helvetica','bold'); doc.setTextColor(20,20,25); doc.setFontSize(16); doc.text(code, labelW/2, 20, { align: 'center' });
-      doc.setFont('helvetica','normal'); doc.setFontSize(5.2); doc.setTextColor(60,60,65);
-  const desc = t('chinese.ordersPage.modals.labelWarning.description', { defaultValue: 'Asegúrate de poner la etiqueta al producto antes de empaquetar.' });
-      doc.text(doc.splitTextToSize(desc, labelW-8), labelW/2, 26.5, { align: 'center' });
+      doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255); doc.setFontSize(7.5); doc.text('PITA EXPRESS', labelW / 2, 5.2, { align: 'center' });
+      const code = `#PED-${String(pedidoId).padStart(3, '0')}`;
+      doc.setFont('helvetica', 'bold'); doc.setTextColor(20, 20, 25); doc.setFontSize(16); doc.text(code, labelW / 2, 20, { align: 'center' });
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(5.2); doc.setTextColor(60, 60, 65);
+      const desc = t('chinese.ordersPage.modals.labelWarning.description', { defaultValue: 'Asegúrate de poner la etiqueta al producto antes de empaquetar.' });
+      doc.text(doc.splitTextToSize(desc, labelW - 8), labelW / 2, 26.5, { align: 'center' });
       const blobUrl = doc.output('bloburl');
-      window.open(blobUrl,'_blank','noopener,noreferrer');
-  toast({ title: t('chinese.ordersPage.modals.labelWarning.toastTitleSuccess', { defaultValue: 'Etiqueta lista' }), description: t('chinese.ordersPage.modals.labelWarning.downloaded', { defaultValue: 'Etiqueta generada' }) });
-    } catch(e){
+      window.open(blobUrl, '_blank', 'noopener,noreferrer');
+      toast({ title: t('chinese.ordersPage.modals.labelWarning.toastTitleSuccess', { defaultValue: 'Etiqueta lista' }), description: t('chinese.ordersPage.modals.labelWarning.downloaded', { defaultValue: 'Etiqueta generada' }) });
+    } catch (e) {
       console.error(e);
-  toast({ title: t('chinese.ordersPage.modals.labelWarning.toastTitleError', { defaultValue: 'Error generando' }), description: t('chinese.ordersPage.modals.labelWarning.downloadError', { defaultValue: 'No se pudo generar la etiqueta' }) });
+      toast({ title: t('chinese.ordersPage.modals.labelWarning.toastTitleError', { defaultValue: 'Error generando' }), description: t('chinese.ordersPage.modals.labelWarning.downloadError', { defaultValue: 'No se pudo generar la etiqueta' }) });
     }
   }
 
@@ -1328,18 +1336,18 @@ export default function PedidosChina() {
       return;
     }
 
-  const supabase = getSupabaseBrowserClient();
-  // Entradas ahora en CNY (¥): convertir a USD para guardar en totalQuote
-  const totalProductosCNY = Number(precioUnitario) * Number(pedido.cantidad || 0);
-  const totalCNY = totalProductosCNY + Number(precioEnvio);
-  const rate = cnyRate && cnyRate > 0 ? cnyRate : 7.25;
-  const totalUSD = totalCNY / rate;
+    const supabase = getSupabaseBrowserClient();
+    // Entradas ahora en CNY (¥): convertir a USD para guardar en totalQuote
+    const totalProductosCNY = Number(precioUnitario) * Number(pedido.cantidad || 0);
+    const totalCNY = totalProductosCNY + Number(precioEnvio);
+    const rate = cnyRate && cnyRate > 0 ? cnyRate : 7.25;
+    const totalUSD = totalCNY / rate;
 
     // 1) Actualizar totalQuote en la tabla orders (sin cambiar estado aquí)
     const { error: updateError } = await supabase
       .from('orders')
-      .update({ 
-        totalQuote: totalUSD, 
+      .update({
+        totalQuote: totalUSD,
         unitQuote: precioUnitario,
         shippingPrice: precioEnvio,
         height: altura,
@@ -1365,7 +1373,7 @@ export default function PedidosChina() {
     }
 
     // Actualizar estado local y cerrar modal (sin PDF)
-  setPedidos(prev => prev.map(p => p.id === pedido.id ? { ...p, cotizado: true, estado: 'cotizado', precio: precioUnitario, totalQuote: totalUSD, numericState: 3 } : p));
+    setPedidos(prev => prev.map(p => p.id === pedido.id ? { ...p, cotizado: true, estado: 'cotizado', precio: precioUnitario, totalQuote: totalUSD, numericState: 3 } : p));
     setModalCotizar({ open: false });
     setIsModalCotizarClosing(false);
   };  // getStatusColor/Text ya no se usan; sustituido por getOrderBadge basado en estado numérico
@@ -1380,43 +1388,43 @@ export default function PedidosChina() {
     }
     try {
       const supabase = getSupabaseBrowserClient();
-      
+
       // Encontrar el pedido actual para obtener su shippingType
       const pedidoActual = pedidos.find(p => p.id === pedidoId);
       if (!pedidoActual) {
         toast({ title: t('chinese.ordersPage.toasts.orderNotFoundTitle'), description: t('chinese.ordersPage.toasts.orderNotFoundDesc') });
         return;
       }
-      
+
       // Verificar shippingType de pedidos existentes en la caja
       const { data: existingOrders, error: fetchError } = await supabase
         .from('orders')
         .select('shippingType')
         .eq('box_id', boxId);
-      
+
       if (fetchError) {
         console.error('Error obteniendo pedidos existentes:', fetchError);
         toast({ title: t('chinese.ordersPage.toasts.fetchErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgain') });
         return;
       }
-      
+
       // Obtener tipos de envío únicos de pedidos existentes
       const existingShippingTypes = existingOrders?.map(o => o.shippingType).filter(st => st && st.trim() !== '') || [];
       const uniqueShippingTypes = Array.from(new Set(existingShippingTypes));
-      
+
       // Verificar reglas de shippingType
       if (uniqueShippingTypes.length > 1) {
         // Hay diferentes shippingTypes en la caja
         toast({ title: t('chinese.ordersPage.toasts.shippingTypeMismatchTitle'), description: t('chinese.ordersPage.toasts.shippingTypeMultipleDesc') });
         return;
       }
-      
+
       if (uniqueShippingTypes.length === 1 && uniqueShippingTypes[0] !== pedidoActual.shippingType) {
         // El shippingType del pedido no coincide con el de la caja
         toast({ title: t('chinese.ordersPage.toasts.shippingTypeMismatchTitle'), description: t('chinese.ordersPage.toasts.shippingTypeMismatchDesc') });
         return;
       }
-      
+
       // No permitir empaquetar en cajas enviadas o contenedores enviados
       const boxStateNumCheck = (box.state ?? 1) as number;
       if (boxStateNumCheck >= 3) {
@@ -1445,14 +1453,14 @@ export default function PedidosChina() {
         .from('orders')
         .update({ box_id: boxId, state: nextOrderState })
         .eq('id', pedidoId);
-  if (error) {
-    console.error('Error asignando caja:', error);
-    toast({ title: t('chinese.ordersPage.toasts.assignBoxErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgain') });
+      if (error) {
+        console.error('Error asignando caja:', error);
+        toast({ title: t('chinese.ordersPage.toasts.assignBoxErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgain') });
         return;
       }
-  toast({ title: t('chinese.ordersPage.toasts.orderAssignedTitle'), description: t('chinese.ordersPage.toasts.orderAssignedDesc', { orderId: pedidoId, boxId: boxId }) });
-  // Reflejar inmediatamente en UI que el pedido pasó a estado 6
-  setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, numericState: nextOrderState } : p));
+      toast({ title: t('chinese.ordersPage.toasts.orderAssignedTitle'), description: t('chinese.ordersPage.toasts.orderAssignedDesc', { orderId: pedidoId, boxId: boxId }) });
+      // Reflejar inmediatamente en UI que el pedido pasó a estado 6
+      setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, numericState: nextOrderState } : p));
 
       // Incrementar conteo local de pedidos por caja en la lista principal
       setOrderCountsByBoxMain(prev => ({
@@ -1475,7 +1483,7 @@ export default function PedidosChina() {
       closeModalEmpaquetar();
     } catch (e) {
       console.error(e);
-  toast({ title: t('chinese.ordersPage.toasts.unexpectedErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgainLater') });
+      toast({ title: t('chinese.ordersPage.toasts.unexpectedErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgainLater') });
     }
   };
 
@@ -1538,7 +1546,7 @@ export default function PedidosChina() {
         toast({ title: t('chinese.ordersPage.toasts.unassignErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgain') });
         return;
       }
-  toast({ title: t('chinese.ordersPage.toasts.orderUnassignedTitle'), description: t('chinese.ordersPage.toasts.orderUnassignedDesc', { orderId: pedidoId }) });
+      toast({ title: t('chinese.ordersPage.toasts.orderUnassignedTitle'), description: t('chinese.ordersPage.toasts.orderUnassignedDesc', { orderId: pedidoId }) });
       // Actualizar UI: estado del pedido
       setPedidos(prev => prev.map(p => p.id === pedidoId ? { ...p, numericState: 5 } : p));
       // Ajustar conteo local de la caja en vistas principales
@@ -1558,7 +1566,7 @@ export default function PedidosChina() {
       }
     } catch (e) {
       console.error(e);
-  toast({ title: t('chinese.ordersPage.toasts.unexpectedErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgainLater') });
+      toast({ title: t('chinese.ordersPage.toasts.unexpectedErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgainLater') });
     }
   };
 
@@ -1584,13 +1592,12 @@ export default function PedidosChina() {
         onMobileMenuClose={() => setIsMobileMenuOpen(false)}
         userRole="china"
       />
-      
+
       <main
-        className={`flex-1 transition-all duration-300 px-2 sm:px-4 lg:px-6 ${
-          sidebarExpanded ? 'lg:ml-72' : 'lg:ml-24'
-        }`}
+        className={`flex-1 transition-all duration-300 px-2 sm:px-4 lg:px-6 ${sidebarExpanded ? 'lg:ml-72' : 'lg:ml-24'
+          }`}
       >
-        <Header 
+        <Header
           notifications={unreadCount || 0}
           onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           title={t('chinese.ordersPage.title')}
@@ -1603,8 +1610,8 @@ export default function PedidosChina() {
           notificationsRole="china"
           notificationsUserId={chinaId}
         />
-        
-  <div className="p-4 md:p-5 lg:p-6 space-y-6 max-w-7xl mx-auto w-full">
+
+        <div className="p-4 md:p-5 lg:p-6 space-y-6 max-w-7xl mx-auto w-full">
           {/* Estadísticas en tarjetas (como Venezuela) */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             <Card className="bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200 dark:from-yellow-900/20 dark:to-orange-900/20 dark:border-yellow-700">
@@ -1676,11 +1683,11 @@ export default function PedidosChina() {
                 <span
                   className="absolute top-1 bottom-1 rounded-md bg-slate-900/95 dark:bg-slate-200 transition-all duration-300 ease-out shadow-sm"
                   style={{
-                    left: `${(['pedidos','cajas','contenedores'] as const).indexOf(activeTab) * (100/3)}%`,
+                    left: `${(['pedidos', 'cajas', 'contenedores'] as const).indexOf(activeTab) * (100 / 3)}%`,
                     width: 'calc((100% - 0.25rem * 2) / 3)' // gap-1 => 0.25rem
                   }}
                 />
-                {(['pedidos','cajas','contenedores'] as const).map(tab => (
+                {(['pedidos', 'cajas', 'contenedores'] as const).map(tab => (
                   <button
                     key={tab}
                     type="button"
@@ -1772,349 +1779,367 @@ export default function PedidosChina() {
               </div>
             </CardHeader>
             <CardContent>
-          {activeTab === 'pedidos' && (
-              <>
-                <div className="space-y-4">
-                  {pedidosFiltrados.map((pedido) => (
-                    <div
-                      key={pedido.id}
-                      className={`flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 justify-between p-4 rounded-xl ${mounted && theme === 'dark' ? 'bg-gradient-to-r from-slate-800 to-slate-700 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200'} border hover:shadow-md transition-all duration-300`}
-                    >
-                      {/* Columna izquierda */}
-                      <div className="flex items-start sm:items-center gap-4 flex-1 min-w-0">
-                        <div className={`p-3 rounded-lg shrink-0 ${mounted && theme === 'dark' ? 'bg-blue-900/30' : 'bg-blue-100'}`}>
-                          <Package className={`h-5 w-5 ${mounted && theme === 'dark' ? 'text-blue-300' : 'text-blue-600'}`} />
-                        </div>
-                        <div className="space-y-1 w-full min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h3 className={`font-semibold text-sm sm:text-base ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>#ORD-{pedido.id}</h3>
-                            {/* Badge estado principal: forzamos 'Pendiente' explícito para state 2 */}
-                            {pedido.numericState === 2 ? (
-                              <Badge className={`hidden sm:inline-block border ${mounted && theme === 'dark' ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700' : 'bg-yellow-100 text-yellow-800 border-yellow-200'}`}>{t('chinese.ordersPage.filters.pending')}</Badge>
-                            ) : (
-                              <Badge className={`hidden sm:inline-block ${getOrderBadge(pedido.numericState).className}`}>{getOrderBadge(pedido.numericState).label}</Badge>
+              {activeTab === 'pedidos' && (
+                <>
+                  <div className="space-y-4">
+                    {pedidosFiltrados.map((pedido) => (
+                      <div
+                        key={pedido.id}
+                        className={`flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 justify-between p-4 rounded-xl ${mounted && theme === 'dark' ? 'bg-gradient-to-r from-slate-800 to-slate-700 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200'} border hover:shadow-md transition-all duration-300`}
+                      >
+                        {/* Columna izquierda */}
+                        <div className="flex items-start sm:items-center gap-4 flex-1 min-w-0">
+                          <div className={`p-3 rounded-lg shrink-0 ${mounted && theme === 'dark' ? 'bg-blue-900/30' : 'bg-blue-100'}`}>
+                            <Package className={`h-5 w-5 ${mounted && theme === 'dark' ? 'text-blue-300' : 'text-blue-600'}`} />
+                          </div>
+                          <div className="space-y-1 w-full min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3 className={`font-semibold text-sm sm:text-base ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>#ORD-{pedido.id}</h3>
+                              {/* Badge estado principal: forzamos 'Pendiente' explícito para state 2 */}
+                              {pedido.numericState === 2 ? (
+                                <Badge className={`hidden sm:inline-block border ${mounted && theme === 'dark' ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700' : 'bg-yellow-100 text-yellow-800 border-yellow-200'}`}>{t('chinese.ordersPage.filters.pending')}</Badge>
+                              ) : (
+                                <Badge className={`hidden sm:inline-block ${getOrderBadge(pedido.numericState).className}`}>{getOrderBadge(pedido.numericState).label}</Badge>
+                              )}
+                            </div>
+                            <p className={`text-xs sm:text-sm truncate max-w-full ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{pedido.producto}</p>
+                            <div className={`flex flex-wrap gap-x-4 gap-y-1 text-[11px] sm:text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                              <span className="flex items-center gap-1 min-w-[110px]">
+                                <User className="h-3 w-3" /> {pedido.cliente}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Tag className="h-3 w-3" /> {t('chinese.ordersPage.orders.qtyShort')}: {pedido.cantidad}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" /> {new Date(pedido.fecha).toLocaleDateString('es-ES')}
+                              </span>
+                            </div>
+                            {pedido.precio && (
+                              <div className="sm:hidden mt-1 text-[11px] text-green-700 font-medium">
+                                <PriceDisplayWithCNY
+                                  amount={pedido.precio}
+                                  currency="USD"
+                                  variant="inline"
+                                  className="inline mr-2"
+                                />
+                                · Total:
+                                <PriceDisplayWithCNY
+                                  amount={pedido.precio}
+                                  currency="USD"
+                                  variant="inline"
+                                  className="inline ml-1"
+                                />
+                              </div>
                             )}
                           </div>
-                          <p className={`text-xs sm:text-sm truncate max-w-full ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{pedido.producto}</p>
-                          <div className={`flex flex-wrap gap-x-4 gap-y-1 text-[11px] sm:text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                            <span className="flex items-center gap-1 min-w-[110px]">
-                              <User className="h-3 w-3" /> {pedido.cliente}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Tag className="h-3 w-3" /> {t('chinese.ordersPage.orders.qtyShort')}: {pedido.cantidad}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" /> {new Date(pedido.fecha).toLocaleDateString('es-ES')}
-                            </span>
-                          </div>
+                        </div>
+                        {/* Columna derecha / acciones */}
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
                           {pedido.precio && (
-                            <div className="sm:hidden mt-1 text-[11px] text-green-700 font-medium">
-                              <PriceDisplayWithCNY 
-                                amount={pedido.precio} 
-                                currency="USD"
-                                variant="inline"
-                                className="inline mr-2"
-                              />
-                              · Total:
+                            <div className="hidden sm:block text-right space-y-1">
                               <PriceDisplayWithCNY
                                 amount={pedido.precio}
                                 currency="USD"
                                 variant="inline"
-                                className="inline ml-1"
+                                className="text-sm font-semibold text-green-600"
                               />
+                              <div className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                Total: <PriceDisplayWithCNY
+                                  amount={pedido.precio}
+                                  currency="USD"
+                                  variant="inline"
+                                  className="text-xs"
+                                />
+                              </div>
                             </div>
                           )}
-                        </div>
-                      </div>
-                      {/* Columna derecha / acciones */}
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
-                        <div className="hidden sm:block">
-                          {pedido.numericState === 2 ? (
-                            <Badge className={`border ${mounted && theme === 'dark' ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700' : 'bg-yellow-100 text-yellow-800 border-yellow-200'}`}>{t('chinese.ordersPage.filters.pending')}</Badge>
-                          ) : (
-                            <Badge className={`${getOrderBadge(pedido.numericState).className}`}>{getOrderBadge(pedido.numericState).label}</Badge>
-                          )}
-                        </div>
-                        {pedido.precio && (
-                          <div className="hidden sm:block text-right space-y-1">
-                            <PriceDisplayWithCNY 
-                              amount={pedido.precio} 
-                              currency="USD"
-                              variant="inline"
-                              className="text-sm font-semibold text-green-600"
-                            />
-                            <div className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                              Total: <PriceDisplayWithCNY
-                                amount={pedido.precio}
-                                currency="USD"
-                                variant="inline"
-                                className="text-xs"
-                              />
-                            </div>
-                          </div>
-                        )}
-                        <div className="flex w-full sm:w-auto flex-wrap items-center gap-2 justify-end sm:justify-end">
-                          {pedido.estado === 'enviado' && (pedido.numericState ?? 0) < 6 && (
-                            <Button
-                              size="sm"
-                              className="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700"
-                              onClick={() => {
-                                setModalEmpaquetar({ open: true, pedidoId: pedido.id });
-                                if (boxes.length === 0) fetchBoxes();
-                              }}
-                            >
-                              <Boxes className="h-4 w-4" />
-                              <span className="hidden sm:inline">{t('chinese.ordersPage.orders.pack')}</span>
-                            </Button>
-                          )}
-                          {pedido.estado === 'enviado' && (pedido.numericState ?? 0) >= 6 && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex items-center gap-1 text-amber-700 border-amber-300 hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                              disabled={(pedido.numericState ?? 0) >= 9}
-                              onClick={() => {
-                                if ((pedido.numericState ?? 0) >= 9) return;
-                                handleUnpackOrder(pedido.id);
-                              }}
-                            >
-                              <span className="hidden sm:inline">{t('chinese.ordersPage.orders.unpack')}</span>
-                              <Boxes className="h-4 w-4 sm:hidden" aria-label="Desempaquetar" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              if (pedido.pdfRoutes) {
-                                const bust = pedido.pdfRoutes.includes('?') ? `&t=${Date.now()}` : `?t=${Date.now()}`;
-                                window.open(pedido.pdfRoutes + bust, '_blank', 'noopener,noreferrer');
-                              } else {
-                                alert('No hay PDF disponible para este pedido.');
-                              }
-                            }}
-                            className="flex items-center gap-1"
-                          >
-                            <Eye className="h-4 w-4" />
-                            <span className="hidden sm:inline">{t('chinese.ordersPage.orders.view')}</span>
-                          </Button>
-                          {pedido.estado === 'pendiente' && (!pedido.numericState || pedido.numericState < 9) ? (
-                            <Button
-                              onClick={() => setModalCotizar({ 
-                                open: true, 
-                                pedido,
-                                precioUnitario: pedido.unitQuote || 0,
-                                precioEnvio: pedido.shippingPrice || 0,
-                                altura: pedido.height || 0,
-                                anchura: pedido.width || 0,
-                                largo: pedido.long || 0,
-                                peso: pedido.weight || 0,
-                                precioUnitarioInput: (pedido.unitQuote || 0).toString(),
-                                precioEnvioInput: (pedido.shippingPrice || 0).toString(),
-                                alturaInput: (pedido.height || 0).toString(),
-                                anchuraInput: (pedido.width || 0).toString(),
-                                largoInput: (pedido.long || 0).toString(),
-                                pesoInput: (pedido.weight || 0).toString(),
-                              })}
-                              size="sm"
-                              className="flex items-center gap-1 bg-orange-600 hover:bg-orange-700"
-                            >
-                              <Calculator className="h-4 w-4" />
-                              <span className="hidden sm:inline">{t('chinese.ordersPage.orders.quote')}</span>
-                            </Button>
-                          ) : pedido.estado !== 'pendiente' && (!pedido.numericState || pedido.numericState < 9) ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setModalCotizar({ 
-                                open: true, 
-                                pedido,
-                                precioUnitario: pedido.unitQuote || 0,
-                                precioEnvio: pedido.shippingPrice || 0,
-                                altura: pedido.height || 0,
-                                anchura: pedido.width || 0,
-                                largo: pedido.long || 0,
-                                peso: pedido.weight || 0,
-                                precioUnitarioInput: (pedido.unitQuote || 0).toString(),
-                                precioEnvioInput: (pedido.shippingPrice || 0).toString(),
-                                alturaInput: (pedido.height || 0).toString(),
-                                anchuraInput: (pedido.width || 0).toString(),
-                                largoInput: (pedido.long || 0).toString(),
-                                pesoInput: (pedido.weight || 0).toString(),
-                              })}
-                              className="flex items-center gap-1"
-                            >
-                              <Pencil className="h-4 w-4" />
-                              <span className="hidden sm:inline">{t('chinese.ordersPage.orders.editQuote')}</span>
-                            </Button>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {pedidosFiltrados.length === 0 && (
-                    <div className="text-center py-12">
-                    <Package className={`h-12 w-12 mx-auto mb-4 ${mounted && theme === 'dark' ? 'text-slate-600' : 'text-slate-400'}`} />
-                    <h3 className={`text-lg font-medium mb-2 ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.orders.notFoundTitle')}</h3>
-                    <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}>{t('chinese.ordersPage.orders.notFoundSubtitle')}</p>
-                    </div>
-                  )}
-                </div>
-              </>
-          )}
-
-          {activeTab === 'cajas' && (
-              <>
-                {boxes.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Boxes className={`h-12 w-12 mx-auto mb-4 ${mounted && theme === 'dark' ? 'text-slate-600' : 'text-slate-400'}`} />
-                    <h3 className={`text-lg font-medium mb-2 ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.boxes.noneTitle')}</h3>
-                    <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}>{t('chinese.ordersPage.boxes.noneSubtitle')}</p>
-                  </div>
-                ) : cajasFiltradas.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Boxes className={`h-12 w-12 mx-auto mb-4 ${mounted && theme === 'dark' ? 'text-slate-600' : 'text-slate-400'}`} />
-                    <h3 className={`text-lg font-medium mb-2 ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.boxes.notFoundTitle')}</h3>
-                    <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}>{t('chinese.ordersPage.boxes.notFoundSubtitle')}</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {cajasFiltradas.map((box, idx) => {
-                      const id = box.boxes_id ?? box.id ?? box.box_id ?? idx;
-                      const boxKey = box.box_id ?? box.boxes_id ?? box.id ?? id;
-                      const created = box.creation_date ?? box.created_at ?? '';
-                      const stateNum = (box.state ?? 1) as number;
-                      return (
-                      <div key={`${id}`} className={`flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 justify-between p-4 rounded-xl ${mounted && theme === 'dark' ? 'bg-gradient-to-r from-slate-800 to-slate-700 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200'} border hover:shadow-md transition-all duration-300`}>
-                        <div className="flex items-start sm:items-center gap-4 flex-1 min-w-0">
-                          <div className={`p-3 rounded-lg shrink-0 ${mounted && theme === 'dark' ? 'bg-indigo-900/30' : 'bg-indigo-100'}`}>
-                            <Boxes className={`h-5 w-5 ${mounted && theme === 'dark' ? 'text-indigo-300' : 'text-indigo-600'}`} />
-                          </div>
-                          <div className="space-y-1 w-full min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h3 className={`font-semibold text-sm sm:text-base ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>#BOX-{id}</h3>
-                              {box?.name && (
-                                <span className={`text-xs sm:text-sm truncate max-w-full ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{String((box as any).name)}</span>
-                              )}
-                              <Badge className={`hidden sm:inline-block ${getBoxBadge(stateNum).className}`}>{getBoxBadge(stateNum).label}</Badge>
-                            </div>
-                            <div className={`flex flex-wrap gap-x-4 gap-y-1 text-[11px] sm:text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                              <span className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" /> {created ? new Date(created).toLocaleString('es-ES') : '—'}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <List className="h-3 w-3" /> {t('chinese.ordersPage.boxes.ordersCount')} {orderCountsByBoxMain[boxKey as any] ?? 0}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex w-full sm:w-auto flex-wrap items-center gap-2 sm:gap-3 justify-end sm:justify-end">
-                          <div className="sm:hidden">
-                            <Badge className={`${getBoxBadge(stateNum).className}`}>{getBoxBadge(stateNum).label}</Badge>
-                          </div>
-              {stateNum === 1 && (
-                            airOnlyBoxes.has(boxKey) ? (
-                              // Botón "Enviar" para cajas con solo pedidos aéreos
+                          <div className="flex w-full sm:w-auto flex-wrap items-center gap-2 justify-end sm:justify-end">
+                            {pedido.estado === 'enviado' && (pedido.numericState ?? 0) < 6 && (
                               <Button
                                 size="sm"
-                                className="flex items-center gap-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                disabled={(orderCountsByBoxMain[boxKey as any] ?? 0) <= 0}
+                                className="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700"
                                 onClick={() => {
-                                  const currentBoxId = box.box_id ?? box.boxes_id ?? box.id;
-                                  if (currentBoxId !== undefined) {
-                                    handleSendBoxDirectly(currentBoxId);
-                                  }
-                                }}
-                              >
-                                <Truck className="h-4 w-4" />
-                                <span className="hidden sm:inline">{t('chinese.ordersPage.boxes.send')}</span>
-                              </Button>
-                            ) : (
-                              // Botón "Empaquetar" para cajas normales
-                              <Button
-                                size="sm"
-                                className="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                disabled={(orderCountsByBoxMain[boxKey as any] ?? 0) <= 0}
-                                onClick={() => {
-                                  const currentBoxId = box.box_id ?? box.boxes_id ?? box.id;
-                                  setModalEmpaquetarCaja({ open: true, boxId: currentBoxId });
-                                  if (containers.length === 0) fetchContainers();
+                                  setModalEmpaquetar({ open: true, pedidoId: pedido.id });
+                                  if (boxes.length === 0) fetchBoxes();
                                 }}
                               >
                                 <Boxes className="h-4 w-4" />
-                                <span className="hidden sm:inline">{t('chinese.ordersPage.boxes.pack')}</span>
+                                <span className="hidden sm:inline">{t('chinese.ordersPage.orders.pack')}</span>
                               </Button>
-                            )
-                          )}
-                          {stateNum === 2 && (
+                            )}
+                            {pedido.estado === 'enviado' && (pedido.numericState ?? 0) >= 6 && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-1 text-amber-700 border-amber-300 hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={(pedido.numericState ?? 0) >= 9}
+                                onClick={() => {
+                                  if ((pedido.numericState ?? 0) >= 9) return;
+                                  handleUnpackOrder(pedido.id);
+                                }}
+                              >
+                                <span className="hidden sm:inline">{t('chinese.ordersPage.orders.unpack')}</span>
+                                <Boxes className="h-4 w-4 sm:hidden" aria-label="Desempaquetar" />
+                              </Button>
+                            )}
                             <Button
                               variant="outline"
                               size="sm"
-                              className="flex items-center gap-1 text-amber-700 border-amber-300 hover:bg-amber-50"
                               onClick={() => {
-                                const currentBoxId = box.box_id ?? box.boxes_id ?? box.id;
-                                if (currentBoxId !== undefined) {
-                                  handleUnpackBox(currentBoxId as any);
+                                if (pedido.pdfRoutes) {
+                                  const bust = pedido.pdfRoutes.includes('?') ? `&t=${Date.now()}` : `?t=${Date.now()}`;
+                                  window.open(pedido.pdfRoutes + bust, '_blank', 'noopener,noreferrer');
+                                } else {
+                                  alert('No hay PDF disponible para este pedido.');
                                 }
                               }}
+                              className="flex items-center gap-1"
                             >
-                              <span className="hidden sm:inline">{t('chinese.ordersPage.boxes.unpack')}</span>
-                              <Boxes className="h-4 w-4 sm:hidden" aria-label="Desempaquetar" />
+                              <Eye className="h-4 w-4" />
+                              <span className="hidden sm:inline">{t('chinese.ordersPage.orders.view')}</span>
                             </Button>
-                          )}
-                          {stateNum >= 3 && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex items-center gap-1 text-amber-700 border-amber-300 hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                              disabled
-                            >
-                              <span className="hidden sm:inline">{t('chinese.ordersPage.boxes.unpack')}</span>
-                              <Boxes className="h-4 w-4 sm:hidden" aria-label="Desempaquetar" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex items-center gap-1"
-                            onClick={() => {
-                              const boxId = box.box_id ?? box.boxes_id ?? box.id;
-                              setModalVerPedidos({ open: true, boxId });
-                              if (boxId !== undefined) fetchOrdersByBoxId(boxId);
-                            }}
-                          >
-                            <List className="h-4 w-4" />
-                            <span className="hidden sm:inline">{t('chinese.ordersPage.boxes.viewOrders')}</span>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex items-center gap-1 text-red-600 border-red-300 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                            disabled={(box.state ?? 1) >= 3}
-                            onClick={() => {
-                              const st = (box.state ?? 1) as number;
-                              if (st >= 3) {
-                                toast({ title: t('chinese.ordersPage.toasts.notAllowedTitle'), description: t('chinese.ordersPage.toasts.deleteShippedBoxDesc') });
-                                return;
+                            {pedido.estado === 'pendiente' && (() => {
+                              console.log('[DEBUG China Page] Pedido:', pedido.id, 'estado:', pedido.estado, 'numericState:', pedido.numericState);
+
+                              if (pedido.hasAlternative) {
+                                return (
+                                  <Badge className="bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700">
+                                    Alternativa Enviada
+                                  </Badge>
+                                );
                               }
-                              setModalEliminarCaja({ open: true, box });
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span className="hidden sm:inline">{t('chinese.ordersPage.boxes.delete')}</span>
-                          </Button>
+
+                              return (!pedido.numericState || pedido.numericState < 9) ? (
+                                <>
+                                  <Button
+                                    onClick={() => setModalCotizar({
+                                      open: true,
+                                      pedido,
+                                      precioUnitario: pedido.unitQuote || 0,
+                                      precioEnvio: pedido.shippingPrice || 0,
+                                      altura: pedido.height || 0,
+                                      anchura: pedido.width || 0,
+                                      largo: pedido.long || 0,
+                                      peso: pedido.weight || 0,
+                                      precioUnitarioInput: (pedido.unitQuote || 0).toString(),
+                                      precioEnvioInput: (pedido.shippingPrice || 0).toString(),
+                                      alturaInput: (pedido.height || 0).toString(),
+                                      anchuraInput: (pedido.width || 0).toString(),
+                                      largoInput: (pedido.long || 0).toString(),
+                                      pesoInput: (pedido.weight || 0).toString(),
+                                    })}
+                                    size="sm"
+                                    className="flex items-center gap-1 bg-orange-600 hover:bg-orange-700"
+                                  >
+                                    <Calculator className="h-4 w-4" />
+                                    <span className="hidden sm:inline">{t('chinese.ordersPage.orders.quote')}</span>
+                                  </Button>
+                                  <Button
+                                    onClick={() => setModalPropAlternativa({ open: true, pedido })}
+                                    size="sm"
+                                    className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700"
+                                    title="Proponer alternativa"
+                                  >
+                                    <Send className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Alternativa</span>
+                                  </Button>
+                                </>
+                              ) : null;
+                            })()}
+                            {pedido.estado !== 'pendiente' && (!pedido.numericState || pedido.numericState < 9) ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setModalCotizar({
+                                  open: true,
+                                  pedido,
+                                  precioUnitario: pedido.unitQuote || 0,
+                                  precioEnvio: pedido.shippingPrice || 0,
+                                  altura: pedido.height || 0,
+                                  anchura: pedido.width || 0,
+                                  largo: pedido.long || 0,
+                                  peso: pedido.weight || 0,
+                                  precioUnitarioInput: (pedido.unitQuote || 0).toString(),
+                                  precioEnvioInput: (pedido.shippingPrice || 0).toString(),
+                                  alturaInput: (pedido.height || 0).toString(),
+                                  anchuraInput: (pedido.width || 0).toString(),
+                                  largoInput: (pedido.long || 0).toString(),
+                                  pesoInput: (pedido.weight || 0).toString(),
+                                })}
+                                className="flex items-center gap-1"
+                              >
+                                <Pencil className="h-4 w-4" />
+                                <span className="hidden sm:inline">{t('chinese.ordersPage.orders.editQuote')}</span>
+                              </Button>
+                            ) : null}
+                          </div>
                         </div>
                       </div>
-                    );})}
+                    ))}
+                    {pedidosFiltrados.length === 0 && (
+                      <div className="text-center py-12">
+                        <Package className={`h-12 w-12 mx-auto mb-4 ${mounted && theme === 'dark' ? 'text-slate-600' : 'text-slate-400'}`} />
+                        <h3 className={`text-lg font-medium mb-2 ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.orders.notFoundTitle')}</h3>
+                        <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}>{t('chinese.ordersPage.orders.notFoundSubtitle')}</p>
+                      </div>
+                    )}
                   </div>
-                )}
-                {boxesLoading && (
-                  <p className={`text-center text-sm mt-4 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{t('chinese.ordersPage.boxes.loading')}</p>
-                )}
-              </>
-          )}
-          {activeTab === 'contenedores' && (
-              <>
+                </>
+              )}
+
+              {activeTab === 'cajas' && (
+                <>
+                  {boxes.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Boxes className={`h-12 w-12 mx-auto mb-4 ${mounted && theme === 'dark' ? 'text-slate-600' : 'text-slate-400'}`} />
+                      <h3 className={`text-lg font-medium mb-2 ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.boxes.noneTitle')}</h3>
+                      <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}>{t('chinese.ordersPage.boxes.noneSubtitle')}</p>
+                    </div>
+                  ) : cajasFiltradas.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Boxes className={`h-12 w-12 mx-auto mb-4 ${mounted && theme === 'dark' ? 'text-slate-600' : 'text-slate-400'}`} />
+                      <h3 className={`text-lg font-medium mb-2 ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.boxes.notFoundTitle')}</h3>
+                      <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}>{t('chinese.ordersPage.boxes.notFoundSubtitle')}</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {cajasFiltradas.map((box, idx) => {
+                        const id = box.boxes_id ?? box.id ?? box.box_id ?? idx;
+                        const boxKey = box.box_id ?? box.boxes_id ?? box.id ?? id;
+                        const created = box.creation_date ?? box.created_at ?? '';
+                        const stateNum = (box.state ?? 1) as number;
+                        return (
+                          <div key={`${id}`} className={`flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 justify-between p-4 rounded-xl ${mounted && theme === 'dark' ? 'bg-gradient-to-r from-slate-800 to-slate-700 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200'} border hover:shadow-md transition-all duration-300`}>
+                            <div className="flex items-start sm:items-center gap-4 flex-1 min-w-0">
+                              <div className={`p-3 rounded-lg shrink-0 ${mounted && theme === 'dark' ? 'bg-indigo-900/30' : 'bg-indigo-100'}`}>
+                                <Boxes className={`h-5 w-5 ${mounted && theme === 'dark' ? 'text-indigo-300' : 'text-indigo-600'}`} />
+                              </div>
+                              <div className="space-y-1 w-full min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <h3 className={`font-semibold text-sm sm:text-base ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>#BOX-{id}</h3>
+                                  {box?.name && (
+                                    <span className={`text-xs sm:text-sm truncate max-w-full ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{String((box as any).name)}</span>
+                                  )}
+                                  <Badge className={`hidden sm:inline-block ${getBoxBadge(stateNum).className}`}>{getBoxBadge(stateNum).label}</Badge>
+                                </div>
+                                <div className={`flex flex-wrap gap-x-4 gap-y-1 text-[11px] sm:text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" /> {created ? new Date(created).toLocaleString('es-ES') : '—'}
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <List className="h-3 w-3" /> {t('chinese.ordersPage.boxes.ordersCount')} {orderCountsByBoxMain[boxKey as any] ?? 0}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex w-full sm:w-auto flex-wrap items-center gap-2 sm:gap-3 justify-end sm:justify-end">
+                              <div className="sm:hidden">
+                                <Badge className={`${getBoxBadge(stateNum).className}`}>{getBoxBadge(stateNum).label}</Badge>
+                              </div>
+                              {stateNum === 1 && (
+                                airOnlyBoxes.has(boxKey) ? (
+                                  // Botón "Enviar" para cajas con solo pedidos aéreos
+                                  <Button
+                                    size="sm"
+                                    className="flex items-center gap-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled={(orderCountsByBoxMain[boxKey as any] ?? 0) <= 0}
+                                    onClick={() => {
+                                      const currentBoxId = box.box_id ?? box.boxes_id ?? box.id;
+                                      if (currentBoxId !== undefined) {
+                                        handleSendBoxDirectly(currentBoxId);
+                                      }
+                                    }}
+                                  >
+                                    <Truck className="h-4 w-4" />
+                                    <span className="hidden sm:inline">{t('chinese.ordersPage.boxes.send')}</span>
+                                  </Button>
+                                ) : (
+                                  // Botón "Empaquetar" para cajas normales
+                                  <Button
+                                    size="sm"
+                                    className="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled={(orderCountsByBoxMain[boxKey as any] ?? 0) <= 0}
+                                    onClick={() => {
+                                      const currentBoxId = box.box_id ?? box.boxes_id ?? box.id;
+                                      setModalEmpaquetarCaja({ open: true, boxId: currentBoxId });
+                                      if (containers.length === 0) fetchContainers();
+                                    }}
+                                  >
+                                    <Boxes className="h-4 w-4" />
+                                    <span className="hidden sm:inline">{t('chinese.ordersPage.boxes.pack')}</span>
+                                  </Button>
+                                )
+                              )}
+                              {stateNum === 2 && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex items-center gap-1 text-amber-700 border-amber-300 hover:bg-amber-50"
+                                  onClick={() => {
+                                    const currentBoxId = box.box_id ?? box.boxes_id ?? box.id;
+                                    if (currentBoxId !== undefined) {
+                                      handleUnpackBox(currentBoxId as any);
+                                    }
+                                  }}
+                                >
+                                  <span className="hidden sm:inline">{t('chinese.ordersPage.boxes.unpack')}</span>
+                                  <Boxes className="h-4 w-4 sm:hidden" aria-label="Desempaquetar" />
+                                </Button>
+                              )}
+                              {stateNum >= 3 && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex items-center gap-1 text-amber-700 border-amber-300 hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  disabled
+                                >
+                                  <span className="hidden sm:inline">{t('chinese.ordersPage.boxes.unpack')}</span>
+                                  <Boxes className="h-4 w-4 sm:hidden" aria-label="Desempaquetar" />
+                                </Button>
+                              )}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-1"
+                                onClick={() => {
+                                  const boxId = box.box_id ?? box.boxes_id ?? box.id;
+                                  setModalVerPedidos({ open: true, boxId });
+                                  if (boxId !== undefined) fetchOrdersByBoxId(boxId);
+                                }}
+                              >
+                                <List className="h-4 w-4" />
+                                <span className="hidden sm:inline">{t('chinese.ordersPage.boxes.viewOrders')}</span>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-1 text-red-600 border-red-300 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={(box.state ?? 1) >= 3}
+                                onClick={() => {
+                                  const st = (box.state ?? 1) as number;
+                                  if (st >= 3) {
+                                    toast({ title: t('chinese.ordersPage.toasts.notAllowedTitle'), description: t('chinese.ordersPage.toasts.deleteShippedBoxDesc') });
+                                    return;
+                                  }
+                                  setModalEliminarCaja({ open: true, box });
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                <span className="hidden sm:inline">{t('chinese.ordersPage.boxes.delete')}</span>
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {boxesLoading && (
+                    <p className={`text-center text-sm mt-4 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{t('chinese.ordersPage.boxes.loading')}</p>
+                  )}
+                </>
+              )}
+              {activeTab === 'contenedores' && (
+                <>
                   {containers.length === 0 ? (
                     <div className="text-center py-12">
                       <Boxes className={`h-12 w-12 mx-auto mb-4 ${mounted && theme === 'dark' ? 'text-slate-600' : 'text-slate-400'}`} />
@@ -2122,10 +2147,10 @@ export default function PedidosChina() {
                       <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}>{t('chinese.ordersPage.containers.noneSubtitle')}</p>
                     </div>
                   ) : containers.filter((c, idx) => {
-                      if (!filtroContenedor) return true;
-                      const id = c.container_id ?? c.containers_id ?? c.id ?? idx;
-                      return String(id).toLowerCase().includes(filtroContenedor.toLowerCase());
-                    }).length === 0 ? (
+                    if (!filtroContenedor) return true;
+                    const id = c.container_id ?? c.containers_id ?? c.id ?? idx;
+                    return String(id).toLowerCase().includes(filtroContenedor.toLowerCase());
+                  }).length === 0 ? (
                     <div className="text-center py-12">
                       <Boxes className={`h-12 w-12 mx-auto mb-4 ${mounted && theme === 'dark' ? 'text-slate-600' : 'text-slate-400'}`} />
                       <h3 className={`text-lg font-medium mb-2 ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.containers.notFoundTitle')}</h3>
@@ -2224,8 +2249,8 @@ export default function PedidosChina() {
                   {containersLoading && (
                     <p className="text-center text-sm text-slate-500 mt-4">{t('chinese.ordersPage.containers.loading')}</p>
                   )}
-              </>
-          )}
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -2235,11 +2260,10 @@ export default function PedidosChina() {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
             <div
               ref={modalEnviarContenedorRef}
-              className={`${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 max-w-md mx-4 w-full transition-all duration-300 ${
-                isModalEnviarContenedorClosing
-                  ? 'translate-y-full scale-95 opacity-0'
-                  : 'animate-in slide-in-from-bottom-4 duration-300'
-              }`}
+              className={`${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 max-w-md mx-4 w-full transition-all duration-300 ${isModalEnviarContenedorClosing
+                ? 'translate-y-full scale-95 opacity-0'
+                : 'animate-in slide-in-from-bottom-4 duration-300'
+                }`}
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className={`text-lg font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.modals.sendContainer.title')}</h3>
@@ -2301,7 +2325,7 @@ export default function PedidosChina() {
                   <label className={`block text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('chinese.ordersPage.modals.sendContainer.trackingNumber')}</label>
                   <Input
                     value={sendTrackingNumber}
-                    onChange={(e) => setSendTrackingNumber(e.target.value.slice(0,50))}
+                    onChange={(e) => setSendTrackingNumber(e.target.value.slice(0, 50))}
                     placeholder={t('chinese.ordersPage.modals.sendContainer.trackingNumberPlaceholder')}
                     maxLength={50}
                     required
@@ -2312,7 +2336,7 @@ export default function PedidosChina() {
                   <label className={`block text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('chinese.ordersPage.modals.sendContainer.courierCompany')}</label>
                   <Input
                     value={sendCourierCompany}
-                    onChange={(e) => setSendCourierCompany(e.target.value.slice(0,50))}
+                    onChange={(e) => setSendCourierCompany(e.target.value.slice(0, 50))}
                     placeholder={t('chinese.ordersPage.modals.sendContainer.courierCompanyPlaceholder')}
                     maxLength={50}
                     required
@@ -2349,27 +2373,26 @@ export default function PedidosChina() {
           </div>
         )}
 
-                 {/* Modal Cotizar */}
-         {modalCotizar.open && (
-           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
-             <div 
-               ref={modalCotizarRef}
-               className={`${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 max-w-2xl mx-4 w-full max-h-[90vh] overflow-y-auto transition-all duration-300 ${
-                 isModalCotizarClosing 
-                   ? 'translate-y-full scale-95 opacity-0' 
-                   : 'animate-in slide-in-from-bottom-4 duration-300'
-               }`}
-             >
+        {/* Modal Cotizar */}
+        {modalCotizar.open && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
+            <div
+              ref={modalCotizarRef}
+              className={`${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 max-w-2xl mx-4 w-full max-h-[90vh] overflow-y-auto transition-all duration-300 ${isModalCotizarClosing
+                ? 'translate-y-full scale-95 opacity-0'
+                : 'animate-in slide-in-from-bottom-4 duration-300'
+                }`}
+            >
               <div className="flex items-center justify-between mb-6">
                 <h3 className={`text-xl font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.modals.quote.title')}</h3>
-                                 <Button
-                   variant="ghost"
-                   size="sm"
-                   onClick={closeModalCotizar}
-                   className={`h-8 w-8 p-0 ${mounted && theme === 'dark' ? 'hover:bg-slate-700' : ''}`}
-                 >
-                   <span className={`text-2xl ${mounted && theme === 'dark' ? 'text-white' : ''}`}>×</span>
-                 </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={closeModalCotizar}
+                  className={`h-8 w-8 p-0 ${mounted && theme === 'dark' ? 'hover:bg-slate-700' : ''}`}
+                >
+                  <span className={`text-2xl ${mounted && theme === 'dark' ? 'text-white' : ''}`}>×</span>
+                </Button>
               </div>
               <form onSubmit={e => {
                 e.preventDefault();
@@ -2409,30 +2432,30 @@ export default function PedidosChina() {
                 </div>
                 <div className="space-y-2">
                   <label className={`block text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('chinese.ordersPage.modals.quote.unitPriceLabel')}</label>
-                                    <div className="relative">
-                                     <span className={`absolute left-3 top-3 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>¥</span>
-                      <input
-                        type="text"
-                        name="precio"
-                        inputMode="decimal"
-                        required
-                        value={modalCotizar.precioUnitarioInput ?? ''}
-                        className={`w-full pl-8 pr-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${modalCotizar.precioUnitario && modalCotizar.precioUnitario>0 ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
-                        placeholder={t('chinese.ordersPage.modals.quote.unitPricePlaceholder')}
-               onChange={e => {
-                 // Aceptar coma o punto como separador decimal y permitir punto final temporal
-                 let raw = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
-                 const parts = raw.split('.');
-                 let intPart = (parts[0] || '').slice(0, 7);
-                 let decPart = (parts[1] || '').slice(0, 2);
-                 // Reconstruir permitiendo punto aunque no haya decimales aún
-                 const cleaned = parts.length > 1 ? `${intPart}.${decPart}` : intPart;
-                 const numero = cleaned === '' || cleaned === '.' ? 0 : Number(cleaned);
-                 setModalCotizar(prev => ({ ...prev, precioUnitario: numero, precioUnitarioInput: cleaned }));
-               }}
-                      />
-                     <p className={`mt-1 text-xs ${modalCotizar.precioUnitario && modalCotizar.precioUnitario>0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.precioUnitario && modalCotizar.precioUnitario>0 ? 'Máx 7 dígitos enteros' : 'Ingresa un precio mayor a 0'}</p>
-                   </div>
+                  <div className="relative">
+                    <span className={`absolute left-3 top-3 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>¥</span>
+                    <input
+                      type="text"
+                      name="precio"
+                      inputMode="decimal"
+                      required
+                      value={modalCotizar.precioUnitarioInput ?? ''}
+                      className={`w-full pl-8 pr-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${modalCotizar.precioUnitario && modalCotizar.precioUnitario > 0 ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
+                      placeholder={t('chinese.ordersPage.modals.quote.unitPricePlaceholder')}
+                      onChange={e => {
+                        // Aceptar coma o punto como separador decimal y permitir punto final temporal
+                        let raw = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
+                        const parts = raw.split('.');
+                        let intPart = (parts[0] || '').slice(0, 7);
+                        let decPart = (parts[1] || '').slice(0, 2);
+                        // Reconstruir permitiendo punto aunque no haya decimales aún
+                        const cleaned = parts.length > 1 ? `${intPart}.${decPart}` : intPart;
+                        const numero = cleaned === '' || cleaned === '.' ? 0 : Number(cleaned);
+                        setModalCotizar(prev => ({ ...prev, precioUnitario: numero, precioUnitarioInput: cleaned }));
+                      }}
+                    />
+                    <p className={`mt-1 text-xs ${modalCotizar.precioUnitario && modalCotizar.precioUnitario > 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.precioUnitario && modalCotizar.precioUnitario > 0 ? 'Máx 7 dígitos enteros' : 'Ingresa un precio mayor a 0'}</p>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <label className={`block text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('chinese.ordersPage.modals.quote.shippingPriceLabel')}</label>
@@ -2446,16 +2469,16 @@ export default function PedidosChina() {
                       value={modalCotizar.precioEnvioInput ?? ''}
                       className={`w-full pl-8 pr-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${modalCotizar.precioEnvio !== undefined && modalCotizar.precioEnvio >= 0 ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
                       placeholder={t('chinese.ordersPage.modals.quote.shippingPricePlaceholder')}
-                onChange={e => {
-                // Aceptar coma o punto como separador decimal y permitir punto final temporal
-                let raw = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
-                const parts = raw.split('.');
-                let intPart = (parts[0] || '').slice(0, 7);
-                let decPart = (parts[1] || '').slice(0, 2);
-                const cleaned = parts.length > 1 ? `${intPart}.${decPart}` : intPart;
-                const numero = cleaned === '' || cleaned === '.' ? 0 : Number(cleaned);
-                setModalCotizar(prev => ({ ...prev, precioEnvio: numero, precioEnvioInput: cleaned }));
-                }}
+                      onChange={e => {
+                        // Aceptar coma o punto como separador decimal y permitir punto final temporal
+                        let raw = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
+                        const parts = raw.split('.');
+                        let intPart = (parts[0] || '').slice(0, 7);
+                        let decPart = (parts[1] || '').slice(0, 2);
+                        const cleaned = parts.length > 1 ? `${intPart}.${decPart}` : intPart;
+                        const numero = cleaned === '' || cleaned === '.' ? 0 : Number(cleaned);
+                        setModalCotizar(prev => ({ ...prev, precioEnvio: numero, precioEnvioInput: cleaned }));
+                      }}
                     />
                     <p className={`mt-1 text-xs ${modalCotizar.precioEnvio !== undefined && modalCotizar.precioEnvio >= 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.precioEnvio !== undefined && modalCotizar.precioEnvio >= 0 ? 'Máx 7 dígitos enteros' : 'Ingresa un precio válido'}</p>
                   </div>
@@ -2472,16 +2495,16 @@ export default function PedidosChina() {
                         value={modalCotizar.alturaInput ?? ''}
                         className={`w-full pr-12 pl-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${modalCotizar.altura && modalCotizar.altura > 0 ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
                         placeholder={t('chinese.ordersPage.modals.quote.heightPlaceholder')}
-                         onChange={e => {
-                           // Aceptar coma o punto como separador decimal y permitir punto final temporal
-                           let raw = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
-                           const parts = raw.split('.');
-                           let intPart = (parts[0] || '').slice(0, 7);
-                           let decPart = (parts[1] || '').slice(0, 1);
-                           const cleaned = parts.length > 1 ? `${intPart}.${decPart}` : intPart;
-                           const numero = cleaned === '' || cleaned === '.' ? 0 : Number(cleaned);
-                           setModalCotizar(prev => ({ ...prev, altura: numero, alturaInput: cleaned }));
-                         }}
+                        onChange={e => {
+                          // Aceptar coma o punto como separador decimal y permitir punto final temporal
+                          let raw = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
+                          const parts = raw.split('.');
+                          let intPart = (parts[0] || '').slice(0, 7);
+                          let decPart = (parts[1] || '').slice(0, 1);
+                          const cleaned = parts.length > 1 ? `${intPart}.${decPart}` : intPart;
+                          const numero = cleaned === '' || cleaned === '.' ? 0 : Number(cleaned);
+                          setModalCotizar(prev => ({ ...prev, altura: numero, alturaInput: cleaned }));
+                        }}
                       />
                       <span className={`absolute right-3 top-3 text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>cm</span>
                       <p className={`mt-1 text-xs ${modalCotizar.altura && modalCotizar.altura > 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.altura && modalCotizar.altura > 0 ? 'Máx 7 dígitos enteros' : 'Ingresa una altura mayor a 0'}</p>
@@ -2498,16 +2521,16 @@ export default function PedidosChina() {
                         value={modalCotizar.anchuraInput ?? ''}
                         className={`w-full pr-12 pl-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${modalCotizar.anchura && modalCotizar.anchura > 0 ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
                         placeholder={t('chinese.ordersPage.modals.quote.widthPlaceholder')}
-                         onChange={e => {
-                           // Aceptar coma o punto como separador decimal y permitir punto final temporal
-                           let raw = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
-                           const parts = raw.split('.');
-                           let intPart = (parts[0] || '').slice(0, 7);
-                           let decPart = (parts[1] || '').slice(0, 1);
-                           const cleaned = parts.length > 1 ? `${intPart}.${decPart}` : intPart;
-                           const numero = cleaned === '' || cleaned === '.' ? 0 : Number(cleaned);
-                           setModalCotizar(prev => ({ ...prev, anchura: numero, anchuraInput: cleaned }));
-                         }}
+                        onChange={e => {
+                          // Aceptar coma o punto como separador decimal y permitir punto final temporal
+                          let raw = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
+                          const parts = raw.split('.');
+                          let intPart = (parts[0] || '').slice(0, 7);
+                          let decPart = (parts[1] || '').slice(0, 1);
+                          const cleaned = parts.length > 1 ? `${intPart}.${decPart}` : intPart;
+                          const numero = cleaned === '' || cleaned === '.' ? 0 : Number(cleaned);
+                          setModalCotizar(prev => ({ ...prev, anchura: numero, anchuraInput: cleaned }));
+                        }}
                       />
                       <span className={`absolute right-3 top-3 text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>cm</span>
                       <p className={`mt-1 text-xs ${modalCotizar.anchura && modalCotizar.anchura > 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.anchura && modalCotizar.anchura > 0 ? 'Máx 7 dígitos enteros' : 'Ingresa una anchura mayor a 0'}</p>
@@ -2524,16 +2547,16 @@ export default function PedidosChina() {
                         value={modalCotizar.largoInput ?? ''}
                         className={`w-full pr-12 pl-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${modalCotizar.largo && modalCotizar.largo > 0 ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
                         placeholder={t('chinese.ordersPage.modals.quote.lengthPlaceholder')}
-                         onChange={e => {
-                           // Aceptar coma o punto como separador decimal y permitir punto final temporal
-                           let raw = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
-                           const parts = raw.split('.');
-                           let intPart = (parts[0] || '').slice(0, 7);
-                           let decPart = (parts[1] || '').slice(0, 1);
-                           const cleaned = parts.length > 1 ? `${intPart}.${decPart}` : intPart;
-                           const numero = cleaned === '' || cleaned === '.' ? 0 : Number(cleaned);
-                           setModalCotizar(prev => ({ ...prev, largo: numero, largoInput: cleaned }));
-                         }}
+                        onChange={e => {
+                          // Aceptar coma o punto como separador decimal y permitir punto final temporal
+                          let raw = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
+                          const parts = raw.split('.');
+                          let intPart = (parts[0] || '').slice(0, 7);
+                          let decPart = (parts[1] || '').slice(0, 1);
+                          const cleaned = parts.length > 1 ? `${intPart}.${decPart}` : intPart;
+                          const numero = cleaned === '' || cleaned === '.' ? 0 : Number(cleaned);
+                          setModalCotizar(prev => ({ ...prev, largo: numero, largoInput: cleaned }));
+                        }}
                       />
                       <span className={`absolute right-3 top-3 text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>cm</span>
                       <p className={`mt-1 text-xs ${modalCotizar.largo && modalCotizar.largo > 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.largo && modalCotizar.largo > 0 ? 'Máx 7 dígitos enteros' : 'Ingresa un largo mayor a 0'}</p>
@@ -2551,16 +2574,16 @@ export default function PedidosChina() {
                       value={modalCotizar.pesoInput ?? ''}
                       className={`w-full pr-12 pl-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${modalCotizar.peso && modalCotizar.peso > 0 ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
                       placeholder={t('chinese.ordersPage.modals.quote.weightPlaceholder')}
-                onChange={e => {
-                // Aceptar coma o punto como separador decimal y permitir punto final temporal
-                let raw = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
-                const parts = raw.split('.');
-                let intPart = (parts[0] || '').slice(0, 7);
-                let decPart = (parts[1] || '').slice(0, 1);
-                const cleaned = parts.length > 1 ? `${intPart}.${decPart}` : intPart;
-                const numero = cleaned === '' || cleaned === '.' ? 0 : Number(cleaned);
-                setModalCotizar(prev => ({ ...prev, peso: numero, pesoInput: cleaned }));
-                }}
+                      onChange={e => {
+                        // Aceptar coma o punto como separador decimal y permitir punto final temporal
+                        let raw = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
+                        const parts = raw.split('.');
+                        let intPart = (parts[0] || '').slice(0, 7);
+                        let decPart = (parts[1] || '').slice(0, 1);
+                        const cleaned = parts.length > 1 ? `${intPart}.${decPart}` : intPart;
+                        const numero = cleaned === '' || cleaned === '.' ? 0 : Number(cleaned);
+                        setModalCotizar(prev => ({ ...prev, peso: numero, pesoInput: cleaned }));
+                      }}
                     />
                     <span className={`absolute right-3 top-3 text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>kg</span>
                     <p className={`mt-1 text-xs ${modalCotizar.peso && modalCotizar.peso > 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.peso && modalCotizar.peso > 0 ? 'Máx 7 dígitos enteros' : 'Ingresa un peso mayor a 0'}</p>
@@ -2596,11 +2619,11 @@ export default function PedidosChina() {
                   <Button
                     type="submit"
                     disabled={!(modalCotizar.precioUnitario && modalCotizar.precioUnitario > 0 && String(Math.trunc(modalCotizar.precioUnitario)).length <= 7 &&
-                               modalCotizar.precioEnvio !== undefined && modalCotizar.precioEnvio >= 0 &&
-                               modalCotizar.altura && modalCotizar.altura > 0 &&
-                               modalCotizar.anchura && modalCotizar.anchura > 0 &&
-                               modalCotizar.largo && modalCotizar.largo > 0 &&
-                               modalCotizar.peso && modalCotizar.peso > 0)}
+                      modalCotizar.precioEnvio !== undefined && modalCotizar.precioEnvio >= 0 &&
+                      modalCotizar.altura && modalCotizar.altura > 0 &&
+                      modalCotizar.anchura && modalCotizar.anchura > 0 &&
+                      modalCotizar.largo && modalCotizar.largo > 0 &&
+                      modalCotizar.peso && modalCotizar.peso > 0)}
                     className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {t('chinese.ordersPage.modals.quote.sendQuote')}
@@ -2616,9 +2639,8 @@ export default function PedidosChina() {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
             <div
               ref={modalEmpaquetarCajaRef}
-              className={`${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 max-w-2xl mx-4 w-full max-h-[85vh] overflow-y-auto transition-all duration-300 ${
-                isModalEmpaquetarCajaClosing ? 'translate-y-full scale-95 opacity-0' : 'animate-in slide-in-from-bottom-4 duration-300'
-              }`}
+              className={`${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 max-w-2xl mx-4 w-full max-h-[85vh] overflow-y-auto transition-all duration-300 ${isModalEmpaquetarCajaClosing ? 'translate-y-full scale-95 opacity-0' : 'animate-in slide-in-from-bottom-4 duration-300'
+                }`}
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className={`text-lg font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.modals.selectContainerForBox.title', { id: String(modalEmpaquetarCaja.boxId ?? '') })}</h3>
@@ -2687,11 +2709,10 @@ export default function PedidosChina() {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
             <div
               ref={modalCrearContenedorRef}
-              className={`bg-white rounded-2xl p-6 max-w-md mx-4 w-full transition-all duration-300 ${
-                isModalCrearContenedorClosing
-                  ? 'translate-y-full scale-95 opacity-0'
-                  : 'animate-in slide-in-from-bottom-4 duration-300'
-              }`}
+              className={`bg-white rounded-2xl p-6 max-w-md mx-4 w-full transition-all duration-300 ${isModalCrearContenedorClosing
+                ? 'translate-y-full scale-95 opacity-0'
+                : 'animate-in slide-in-from-bottom-4 duration-300'
+                }`}
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-slate-900">{t('chinese.ordersPage.modals.createContainer.title')}</h3>
@@ -2715,7 +2736,7 @@ export default function PedidosChina() {
                   placeholder={t('chinese.ordersPage.modals.createContainer.containerNamePlaceholder', { defaultValue: 'Ej. CONT-Agosto-01' })}
                   value={newContainerName}
                   maxLength={50}
-                  onChange={(e) => setNewContainerName(e.target.value.slice(0,50))}
+                  onChange={(e) => setNewContainerName(e.target.value.slice(0, 50))}
                   required
                 />
               </div>
@@ -2734,9 +2755,8 @@ export default function PedidosChina() {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
             <div
               ref={modalVerPedidosContRef}
-              className={`${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 max-w-3xl mx-4 w-full max-h-[90vh] overflow-y-auto transition-all duration-300 ${
-                isModalVerPedidosContClosing ? 'translate-y-full scale-95 opacity-0' : 'animate-in slide-in-from-bottom-4 duration-300'
-              }`}
+              className={`${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 max-w-3xl mx-4 w-full max-h-[90vh] overflow-y-auto transition-all duration-300 ${isModalVerPedidosContClosing ? 'translate-y-full scale-95 opacity-0' : 'animate-in slide-in-from-bottom-4 duration-300'
+                }`}
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className={`text-lg font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.modals.containerBoxes.title', { id: String(modalVerPedidosCont.containerId ?? '') })}</h3>
@@ -2844,11 +2864,10 @@ export default function PedidosChina() {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
             <div
               ref={modalEliminarContenedorRef}
-              className={`bg-white rounded-2xl p-6 max-w-md mx-4 w-full transition-all duration-300 ${
-                isModalEliminarContenedorClosing
-                  ? 'translate-y-full scale-95 opacity-0'
-                  : 'animate-in slide-in-from-bottom-4 duration-300'
-              }`}
+              className={`bg-white rounded-2xl p-6 max-w-md mx-4 w-full transition-all duration-300 ${isModalEliminarContenedorClosing
+                ? 'translate-y-full scale-95 opacity-0'
+                : 'animate-in slide-in-from-bottom-4 duration-300'
+                }`}
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-slate-900">{t('chinese.ordersPage.modals.deleteContainer.title')}</h3>
@@ -2899,11 +2918,11 @@ export default function PedidosChina() {
             </div>
           </div>
         )}
-                 {/* Modal Detalle desactivado: ahora el botón "Ver" abre el PDF en una nueva pestaña */}
-         {false && modalDetalle.open && (
-           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
-             {/* Modal Detalle comentado intencionalmente para reuso futuro */}
-           </div>
+        {/* Modal Detalle desactivado: ahora el botón "Ver" abre el PDF en una nueva pestaña */}
+        {false && modalDetalle.open && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
+            {/* Modal Detalle comentado intencionalmente para reuso futuro */}
+          </div>
         )}
 
         {/* Modal Crear Caja */}
@@ -2911,11 +2930,10 @@ export default function PedidosChina() {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
             <div
               ref={modalCrearCajaRef}
-              className={`bg-white rounded-2xl p-6 max-w-md mx-4 w-full transition-all duration-300 ${
-                isModalCrearCajaClosing
-                  ? 'translate-y-full scale-95 opacity-0'
-                  : 'animate-in slide-in-from-bottom-4 duration-300'
-              }`}
+              className={`bg-white rounded-2xl p-6 max-w-md mx-4 w-full transition-all duration-300 ${isModalCrearCajaClosing
+                ? 'translate-y-full scale-95 opacity-0'
+                : 'animate-in slide-in-from-bottom-4 duration-300'
+                }`}
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-slate-900">{t('chinese.ordersPage.modals.createBox.title')}</h3>
@@ -2939,7 +2957,7 @@ export default function PedidosChina() {
                   placeholder={t('chinese.ordersPage.modals.createBox.boxNamePlaceholder', { defaultValue: 'Ej. Electrónica lote A' })}
                   value={newBoxName}
                   maxLength={50}
-                  onChange={(e) => setNewBoxName(e.target.value.slice(0,50))}
+                  onChange={(e) => setNewBoxName(e.target.value.slice(0, 50))}
                   required
                 />
               </div>
@@ -2958,9 +2976,8 @@ export default function PedidosChina() {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
             <div
               ref={modalVerPedidosRef}
-              className={`${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 max-w-3xl mx-4 w-full max-h-[90vh] overflow-y-auto transition-all duration-300 ${
-                isModalVerPedidosClosing ? 'translate-y-full scale-95 opacity-0' : 'animate-in slide-in-from-bottom-4 duration-300'
-              }`}
+              className={`${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 max-w-3xl mx-4 w-full max-h-[90vh] overflow-y-auto transition-all duration-300 ${isModalVerPedidosClosing ? 'translate-y-full scale-95 opacity-0' : 'animate-in slide-in-from-bottom-4 duration-300'
+                }`}
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className={`text-lg font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.modals.boxOrders.title', { id: String(modalVerPedidos.boxId ?? '') })}</h3>
@@ -3039,9 +3056,8 @@ export default function PedidosChina() {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
             <div
               ref={modalEmpaquetarRef}
-              className={`${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 max-w-2xl mx-4 w-full max-h-[85vh] overflow-y-auto transition-all duration-300 ${
-                isModalEmpaquetarClosing ? 'translate-y-full scale-95 opacity-0' : 'animate-in slide-in-from-bottom-4 duration-300'
-              }`}
+              className={`${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 max-w-2xl mx-4 w-full max-h-[85vh] overflow-y-auto transition-all duration-300 ${isModalEmpaquetarClosing ? 'translate-y-full scale-95 opacity-0' : 'animate-in slide-in-from-bottom-4 duration-300'
+                }`}
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className={`text-lg font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.modals.selectBoxForOrder.title', { id: modalEmpaquetar?.pedidoId })}</h3>
@@ -3081,25 +3097,25 @@ export default function PedidosChina() {
                             </div>
                           </div>
                         </div>
-            <div className="flex items-center gap-3">
-              <Badge className={`${getBoxBadge(stateNum).className}`}>{getBoxBadge(stateNum).label}</Badge>
-              <Button
-                size="sm"
-                className="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={stateNum >= 3}
-                // Reemplazado flujo: abrir modal etiqueta en lugar de asignar directamente
-                onClick={() => {
-                  if (modalEmpaquetar?.pedidoId) {
-                    // Guardar combo y abrir modal etiqueta
-                    setModalEtiqueta({ open: true, pedidoId: modalEmpaquetar.pedidoId, box });
-                    // Cerramos modal de selección de caja
-                    closeModalEmpaquetar();
-                  }
-                }}
-              >
-                {t('chinese.ordersPage.modals.selectBoxForOrder.select')}
-              </Button>
-            </div>
+                        <div className="flex items-center gap-3">
+                          <Badge className={`${getBoxBadge(stateNum).className}`}>{getBoxBadge(stateNum).label}</Badge>
+                          <Button
+                            size="sm"
+                            className="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={stateNum >= 3}
+                            // Reemplazado flujo: abrir modal etiqueta en lugar de asignar directamente
+                            onClick={() => {
+                              if (modalEmpaquetar?.pedidoId) {
+                                // Guardar combo y abrir modal etiqueta
+                                setModalEtiqueta({ open: true, pedidoId: modalEmpaquetar.pedidoId, box });
+                                // Cerramos modal de selección de caja
+                                closeModalEmpaquetar();
+                              }
+                            }}
+                          >
+                            {t('chinese.ordersPage.modals.selectBoxForOrder.select')}
+                          </Button>
+                        </div>
                       </div>
                     );
                   })}
@@ -3114,13 +3130,12 @@ export default function PedidosChina() {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
             <div
               ref={modalEtiquetaRef}
-              className={`${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 max-w-md mx-4 w-full transition-all duration-300 ${
-                isModalEtiquetaClosing ? 'translate-y-full scale-95 opacity-0' : 'animate-in slide-in-from-bottom-4 duration-300'
-              }`}
+              className={`${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 max-w-md mx-4 w-full transition-all duration-300 ${isModalEtiquetaClosing ? 'translate-y-full scale-95 opacity-0' : 'animate-in slide-in-from-bottom-4 duration-300'
+                }`}
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className={`text-lg font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.modals.labelWarning.title', { defaultValue: 'Generar Etiqueta' })}</h3>
-                <Button variant="ghost" size="sm" onClick={() => { closeModalEtiqueta(); setTimeout(()=>{ setModalEmpaquetar(prev=> ({...prev, open:true})); },350); }} className={`h-8 w-8 p-0 ${mounted && theme === 'dark' ? 'hover:bg-slate-700' : ''}`}>
+                <Button variant="ghost" size="sm" onClick={() => { closeModalEtiqueta(); setTimeout(() => { setModalEmpaquetar(prev => ({ ...prev, open: true })); }, 350); }} className={`h-8 w-8 p-0 ${mounted && theme === 'dark' ? 'hover:bg-slate-700' : ''}`}>
                   <span className={`text-2xl ${mounted && theme === 'dark' ? 'text-white' : ''}`}>×</span>
                 </Button>
               </div>
@@ -3131,8 +3146,8 @@ export default function PedidosChina() {
                 {/* Botón de generar (abrir en nueva pestaña) sin descarga directa */}
                 <Button
                   variant="outline"
-                  onClick={async ()=>{
-                    if(!modalEtiqueta.pedidoId) return;
+                  onClick={async () => {
+                    if (!modalEtiqueta.pedidoId) return;
                     setGeneratingLabel(true);
                     try { await handleGenerateOrderLabelPdf(modalEtiqueta.pedidoId); } finally { setGeneratingLabel(false); }
                   }}
@@ -3142,7 +3157,7 @@ export default function PedidosChina() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => { closeModalEtiqueta(); setTimeout(()=>{ setModalEmpaquetar(prev=> ({...prev, open:true})); },350); }}
+                  onClick={() => { closeModalEtiqueta(); setTimeout(() => { setModalEmpaquetar(prev => ({ ...prev, open: true })); }, 350); }}
                   disabled={generatingLabel}
                 >
                   {t('chinese.ordersPage.modals.selectBoxForOrder.cancel', { defaultValue: 'Cancelar' })}
@@ -3150,8 +3165,8 @@ export default function PedidosChina() {
                 <Button
                   className="bg-blue-600 hover:bg-blue-700"
                   disabled={generatingLabel}
-                  onClick={async ()=>{
-                    if(!modalEtiqueta.pedidoId || !modalEtiqueta.box) return;
+                  onClick={async () => {
+                    if (!modalEtiqueta.pedidoId || !modalEtiqueta.box) return;
                     setGeneratingLabel(true);
                     try {
                       // Solo asignar sin abrir PDF
@@ -3172,11 +3187,10 @@ export default function PedidosChina() {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
             <div
               ref={modalEliminarCajaRef}
-              className={`bg-white rounded-2xl p-6 max-w-md mx-4 w-full transition-all duration-300 ${
-                isModalEliminarCajaClosing
-                  ? 'translate-y-full scale-95 opacity-0'
-                  : 'animate-in slide-in-from-bottom-4 duration-300'
-              }`}
+              className={`bg-white rounded-2xl p-6 max-w-md mx-4 w-full transition-all duration-300 ${isModalEliminarCajaClosing
+                ? 'translate-y-full scale-95 opacity-0'
+                : 'animate-in slide-in-from-bottom-4 duration-300'
+                }`}
             >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-slate-900">{t('chinese.ordersPage.modals.deleteBox.title')}</h3>
@@ -3229,7 +3243,26 @@ export default function PedidosChina() {
           </div>
         )}
       </main>
-  <Toaster />
+
+      {/* Modal Proponer Alternativa */}
+      <ProposeAlternativeModal
+        isOpen={modalPropAlternativa.open}
+        onClose={() => setModalPropAlternativa({ open: false })}
+        pedido={modalPropAlternativa.pedido ? {
+          id: modalPropAlternativa.pedido.id,
+          producto: modalPropAlternativa.pedido.producto,
+          cliente: modalPropAlternativa.pedido.cliente,
+        } : null}
+        onSuccess={() => {
+          setModalPropAlternativa({ open: false });
+          fetchPedidos(); // Refrescar lista de pedidos
+          toast({
+            title: 'Alternativa propuesta',
+            description: 'La alternativa ha sido enviada al cliente exitosamente.',
+          });
+        }}
+      />
+      <Toaster />
     </div>
   );
 }

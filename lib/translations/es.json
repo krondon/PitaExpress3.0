@@ -2844,6 +2844,7 @@
       },
       "badges": {
         "unknown": "Desconocido",
+        "pending": "Pendiente",
         "quoted": "Cotizado",
         "processing": "Procesando",
         "readyToPack": "Listo para empaquetar",

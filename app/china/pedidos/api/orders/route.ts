@@ -2,19 +2,19 @@ import { createClient } from '@supabase/supabase-js';
 
 function getSupabaseClient() {
   const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_ANON_KEY;
-  
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
   if (!supabaseUrl || !supabaseKey) {
     throw new Error('Missing Supabase environment variables');
   }
-  
+
   return createClient(supabaseUrl, supabaseKey);
 }
 
 // Esta función obtiene los pedidos con el nombre del cliente
 async function getOrdersWithClientName() {
   const supabase = getSupabaseClient();
-  
+
   // Traer pedidos
   const { data: orders, error: ordersError } = await supabase
     .from('orders')
@@ -29,9 +29,19 @@ async function getOrdersWithClientName() {
     .select('user_id, name');
   if (clientsError) throw clientsError;
 
+  // Traer alternativas pendientes
+  const { data: alternatives, error: alternativesError } = await supabase
+    .from('product_alternatives')
+    .select('order_id')
+    .eq('status', 'pending');
+
+  if (alternativesError) console.error('Error fetching alternatives:', alternativesError);
+
   // Join manual en JS
   return orders.map(order => {
     const client = clients.find(c => c.user_id === order.client_id);
+    const hasAlternative = alternatives?.some(a => a.order_id === order.id);
+
     return {
       id: order.id,
       quantity: order.quantity,
@@ -42,9 +52,10 @@ async function getOrdersWithClientName() {
       asignedEChina: order.asignedEChina,
       clientName: client ? client.name : null,
       created_at: order.created_at,
-  specifications: order.description,
-  pdfRoutes: order.pdfRoutes ?? '',
-  totalQuote: order.totalQuote ?? null,
+      specifications: order.description,
+      pdfRoutes: order.pdfRoutes ?? '',
+      totalQuote: order.totalQuote ?? null,
+      hasAlternative: hasAlternative || false,
     };
   });
 }

@@ -30,6 +30,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
+import ReviewAlternativeModal from '@/components/cliente/ReviewAlternativeModal';
+import { useProductAlternatives } from '@/hooks/use-product-alternatives';
 import {
   Package,
   Link,
@@ -54,7 +56,9 @@ import {
   Search,
   Eye,
   Plus,
-  Star
+  Star,
+  XCircle,
+  AlertTriangle
 } from 'lucide-react';
 
 // Rutas de animaciones Lottie (desde /public)
@@ -237,7 +241,7 @@ export default function MisPedidosPage() {
   const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
   const [selectedTrackingOrder, setSelectedTrackingOrder] = useState<TrackingOrder | null>(null);
   const [isTrackingQRModalOpen, setIsTrackingQRModalOpen] = useState(false); // modal separado para QR del tracking link
-  
+
   // Estados para reseñas
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isViewReviewModalOpen, setIsViewReviewModalOpen] = useState(false);
@@ -298,14 +302,14 @@ export default function MisPedidosPage() {
     setCreatingOrder(false);
   };
   const [isLinkHovered, setIsLinkHovered] = useState(false);
-  
+
   // Estados para drag and drop
   const [isDragOver, setIsDragOver] = useState(false);
-  
+
   // Estados para transiciones suaves
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [stepDirection, setStepDirection] = useState<'next' | 'prev'>('next');
-  
+
   // Referencia al modal para scroll
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -315,7 +319,25 @@ export default function MisPedidosPage() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null);
   const [selectedOrderForPayment, setSelectedOrderForPayment] = useState<Order | null>(null);
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
-  
+
+  // Estados para alternativas de productos
+  const [isReviewAlternativeModalOpen, setIsReviewAlternativeModalOpen] = useState(false);
+  const [selectedAlternative, setSelectedAlternative] = useState<any>(null);
+  const [selectedOrderForAlternative, setSelectedOrderForAlternative] = useState<Order | null>(null);
+
+  // Estados para cancelar pedido
+  const [isCancelOrderModalOpen, setIsCancelOrderModalOpen] = useState(false);
+  const [selectedOrderForCancel, setSelectedOrderForCancel] = useState<Order | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancellingOrder, setCancellingOrder] = useState(false);
+
+  // Hook para alternativas de productos
+  const { alternatives, refetch: refetchAlternatives } = useProductAlternatives({
+    clientId: clientId || undefined,
+    status: 'pending',
+    enabled: !!clientId,
+  });
+
   // Estado para tasa de cambio
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [exchangeRateLoading, setExchangeRateLoading] = useState(false);
@@ -323,12 +345,12 @@ export default function MisPedidosPage() {
   // Función para obtener tasa de cambio
   const fetchExchangeRate = useCallback(async () => {
     if (exchangeRate) return; // usar caché si existe
-    
+
     setExchangeRateLoading(true);
     try {
       const response = await fetch('/api/exchange-rate');
       const data = await response.json();
-      
+
       if (data.success && data.rate) {
         setExchangeRate(data.rate);
       } else {
@@ -351,16 +373,16 @@ export default function MisPedidosPage() {
       paymentMethod: paymentMethod?.currency,
       exchangeRate
     });
-    
+
     // Extraer número del string del precio manejando diferentes formatos
     // Formato 1: "$7,049.99" (formato US)
     // Formato 2: "$7.049,99" (formato EU)
     let cleanPrice = priceStr.replace(/[$\s]/g, ''); // quitar $ y espacios
-    
+
     // Detectar formato: si tiene punto seguido de 2 dígitos al final, es formato US
     // Si tiene coma seguida de 2 dígitos al final, es formato EU
     let usdAmount;
-    
+
     if (/\.\d{2}$/.test(cleanPrice)) {
       // Formato US: "$7,049.99" -> "7,049.99"
       cleanPrice = cleanPrice.replace(/,/g, ''); // quitar comas de miles
@@ -375,16 +397,16 @@ export default function MisPedidosPage() {
       cleanPrice = cleanPrice.replace(/[,.]/g, '');
       usdAmount = parseFloat(cleanPrice);
     }
-    
+
     console.log('💰 Price parsing:', {
       original: priceStr,
       cleaned: cleanPrice,
       usdAmount,
       isNaN: isNaN(usdAmount)
     });
-    
+
     if (isNaN(usdAmount)) return priceStr;
-    
+
     // Si es método en Bs y tenemos tasa de cambio, mostrar conversión
     if (paymentMethod?.currency === 'BS' && exchangeRate) {
       const bsAmount = usdAmount * exchangeRate;
@@ -392,17 +414,17 @@ export default function MisPedidosPage() {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       });
-      
+
       console.log('🔄 Conversion calculation:', {
         usdAmount,
         exchangeRate,
         bsAmount,
         formattedBs
       });
-      
+
       return `${priceStr} [${formattedBs} Bs]`;
     }
-    
+
     return priceStr;
   }, [exchangeRate]);
 
@@ -452,9 +474,9 @@ export default function MisPedidosPage() {
   const fetchOrders = async () => {
     if (!clientId) return;
     try {
-  const { data, error } = await supabase
-    .from('orders')
-  .select('id, productName, description, estimatedBudget, totalQuote, unitQuote, shippingPrice, state, created_at, pdfRoutes, quantity, box_id')
+      const { data, error } = await supabase
+        .from('orders')
+        .select('id, productName, description, estimatedBudget, totalQuote, unitQuote, shippingPrice, state, created_at, pdfRoutes, quantity, box_id')
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
       if (error) {
@@ -482,7 +504,7 @@ export default function MisPedidosPage() {
       }
 
       // Fallback: si la API no devolvió nada útil, intentar desde el cliente (puede fallar por RLS)
-    const needsFallback = Object.keys(tnMap).length === 0 && Object.keys(tcMap).length === 0 && Object.keys(adMap).length === 0 && Object.keys(tlMap).length === 0;
+      const needsFallback = Object.keys(tnMap).length === 0 && Object.keys(tcMap).length === 0 && Object.keys(adMap).length === 0 && Object.keys(tlMap).length === 0;
       if (needsFallback && (data || []).length > 0) {
         try {
           const boxIds = (data || [])
@@ -501,7 +523,7 @@ export default function MisPedidosPage() {
           }
 
           const containerIds = Object.values(boxToContainer).filter((v) => v !== null && v !== undefined);
-          type ContainerTrack = { tracking_number?: string | null; tracking_company?: string | null; arrive_date?: string | null; ['arrive-data']?: string | null; tracking_link?: string | null };
+          type ContainerTrack = { tracking_number?: string | null; tracking_company?: string | null; arrive_date?: string | null;['arrive-data']?: string | null; tracking_link?: string | null };
           const containerInfo: Record<string | number, ContainerTrack> = {};
           if (containerIds.length > 0) {
             const { data: containersRows } = await supabase
@@ -570,7 +592,7 @@ export default function MisPedidosPage() {
       setTrackingNumberMap(tnMap);
       setTrackingCompanyMap(tcMap);
       setArriveDateMap(adMap);
-    setTrackingLinkMap(tlMap);
+      setTrackingLinkMap(tlMap);
     } catch (e) {
       console.error('Excepción cargando pedidos:', e);
     }
@@ -608,7 +630,7 @@ export default function MisPedidosPage() {
   }, [clientId, supabase]);
 
   const filteredOrders = orders.filter(order => {
-    const matchesSearch = 
+    const matchesSearch =
       order.product.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.tracking.toLowerCase().includes(searchQuery.toLowerCase());
@@ -661,7 +683,7 @@ export default function MisPedidosPage() {
   // Función para obtener timeline real desde la API
   const fetchOrderTimeline = async (orderId: string): Promise<TrackingOrder['timeline']> => {
     console.log('🔍 fetchOrderTimeline llamado para order:', orderId);
-    
+
     // DESACTIVAR CACHÉ TEMPORALMENTE PARA DEBUG
     // if (timelineData[orderId]) {
     //   console.log('📱 Usando timeline desde caché para order:', orderId);
@@ -679,13 +701,13 @@ export default function MisPedidosPage() {
     try {
       console.log('🌐 Haciendo fetch a /api/orders/' + orderId + '/timeline');
       const response = await fetch(`/api/orders/${orderId}/timeline`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      
+
       console.log('📦 Respuesta del timeline API:', data);
       console.log('🎯 TIMELINE EN RESPUESTA:', data.timeline);
 
@@ -732,7 +754,7 @@ export default function MisPedidosPage() {
   // Construir objeto de tracking a partir de un pedido
   const buildTrackingFromOrder = async (order: Order): Promise<TrackingOrder> => {
     console.log('🏗️ buildTrackingFromOrder llamado para order:', order);
-    
+
     const mapStatus = (s: Order['status']): TrackingOrder['status'] => {
       if (s === 'shipped') return 'in-transit';
       if (s === 'delivered') return 'delivered';
@@ -743,7 +765,7 @@ export default function MisPedidosPage() {
 
     const status = mapStatus(order.status);
     console.log('📊 Status mapeado:', order.status, '->', status);
-    
+
     // Obtener timeline real desde la API
     console.log('🕐 Obteniendo timeline para order ID:', order.id);
     const timeline = await fetchOrderTimeline(order.id);
@@ -761,7 +783,7 @@ export default function MisPedidosPage() {
       carrier: '—',
       timeline,
     };
-    
+
     console.log('🎯 TrackingOrder final construido:', trackingOrder);
     return trackingOrder;
   };
@@ -780,10 +802,10 @@ export default function MisPedidosPage() {
       carrier: '—',
       timeline: generateFallbackTimeline(),
     };
-    
+
     setSelectedTrackingOrder(basicTrackingOrder);
     setIsTrackingModalOpen(true);
-    
+
     // Cargar datos reales en background
     try {
       const realTrackingOrder = await buildTrackingFromOrder(order);
@@ -797,7 +819,7 @@ export default function MisPedidosPage() {
   const closeTrackingModal = () => {
     setIsTrackingModalOpen(false);
     setTimeout(() => setSelectedTrackingOrder(null), 300);
-  setIsTrackingQRModalOpen(false);
+    setIsTrackingQRModalOpen(false);
   };
 
   const getStatusText = (status: string) => {
@@ -951,6 +973,89 @@ export default function MisPedidosPage() {
     }
   };
 
+  // Funciones para manejar alternativas de productos
+  const openReviewAlternativeModal = (order: Order) => {
+    // Buscar alternativa pendiente para este pedido
+    const alternative = alternatives.find(alt => alt.order_id === parseInt(order.id));
+    if (alternative) {
+      setSelectedAlternative(alternative);
+      setSelectedOrderForAlternative(order);
+      setIsReviewAlternativeModalOpen(true);
+    }
+  };
+
+  const closeReviewAlternativeModal = () => {
+    setIsReviewAlternativeModalOpen(false);
+    setSelectedAlternative(null);
+    setSelectedOrderForAlternative(null);
+  };
+
+  const handleAlternativeSuccess = () => {
+    refetchAlternatives();
+    fetchOrders();
+    closeReviewAlternativeModal();
+  };
+
+  // Funciones para cancelar pedido
+  const openCancelOrderModal = (order: Order) => {
+    setSelectedOrderForCancel(order);
+    setIsCancelOrderModalOpen(true);
+  };
+
+  const closeCancelOrderModal = () => {
+    setIsCancelOrderModalOpen(false);
+    setSelectedOrderForCancel(null);
+    setCancelReason('');
+  };
+
+  const handleCancelOrder = async () => {
+    if (!selectedOrderForCancel) return;
+
+    if (!cancelReason.trim()) {
+      toast({
+        title: 'Razón requerida',
+        description: 'Por favor indica por qué deseas cancelar el pedido',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setCancellingOrder(true);
+
+      // Actualizar estado del pedido a cancelado (-2)
+      const response = await fetch(`/api/orders/${selectedOrderForCancel.id}/state`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          state: -2, // Estado cancelado
+          changed_by: 'client',
+          notes: `Cancelado por cliente: ${cancelReason.trim()}`,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al cancelar el pedido');
+      }
+
+      toast({
+        title: 'Pedido cancelado',
+        description: 'Tu pedido ha sido cancelado exitosamente',
+      });
+
+      closeCancelOrderModal();
+      fetchOrders();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'No se pudo cancelar el pedido',
+        variant: 'destructive',
+      });
+    } finally {
+      setCancellingOrder(false);
+    }
+  };
+
   // Cargar reseñas para pedidos completados al 100% cuando tengamos clientId
   useEffect(() => {
     if (!clientId) return;
@@ -1063,7 +1168,7 @@ export default function MisPedidosPage() {
     setPaymentStep(1);
     setSelectedPaymentMethod(null);
     setIsPaymentModalOpen(true);
-    
+
     // Obtener tasa de cambio actualizada cuando se abre el modal
     fetchExchangeRate();
   };
@@ -1093,7 +1198,7 @@ export default function MisPedidosPage() {
     try {
       const rawId = selectedOrderForPayment.id;
       const orderId = isNaN(Number(rawId)) ? rawId : Number(rawId);
-      
+
       // Usar la API del servidor para que se active el trigger y se registre en el historial
       const response = await fetch(`/api/orders/${orderId}/state`, {
         method: 'PUT',
@@ -1108,13 +1213,13 @@ export default function MisPedidosPage() {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok || !data.success) {
         console.error('Error actualizando estado del pedido:', data.error);
         toast({ title: 'Error al confirmar pago', description: data.error || 'Intenta nuevamente.', variant: 'destructive', duration: 5000 });
         return;
       }
-      
+
       // Refrescar pedidos y cerrar modal
       await fetchOrders();
       toast({ title: 'Pago confirmado', description: 'Tu pedido ha sido marcado como pagado y registrado en el historial.', duration: 4000 });
@@ -1163,7 +1268,7 @@ export default function MisPedidosPage() {
     if (currentStep > 1 && !isTransitioning) {
       setStepDirection('prev');
       setIsTransitioning(true);
-      
+
       // Scroll suave hacia arriba del modal con delay para mejor UX
       setTimeout(() => {
         if (modalRef.current) {
@@ -1173,7 +1278,7 @@ export default function MisPedidosPage() {
           });
         }
       }, 150);
-      
+
       setTimeout(() => {
         setCurrentStep(currentStep - 1);
         setIsTransitioning(false);
@@ -1182,17 +1287,17 @@ export default function MisPedidosPage() {
   };
 
   const handleSubmitOrder = () => {
-  // ...existing code...
-  console.log('handleSubmitOrder called', newOrderData);
-  // Generar nombre del PDF con fecha legible dd-mm-yyyy
-  const fechaObj = new Date();
-  const dd = String(fechaObj.getDate()).padStart(2, '0');
-  const mm = String(fechaObj.getMonth() + 1).padStart(2, '0');
-  const yyyy = fechaObj.getFullYear();
-  const fechaPedidoLegible = `${dd}-${mm}-${yyyy}`;
-  // Generaremos el PDF usando el ID real del pedido (tras crear el pedido)
-  let orderIdCreated: string | number | null = null;
-  // Variable antigua nombrePDF eliminada (se generará una versión sanitizada más adelante)
+    // ...existing code...
+    console.log('handleSubmitOrder called', newOrderData);
+    // Generar nombre del PDF con fecha legible dd-mm-yyyy
+    const fechaObj = new Date();
+    const dd = String(fechaObj.getDate()).padStart(2, '0');
+    const mm = String(fechaObj.getMonth() + 1).padStart(2, '0');
+    const yyyy = fechaObj.getFullYear();
+    const fechaPedidoLegible = `${dd}-${mm}-${yyyy}`;
+    // Generaremos el PDF usando el ID real del pedido (tras crear el pedido)
+    let orderIdCreated: string | number | null = null;
+    // Variable antigua nombrePDF eliminada (se generará una versión sanitizada más adelante)
 
     setCreatingOrder(true);
     // Flujo: 1) Crear pedido vía API para obtener su ID. 2) Generar PDF usando ese ID. 3) Subir PDF. 4) PATCH pedido con pdfRoutes.
@@ -1225,7 +1330,7 @@ export default function MisPedidosPage() {
             const j = await createRes.json();
             if (j?.error) errMsg += ` - ${j.error}`;
             if (j?.details) errMsg += ` | ${Array.isArray(j.details) ? j.details.join(', ') : j.details}`;
-          } catch {/* ignore */}
+          } catch {/* ignore */ }
           console.error('Error creando pedido (pre-PDF) vía API:', errMsg, prePayload);
           toast({ title: 'Error creando pedido', description: errMsg, variant: 'destructive', duration: 6000 });
           alert('Error al crear el pedido antes de generar el PDF.\n' + errMsg);
@@ -1334,7 +1439,7 @@ export default function MisPedidosPage() {
         doc.text('ORDER SUMMARY', pageWidth / 2, 22, { align: 'center' });
         doc.setFontSize(10);
         doc.setTextColor(255, 255, 255);
-  doc.text(`Order: #${orderIdCreated}`, pageWidth - margin, 15, { align: 'right' });
+        doc.text(`Order: #${orderIdCreated}`, pageWidth - margin, 15, { align: 'right' });
         doc.text(`Date: ${fechaPedidoLegible}`, pageWidth - margin, 21, { align: 'right' });
 
         let currentY = 50;
@@ -1348,8 +1453,8 @@ export default function MisPedidosPage() {
           doc.setFillColor(240, 240, 240);
           doc.roundedRect(imgX - 2, currentY - 2, imgWidth + 4, imgHeight + 4, 3, 3, 'F');
           doc.setDrawColor(colors.border[0], colors.border[1], colors.border[2]);
-            doc.setLineWidth(1);
-            doc.roundedRect(imgX, currentY, imgWidth, imgHeight, 2, 2, 'D');
+          doc.setLineWidth(1);
+          doc.roundedRect(imgX, currentY, imgWidth, imgHeight, 2, 2, 'D');
           const imgData = await new Promise<string>((resolve) => {
             const reader = new FileReader();
             reader.onload = (e) => resolve(e.target?.result as string);
@@ -1450,7 +1555,7 @@ export default function MisPedidosPage() {
         const safeClient = sanitizeForFile(clientId || newOrderData.client_id);
         const safeDeliveryVzla = sanitizeForFile(newOrderData.deliveryVenezuela);
         const safeDeliveryType = sanitizeForFile(newOrderData.deliveryType);
-  const nombrePDFCorr = `${safeProduct}_${fechaPedidoLegible}_${orderIdCreated}_${safeClient}_${safeDeliveryVzla}.pdf`;
+        const nombrePDFCorr = `${safeProduct}_${fechaPedidoLegible}_${orderIdCreated}_${safeClient}_${safeDeliveryVzla}.pdf`;
         const folder = safeDeliveryType || 'otros';
         const uploadKey = `${folder}/${nombrePDFCorr}`;
 
@@ -1483,10 +1588,10 @@ export default function MisPedidosPage() {
           return;
         }
 
-  const finalKey = uploadResult.data?.path || uploadKey;
-  // Obtener URL pública a través del API de Supabase (más robusto que concatenar)
-  const pdfPublic = supabase.storage.from('orders').getPublicUrl(finalKey);
-  const pdfUrl = pdfPublic?.data?.publicUrl || `https://bgzsodcydkjqehjafbkv.supabase.co/storage/v1/object/public/orders/${finalKey}`;
+        const finalKey = uploadResult.data?.path || uploadKey;
+        // Obtener URL pública a través del API de Supabase (más robusto que concatenar)
+        const pdfPublic = supabase.storage.from('orders').getPublicUrl(finalKey);
+        const pdfUrl = pdfPublic?.data?.publicUrl || `https://bgzsodcydkjqehjafbkv.supabase.co/storage/v1/object/public/orders/${finalKey}`;
         console.log('pdfUrl:', pdfUrl);
 
         // Subir imagen del producto (si existe) al bucket y obtener URL pública
@@ -1561,7 +1666,7 @@ export default function MisPedidosPage() {
             const j = await patchRes.json();
             if (j?.error) errMsg += ` - ${j.error}`;
             if (j?.details) errMsg += ` | ${Array.isArray(j.details) ? j.details.join(', ') : j.details}`;
-          } catch {/* ignore */}
+          } catch {/* ignore */ }
           console.error('Error asociando PDF/recursos a la orden en la BD:', errMsg, { orderIdCreated, pdfUrl, imgs: imageUrls, links: newOrderData.productUrl });
           toast({ title: 'Advertencia', description: 'Pedido creado y PDF subido, pero no se pudo asociar en la base de datos. Intenta nuevamente.', duration: 6000 });
         }
@@ -1612,12 +1717,12 @@ export default function MisPedidosPage() {
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragOver(false);
-    
+
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
       const file = files[0];
       const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
-      
+
       if (!validTypes.includes(file.type)) {
         alert(t('admin.orders.alerts.onlyImages'));
         return;
@@ -1626,7 +1731,7 @@ export default function MisPedidosPage() {
         alert(t('admin.orders.alerts.imageTooLarge', { maxMB: 50 }));
         return;
       }
-      
+
       setNewOrderData({ ...newOrderData, productImage: file });
     }
   };
@@ -1671,8 +1776,8 @@ export default function MisPedidosPage() {
         return true;
       case 2:
         // Ahora sólo requerimos tipo de envío y modalidad/pickup (deliveryVenezuela). El presupuesto estimado es opcional.
-  if (!newOrderData.deliveryType || !newOrderData.deliveryVenezuela) return false;
-  return true;
+        if (!newOrderData.deliveryType || !newOrderData.deliveryVenezuela) return false;
+        return true;
       case 3:
         return true;
       default:
@@ -1705,19 +1810,18 @@ export default function MisPedidosPage() {
 
   return (
     <div className={`min-h-screen flex overflow-x-hidden ${theme === 'dark' ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50'}`}>
-      <Sidebar 
-        isExpanded={sidebarExpanded} 
+      <Sidebar
+        isExpanded={sidebarExpanded}
         setIsExpanded={setSidebarExpanded}
         isMobileMenuOpen={isMobileMenuOpen}
         onMobileMenuClose={() => setIsMobileMenuOpen(false)}
         userRole="client"
       />
-      
-      <main className={`flex-1 transition-all duration-300 ${
-        sidebarExpanded ? 'lg:ml-72 lg:w-[calc(100%-18rem)]' : 'lg:ml-24 lg:w-[calc(100%-6rem)]'
-      }`}>
-        <Header 
-          notifications={unreadCount || 0} 
+
+      <main className={`flex-1 transition-all duration-300 ${sidebarExpanded ? 'lg:ml-72 lg:w-[calc(100%-18rem)]' : 'lg:ml-24 lg:w-[calc(100%-6rem)]'
+        }`}>
+        <Header
+          notifications={unreadCount || 0}
           onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           title={t('client.recentOrders.title')}
           subtitle={t('client.recentOrders.subtitle')}
@@ -1726,7 +1830,7 @@ export default function MisPedidosPage() {
           onItemClick={async (id) => { await markOneAsRead(id); }}
           onOpenNotifications={() => { /* ya estamos en mis-pedidos */ }}
         />
-        
+
         <div className="p-4 md:p-5 lg:p-6 space-y-6 md:space-y-6 lg:space-y-8">
           {/* Header de la página */}
           <div className={`rounded-xl p-4 md:p-6 lg:p-8 text-white relative overflow-hidden ${mounted && theme === 'dark' ? 'bg-gradient-to-r from-blue-900 via-blue-800 to-orange-900' : 'bg-gradient-to-r from-blue-500 via-blue-600 to-orange-500'}`}>
@@ -1738,7 +1842,7 @@ export default function MisPedidosPage() {
                   <p className={`text-sm md:text-base lg:text-lg ${mounted && theme === 'dark' ? 'text-green-200' : 'text-green-100'}`}>{t('client.dashboard.panel')}</p>
                   <p className={`mt-2 text-xs md:text-sm ${mounted && theme === 'dark' ? 'text-green-300' : 'text-green-200'}`}>{t('client.recentOrders.subtitle')}</p>
                 </div>
-                
+
                 <div className="grid grid-cols-2 md:flex md:items-center md:space-x-4 gap-4">
                   <div className="text-center">
                     <div className="text-2xl md:text-3xl lg:text-4xl font-bold">{stats.total}</div>
@@ -1777,16 +1881,15 @@ export default function MisPedidosPage() {
                 </DialogHeader>
 
                 {/* Enhanced Progress Bar */}
-                <div className={`space-y-4 mb-8 transition-all duration-300 ${
-                  isTransitioning ? 'opacity-75' : 'opacity-100'
-                }`}>
+                <div className={`space-y-4 mb-8 transition-all duration-300 ${isTransitioning ? 'opacity-75' : 'opacity-100'
+                  }`}>
                   <div className="flex items-center justify-between text-sm">
                     <span className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('client.recentOrders.newOrder.step', { current: currentStep, total: 3 })}</span>
                     <span className={`font-bold ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>{t('client.recentOrders.newOrder.percentComplete', { percent: Math.round((currentStep / 3) * 100) })}</span>
                   </div>
                   <div className="relative">
                     <div className={`w-full rounded-full h-3 overflow-hidden ${mounted && theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`}>
-                      <div 
+                      <div
                         className="h-full bg-gradient-to-r from-blue-500 to-orange-500 rounded-full transition-all duration-500 ease-out relative"
                         style={{ width: `${(currentStep / 3) * 100}%` }}
                       >
@@ -1797,16 +1900,14 @@ export default function MisPedidosPage() {
                     <div className="flex justify-between mt-2">
                       {[1, 2, 3].map((step) => (
                         <div key={step} className="flex flex-col items-center">
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
-                            step <= currentStep 
-                              ? 'bg-gradient-to-r from-blue-500 to-orange-500 text-white shadow-lg scale-110' 
-                              : (mounted && theme === 'dark' ? 'bg-slate-700 text-slate-400' : 'bg-slate-300 text-slate-600')
-                          }`}>
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${step <= currentStep
+                            ? 'bg-gradient-to-r from-blue-500 to-orange-500 text-white shadow-lg scale-110'
+                            : (mounted && theme === 'dark' ? 'bg-slate-700 text-slate-400' : 'bg-slate-300 text-slate-600')
+                            }`}>
                             {step < currentStep ? '✓' : step}
                           </div>
-                          <span className={`text-xs mt-1 transition-colors duration-300 ${
-                            step <= currentStep ? (mounted && theme === 'dark' ? 'text-blue-400 font-medium' : 'text-blue-600 font-medium') : (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500')
-                          }`}>
+                          <span className={`text-xs mt-1 transition-colors duration-300 ${step <= currentStep ? (mounted && theme === 'dark' ? 'text-blue-400 font-medium' : 'text-blue-600 font-medium') : (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500')
+                            }`}>
                             {step === 1 ? t('client.recentOrders.newOrder.productTab') : step === 2 ? t('client.recentOrders.newOrder.shippingTab') : t('client.recentOrders.newOrder.summaryTab')}
                           </span>
                         </div>
@@ -1815,13 +1916,12 @@ export default function MisPedidosPage() {
                   </div>
                 </div>
 
-                                  {/* Step Content with Smooth Transitions */}
-                  <div className={`space-y-6 transition-all duration-300 ${
-                    isTransitioning 
-                      ? stepDirection === 'next' 
-                        ? 'opacity-0 transform translate-x-4' 
-                        : 'opacity-0 transform -translate-x-4'
-                      : 'opacity-100 transform translate-x-0'
+                {/* Step Content with Smooth Transitions */}
+                <div className={`space-y-6 transition-all duration-300 ${isTransitioning
+                  ? stepDirection === 'next'
+                    ? 'opacity-0 transform translate-x-4'
+                    : 'opacity-0 transform -translate-x-4'
+                  : 'opacity-100 transform translate-x-0'
                   }`}>
                   {/* Enhanced Success Animation */}
                   {showSuccessAnimation && (
@@ -1847,9 +1947,8 @@ export default function MisPedidosPage() {
                   )}
 
                   {/* Enhanced Step Header */}
-                  <div className={`text-center space-y-4 mb-8 transition-all duration-300 ${
-                    isTransitioning ? 'opacity-50 scale-95' : 'opacity-100 scale-100'
-                  }`}>
+                  <div className={`text-center space-y-4 mb-8 transition-all duration-300 ${isTransitioning ? 'opacity-50 scale-95' : 'opacity-100 scale-100'
+                    }`}>
                     <div className="relative">
                       <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-orange-500 rounded-lg blur-lg opacity-10 animate-pulse"></div>
                       <div className={`relative backdrop-blur-sm rounded-lg p-6 border ${mounted && theme === 'dark' ? 'bg-slate-700/80 border-slate-600' : 'bg-white/80 border-slate-200/50'}`}>
@@ -2026,17 +2125,16 @@ export default function MisPedidosPage() {
                         <Label className={mounted && theme === 'dark' ? 'text-slate-300' : ''}>{t('client.recentOrders.newOrder.deliveryType')}</Label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div
-                            className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
-                              mounted && theme === 'dark' ? (
-                                newOrderData.deliveryType === 'air'
-                                  ? 'border-blue-500 bg-blue-900/20'
-                                  : 'border-slate-600 hover:border-slate-500 bg-slate-700'
-                              ) : (
-                                newOrderData.deliveryType === 'air'
-                                  ? 'border-blue-500 bg-blue-50'
-                                  : 'border-slate-200 hover:border-slate-300'
-                              )
-                            }`}
+                            className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${mounted && theme === 'dark' ? (
+                              newOrderData.deliveryType === 'air'
+                                ? 'border-blue-500 bg-blue-900/20'
+                                : 'border-slate-600 hover:border-slate-500 bg-slate-700'
+                            ) : (
+                              newOrderData.deliveryType === 'air'
+                                ? 'border-blue-500 bg-blue-50'
+                                : 'border-slate-200 hover:border-slate-300'
+                            )
+                              }`}
                             onClick={() => setNewOrderData({ ...newOrderData, deliveryType: 'air' })}
                             onMouseEnter={() => setHoveredDeliveryOption('air')}
                             onMouseLeave={() => setHoveredDeliveryOption(null)}
@@ -2056,17 +2154,16 @@ export default function MisPedidosPage() {
                             </div>
                           </div>
                           <div
-                            className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
-                              mounted && theme === 'dark' ? (
-                                newOrderData.deliveryType === 'maritime'
-                                  ? 'border-blue-500 bg-blue-900/20'
-                                  : 'border-slate-600 hover:border-slate-500 bg-slate-700'
-                              ) : (
-                                newOrderData.deliveryType === 'maritime'
-                                  ? 'border-blue-500 bg-blue-50'
-                                  : 'border-slate-200 hover:border-slate-300'
-                              )
-                            }`}
+                            className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${mounted && theme === 'dark' ? (
+                              newOrderData.deliveryType === 'maritime'
+                                ? 'border-blue-500 bg-blue-900/20'
+                                : 'border-slate-600 hover:border-slate-500 bg-slate-700'
+                            ) : (
+                              newOrderData.deliveryType === 'maritime'
+                                ? 'border-blue-500 bg-blue-50'
+                                : 'border-slate-200 hover:border-slate-300'
+                            )
+                              }`}
                             onClick={() => setNewOrderData({ ...newOrderData, deliveryType: 'maritime' })}
                             onMouseEnter={() => setHoveredDeliveryOption('maritime')}
                             onMouseLeave={() => setHoveredDeliveryOption(null)}
@@ -2108,7 +2205,7 @@ export default function MisPedidosPage() {
                     <div className="space-y-6">
                       <div className={`rounded-lg p-6 space-y-4 ${mounted && theme === 'dark' ? 'bg-slate-700' : 'bg-slate-50'}`}>
                         <h4 className={`font-semibold text-lg ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{t('client.recentOrders.newOrder.summaryTitle')}</h4>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <p className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.newOrder.productName')}</p>
@@ -2176,7 +2273,7 @@ export default function MisPedidosPage() {
                       </>
                     )}
                   </Button>
-                  
+
                   <div className="flex justify-center">
                     {currentStep < 3 ? (
                       <Button
@@ -2234,11 +2331,11 @@ export default function MisPedidosPage() {
                 <div className={`text-xl md:text-2xl lg:text-3xl font-bold ${mounted && theme === 'dark' ? 'text-blue-300' : 'text-blue-900'}`}>{stats.total}</div>
                 <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-blue-700'}`}>{t('client.recentOrders.table.id')}</p>
                 <div className={`mt-2 w-full rounded-full h-2 ${mounted && theme === 'dark' ? 'bg-blue-900/50' : 'bg-blue-200'}`}>
-                  <div className={`h-2 rounded-full ${mounted && theme === 'dark' ? 'bg-blue-500' : 'bg-blue-500'}`} style={{width: '100%'}}></div>
+                  <div className={`h-2 rounded-full ${mounted && theme === 'dark' ? 'bg-blue-500' : 'bg-blue-500'}`} style={{ width: '100%' }}></div>
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card className={`hover:shadow-lg transition-all duration-300 group ${mounted && theme === 'dark' ? 'bg-slate-800/70 border-slate-700' : 'bg-orange-50 border-orange-200'}`}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-white' : 'text-orange-800'}`}>{t('client.recentOrders.statuses.pending')}</CardTitle>
@@ -2250,11 +2347,11 @@ export default function MisPedidosPage() {
                 <div className={`text-xl md:text-2xl lg:text-3xl font-bold ${mounted && theme === 'dark' ? 'text-orange-300' : 'text-orange-900'}`}>{stats.pending}</div>
                 <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-orange-700'}`}>{t('client.recentOrders.statuses.pending')}</p>
                 <div className={`mt-2 w-full rounded-full h-2 ${mounted && theme === 'dark' ? 'bg-orange-900/50' : 'bg-orange-200'}`}>
-                  <div className={`h-2 rounded-full ${mounted && theme === 'dark' ? 'bg-orange-500' : 'bg-orange-500'}`} style={{width: `${(stats.pending / stats.total) * 100}%`}}></div>
+                  <div className={`h-2 rounded-full ${mounted && theme === 'dark' ? 'bg-orange-500' : 'bg-orange-500'}`} style={{ width: `${(stats.pending / stats.total) * 100}%` }}></div>
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card className={`hover:shadow-lg transition-all duration-300 group ${mounted && theme === 'dark' ? 'bg-slate-800/70 border-slate-700' : 'bg-blue-50 border-blue-200'}`}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-white' : 'text-blue-800'}`}>{t('client.recentOrders.statuses.processing')}</CardTitle>
@@ -2266,11 +2363,11 @@ export default function MisPedidosPage() {
                 <div className={`text-xl md:text-2xl lg:text-3xl font-bold ${mounted && theme === 'dark' ? 'text-blue-300' : 'text-blue-900'}`}>{stats.processing}</div>
                 <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-blue-700'}`}>{t('client.recentOrders.statuses.processing')}</p>
                 <div className={`mt-2 w-full rounded-full h-2 ${mounted && theme === 'dark' ? 'bg-blue-900/50' : 'bg-blue-200'}`}>
-                  <div className={`h-2 rounded-full ${mounted && theme === 'dark' ? 'bg-blue-500' : 'bg-blue-500'}`} style={{width: `${(stats.processing / stats.total) * 100}%`}}></div>
+                  <div className={`h-2 rounded-full ${mounted && theme === 'dark' ? 'bg-blue-500' : 'bg-blue-500'}`} style={{ width: `${(stats.processing / stats.total) * 100}%` }}></div>
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card className={`hover:shadow-lg transition-all duration-300 group ${mounted && theme === 'dark' ? 'bg-slate-800/70 border-slate-700' : 'bg-orange-50 border-orange-200'}`}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-white' : 'text-orange-800'}`}>{t('client.recentOrders.statuses.shipped')}</CardTitle>
@@ -2282,11 +2379,11 @@ export default function MisPedidosPage() {
                 <div className={`text-xl md:text-2xl lg:text-3xl font-bold ${mounted && theme === 'dark' ? 'text-orange-300' : 'text-orange-900'}`}>{stats.shipped}</div>
                 <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-orange-700'}`}>{t('client.recentOrders.statuses.shipped')}</p>
                 <div className={`mt-2 w-full rounded-full h-2 ${mounted && theme === 'dark' ? 'bg-orange-900/50' : 'bg-orange-200'}`}>
-                  <div className={`h-2 rounded-full ${mounted && theme === 'dark' ? 'bg-orange-500' : 'bg-orange-500'}`} style={{width: `${(stats.shipped / stats.total) * 100}%`}}></div>
+                  <div className={`h-2 rounded-full ${mounted && theme === 'dark' ? 'bg-orange-500' : 'bg-orange-500'}`} style={{ width: `${(stats.shipped / stats.total) * 100}%` }}></div>
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card className={`hover:shadow-lg transition-all duration-300 group ${mounted && theme === 'dark' ? 'bg-slate-800/70 border-slate-700' : 'bg-blue-50 border-blue-200'}`}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-white' : 'text-blue-800'}`}>{t('client.dashboard.totalSpent')}</CardTitle>
@@ -2298,7 +2395,7 @@ export default function MisPedidosPage() {
                 <div className={`text-xl md:text-2xl lg:text-3xl font-bold ${mounted && theme === 'dark' ? 'text-blue-300' : 'text-blue-900'}`}>${stats.totalSpent.toLocaleString()}</div>
                 <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-blue-700'}`}>{t('client.dashboard.totalInvestment')}</p>
                 <div className={`mt-2 w-full rounded-full h-2 ${mounted && theme === 'dark' ? 'bg-blue-900/50' : 'bg-blue-200'}`}>
-                  <div className={`h-2 rounded-full ${mounted && theme === 'dark' ? 'bg-blue-500' : 'bg-blue-500'}`} style={{width: '100%'}}></div>
+                  <div className={`h-2 rounded-full ${mounted && theme === 'dark' ? 'bg-blue-500' : 'bg-blue-500'}`} style={{ width: '100%' }}></div>
                 </div>
               </CardContent>
             </Card>
@@ -2357,48 +2454,47 @@ export default function MisPedidosPage() {
                         </div>
                         {/* Un solo badge basado en stateNum; fallback al badge de status si no hay stateNum */}
                         {typeof order.stateNum === 'number' ? (
-                          <Badge className={`text-xs md:text-sm font-semibold px-3 py-1 transition-colors hover:brightness-110 hover:ring-1 ${
-                            mounted && theme === 'dark' ? (
-                              order.stateNum === -1 ? 'bg-red-900/30 text-red-300 border-red-700 hover:bg-red-900/50 hover:ring-red-500/20' :
+                          <Badge className={`text-xs md:text-sm font-semibold px-3 py-1 transition-colors hover:brightness-110 hover:ring-1 ${mounted && theme === 'dark' ? (
+                            order.stateNum === -1 ? 'bg-red-900/30 text-red-300 border-red-700 hover:bg-red-900/50 hover:ring-red-500/20' :
                               order.stateNum === 13 ? 'bg-emerald-900/30 text-emerald-300 border-emerald-700 hover:bg-emerald-900/50 hover:ring-emerald-500/20' :
-                              order.stateNum === 12 ? 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700 hover:ring-gray-500/20' :
-                              order.stateNum === 11 ? 'bg-green-900/30 text-green-300 border-green-700 hover:bg-green-900/50 hover:ring-green-500/20' :
-                              order.stateNum === 10 ? 'bg-orange-900/30 text-orange-300 border-orange-700 hover:bg-orange-900/50 hover:ring-orange-500/20' :
-                              (order.stateNum === 7 || order.stateNum === 8 || order.stateNum === 9) ? 'bg-cyan-900/30 text-cyan-300 border-cyan-700 hover:bg-cyan-900/50 hover:ring-cyan-500/20' :
-                              order.stateNum === 6 ? 'bg-blue-900/30 text-blue-300 border-blue-700 hover:bg-blue-900/50 hover:ring-blue-500/20' :
-                              order.stateNum === 5 ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700 hover:bg-yellow-900/50 hover:ring-yellow-500/20' :
-                              order.stateNum === 4 ? 'bg-blue-900/30 text-blue-300 border-blue-700 hover:bg-blue-900/50 hover:ring-blue-500/20' :
-                              order.stateNum === 3 ? 'bg-green-900/30 text-green-300 border-green-700 hover:bg-green-900/50 hover:ring-green-500/20' :
-                              order.stateNum === 2 ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700 hover:bg-yellow-900/50 hover:ring-yellow-500/20' :
-                              'bg-yellow-900/30 text-yellow-300 border-yellow-700 hover:bg-yellow-900/50 hover:ring-yellow-500/20'
-                            ) : (
-                              order.stateNum === -1 ? 'bg-red-100 text-red-800 border-red-200 hover:bg-red-50 hover:ring-red-200' :
+                                order.stateNum === 12 ? 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700 hover:ring-gray-500/20' :
+                                  order.stateNum === 11 ? 'bg-green-900/30 text-green-300 border-green-700 hover:bg-green-900/50 hover:ring-green-500/20' :
+                                    order.stateNum === 10 ? 'bg-orange-900/30 text-orange-300 border-orange-700 hover:bg-orange-900/50 hover:ring-orange-500/20' :
+                                      (order.stateNum === 7 || order.stateNum === 8 || order.stateNum === 9) ? 'bg-cyan-900/30 text-cyan-300 border-cyan-700 hover:bg-cyan-900/50 hover:ring-cyan-500/20' :
+                                        order.stateNum === 6 ? 'bg-blue-900/30 text-blue-300 border-blue-700 hover:bg-blue-900/50 hover:ring-blue-500/20' :
+                                          order.stateNum === 5 ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700 hover:bg-yellow-900/50 hover:ring-yellow-500/20' :
+                                            order.stateNum === 4 ? 'bg-blue-900/30 text-blue-300 border-blue-700 hover:bg-blue-900/50 hover:ring-blue-500/20' :
+                                              order.stateNum === 3 ? 'bg-green-900/30 text-green-300 border-green-700 hover:bg-green-900/50 hover:ring-green-500/20' :
+                                                order.stateNum === 2 ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700 hover:bg-yellow-900/50 hover:ring-yellow-500/20' :
+                                                  'bg-yellow-900/30 text-yellow-300 border-yellow-700 hover:bg-yellow-900/50 hover:ring-yellow-500/20'
+                          ) : (
+                            order.stateNum === -1 ? 'bg-red-100 text-red-800 border-red-200 hover:bg-red-50 hover:ring-red-200' :
                               order.stateNum === 13 ? 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:ring-emerald-200' :
-                              order.stateNum === 12 ? 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-50 hover:ring-gray-200' :
-                              order.stateNum === 11 ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-50 hover:ring-green-200' :
-                              order.stateNum === 10 ? 'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-50 hover:ring-orange-200' :
-                              (order.stateNum === 7 || order.stateNum === 8 || order.stateNum === 9) ? 'bg-cyan-100 text-cyan-800 border-cyan-200 hover:bg-cyan-50 hover:ring-cyan-200' :
-                              order.stateNum === 6 ? 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:ring-blue-200' :
-                              order.stateNum === 5 ? 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:ring-yellow-200' :
-                              order.stateNum === 4 ? 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:ring-blue-200' :
-                              order.stateNum === 3 ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-50 hover:ring-green-200' :
-                              order.stateNum === 2 ? 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:ring-yellow-200' :
-                              'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:ring-yellow-200'
-                            )
-                          }`}>
+                                order.stateNum === 12 ? 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-50 hover:ring-gray-200' :
+                                  order.stateNum === 11 ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-50 hover:ring-green-200' :
+                                    order.stateNum === 10 ? 'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-50 hover:ring-orange-200' :
+                                      (order.stateNum === 7 || order.stateNum === 8 || order.stateNum === 9) ? 'bg-cyan-100 text-cyan-800 border-cyan-200 hover:bg-cyan-50 hover:ring-cyan-200' :
+                                        order.stateNum === 6 ? 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:ring-blue-200' :
+                                          order.stateNum === 5 ? 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:ring-yellow-200' :
+                                            order.stateNum === 4 ? 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:ring-blue-200' :
+                                              order.stateNum === 3 ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-50 hover:ring-green-200' :
+                                                order.stateNum === 2 ? 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:ring-yellow-200' :
+                                                  'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:ring-yellow-200'
+                          )
+                            }`}>
                             {order.stateNum === -1 ? t('client.recentOrders.statuses.paymentRejected') :
-                             order.stateNum === 5 ? t('client.recentOrders.statuses.paymentValidated') :
-                             order.stateNum === 6 ? t('client.recentOrders.statuses.packagingBox') :
-                             // 7 y 8 etiquetados como 9
-                             (order.stateNum === 7 || order.stateNum === 8 || order.stateNum === 9) ? t('client.recentOrders.statuses.sentFromChina') :
-                             order.stateNum === 10 ? t('client.recentOrders.statuses.inCustoms') :
-                             order.stateNum === 11 ? t('client.recentOrders.statuses.arriving') :
-                             order.stateNum === 12 ? t('client.recentOrders.statuses.inStore') :
-                             order.stateNum === 13 ? t('client.recentOrders.statuses.delivered') :
-                             order.stateNum === 4 ? t('client.recentOrders.statuses.processing') :
-                             order.stateNum === 3 ? t('client.recentOrders.statuses.quoted') :
-                             order.stateNum === 2 ? t('client.recentOrders.statuses.pending') :
-                             t('client.recentOrders.statuses.pending')}
+                              order.stateNum === 5 ? t('client.recentOrders.statuses.paymentValidated') :
+                                order.stateNum === 6 ? t('client.recentOrders.statuses.packagingBox') :
+                                  // 7 y 8 etiquetados como 9
+                                  (order.stateNum === 7 || order.stateNum === 8 || order.stateNum === 9) ? t('client.recentOrders.statuses.sentFromChina') :
+                                    order.stateNum === 10 ? t('client.recentOrders.statuses.inCustoms') :
+                                      order.stateNum === 11 ? t('client.recentOrders.statuses.arriving') :
+                                        order.stateNum === 12 ? t('client.recentOrders.statuses.inStore') :
+                                          order.stateNum === 13 ? t('client.recentOrders.statuses.delivered') :
+                                            order.stateNum === 4 ? t('client.recentOrders.statuses.processing') :
+                                              order.stateNum === 3 ? t('client.recentOrders.statuses.quoted') :
+                                                order.stateNum === 2 ? t('client.recentOrders.statuses.pending') :
+                                                  t('client.recentOrders.statuses.pending')}
                           </Badge>
                         ) : (
                           <Badge className={`${getStatusColor(order.status)} text-xs md:text-sm font-semibold px-3 py-1`}>
@@ -2414,8 +2510,8 @@ export default function MisPedidosPage() {
                         </p>
                         <div className="font-bold text-lg md:text-xl">
                           {order.status === 'pending' && typeof order.estimatedBudget !== 'undefined' && order.estimatedBudget !== null ? (
-                            <PriceDisplay 
-                              amount={Number(order.estimatedBudget)} 
+                            <PriceDisplay
+                              amount={Number(order.estimatedBudget)}
                               currency="USD"
                               variant="inline"
                               size="lg"
@@ -2423,8 +2519,8 @@ export default function MisPedidosPage() {
                               className={mounted && theme === 'dark' ? 'text-white' : 'text-slate-800'}
                             />
                           ) : order.status === 'quoted' ? (
-                            <PriceDisplay 
-                              amount={Number((order.unitQuote ?? 0) + (order.shippingPrice ?? 0))} 
+                            <PriceDisplay
+                              amount={Number((order.unitQuote ?? 0) + (order.shippingPrice ?? 0))}
                               currency="USD"
                               variant="inline"
                               size="lg"
@@ -2438,15 +2534,15 @@ export default function MisPedidosPage() {
                         <p className={`text-xs font-medium ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>Tracking: {order.tracking || '-'}</p>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-3">
                       <div className="flex justify-between text-sm font-medium">
                         <span className={mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}>{t('client.recentOrders.progress')}</span>
                         <span className={mounted && theme === 'dark' ? 'text-white' : 'text-slate-800'}>{order.progress}%</span>
                       </div>
                       <div className={`w-full rounded-full h-2 md:h-3 overflow-hidden ${mounted && theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`}>
-                        <div 
-                          className={`h-2 md:h-3 rounded-full transition-all duration-500 ${getProgressColor(order.progress)}`} 
+                        <div
+                          className={`h-2 md:h-3 rounded-full transition-all duration-500 ${getProgressColor(order.progress)}`}
                           style={{ width: `${order.progress}%` }}
                         ></div>
                       </div>
@@ -2490,9 +2586,41 @@ export default function MisPedidosPage() {
                           })()}
                         </div>
                         <div className="flex gap-2 md:gap-3">
+                          {/* Botón para revisar alternativa pendiente */}
+                          {(() => {
+                            const alternative = alternatives.find(alt => {
+                              const match = String(alt.order_id) === String(order.id);
+                              if (match) console.log('🎯 Found alternative match for order:', order.id);
+                              return match;
+                            });
+                            return alternative && (
+                              <Button
+                                size="sm"
+                                className="h-7 md:h-8 px-3 md:px-4 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white text-xs font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                                onClick={() => openReviewAlternativeModal(order)}
+                              >
+                                <AlertTriangle className="h-3 w-3 mr-1 animate-pulse" />
+                                Revisar Alternativa
+                              </Button>
+                            );
+                          })()}
+
+                          {/* Botón para cancelar pedido (solo en estados pendiente o cotizado) */}
+                          {(order.status === 'pending' || order.status === 'quoted') && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className={`h-7 md:h-8 px-3 md:px-4 text-xs font-semibold transition-all duration-300 ${mounted && theme === 'dark' ? 'border-red-600 text-red-300 hover:bg-red-900/30 hover:border-red-500' : 'border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300'}`}
+                              onClick={() => openCancelOrderModal(order)}
+                            >
+                              <XCircle className="h-3 w-3 mr-1" />
+                              Cancelar
+                            </Button>
+                          )}
+
                           {(order.status === 'quoted' || order.stateNum === -1) && (
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               className="h-7 md:h-8 px-3 md:px-4 bg-gradient-to-r from-blue-500 to-orange-500 hover:from-blue-600 hover:to-orange-600 text-white text-xs font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                               onClick={() => handlePaymentClick(order)}
                             >
@@ -2500,18 +2628,18 @@ export default function MisPedidosPage() {
                               {order.stateNum === -1 ? t('client.recentOrders.actions.payAgain') : t('client.recentOrders.actions.pay')}
                             </Button>
                           )}
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             className={`h-7 md:h-8 px-3 md:px-4 text-xs font-semibold transition-all duration-300 ${mounted && theme === 'dark' ? 'border-slate-600 text-blue-300 hover:bg-slate-700 hover:border-slate-500' : 'border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300'}`}
                             onClick={() => handleViewDetails(order)}
                           >
                             <Eye className="h-3 w-3 mr-1" />
                             {t('client.recentOrders.actions.view')}
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             className={`h-7 md:h-8 px-3 md:px-4 text-xs font-semibold transition-all duration-300 ${mounted && theme === 'dark' ? 'border-slate-600 text-orange-300 hover:bg-slate-700 hover:border-slate-500' : 'border-orange-200 text-orange-700 hover:bg-orange-50 hover:border-orange-300'}`}
                             onClick={() => openTrackingModal(order)}
                           >
@@ -2523,7 +2651,7 @@ export default function MisPedidosPage() {
                     </div>
                   </div>
                 ))}
-                
+
                 {filteredOrders.length === 0 && (
                   <div className="text-center py-12 md:py-16">
                     <div className={`w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 rounded-full flex items-center justify-center ${mounted && theme === 'dark' ? 'bg-gradient-to-br from-slate-700 to-slate-600' : 'bg-gradient-to-br from-slate-100 to-slate-200'}`}>
@@ -2563,8 +2691,8 @@ export default function MisPedidosPage() {
                     </p>
                     <div className="text-lg font-bold">
                       {selectedOrder.status === 'pending' && typeof selectedOrder.estimatedBudget !== 'undefined' && selectedOrder.estimatedBudget !== null ? (
-                        <PriceDisplay 
-                          amount={Number(selectedOrder.estimatedBudget)} 
+                        <PriceDisplay
+                          amount={Number(selectedOrder.estimatedBudget)}
                           currency="USD"
                           variant="card"
                           size="lg"
@@ -2573,8 +2701,8 @@ export default function MisPedidosPage() {
                           className={mounted && theme === 'dark' ? 'border-green-700' : 'border-green-200'}
                         />
                       ) : selectedOrder.status === 'quoted' ? (
-                        <PriceDisplay 
-                          amount={Number((selectedOrder.unitQuote ?? 0) + (selectedOrder.shippingPrice ?? 0))} 
+                        <PriceDisplay
+                          amount={Number((selectedOrder.unitQuote ?? 0) + (selectedOrder.shippingPrice ?? 0))}
                           currency="USD"
                           variant="card"
                           size="lg"
@@ -2590,45 +2718,44 @@ export default function MisPedidosPage() {
                   <div>
                     <p className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.modal.status')}</p>
                     {typeof selectedOrder.stateNum === 'number' ? (
-                      <Badge className={`text-xs font-semibold px-3 py-1 transition-colors hover:brightness-110 hover:ring-1 ${
-                        mounted && theme === 'dark' ? (
-                          selectedOrder.stateNum === 13 ? 'bg-emerald-900/30 text-emerald-300 border-emerald-700 hover:bg-emerald-900/50 hover:ring-emerald-500/20' :
+                      <Badge className={`text-xs font-semibold px-3 py-1 transition-colors hover:brightness-110 hover:ring-1 ${mounted && theme === 'dark' ? (
+                        selectedOrder.stateNum === 13 ? 'bg-emerald-900/30 text-emerald-300 border-emerald-700 hover:bg-emerald-900/50 hover:ring-emerald-500/20' :
                           selectedOrder.stateNum === 12 ? 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700 hover:ring-gray-500/20' :
-                          selectedOrder.stateNum === 11 ? 'bg-green-900/30 text-green-300 border-green-700 hover:bg-green-900/50 hover:ring-green-500/20' :
-                          selectedOrder.stateNum === 10 ? 'bg-orange-900/30 text-orange-300 border-orange-700 hover:bg-orange-900/50 hover:ring-orange-500/20' :
-                          (selectedOrder.stateNum === 7 || selectedOrder.stateNum === 8 || selectedOrder.stateNum === 9) ? 'bg-cyan-900/30 text-cyan-300 border-cyan-700 hover:bg-cyan-900/50 hover:ring-cyan-500/20' :
-                          selectedOrder.stateNum === 6 ? 'bg-blue-900/30 text-blue-300 border-blue-700 hover:bg-blue-900/50 hover:ring-blue-500/20' :
-                          selectedOrder.stateNum === 5 ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700 hover:bg-yellow-900/50 hover:ring-yellow-500/20' :
-                          selectedOrder.stateNum === 4 ? 'bg-blue-900/30 text-blue-300 border-blue-700 hover:bg-blue-900/50 hover:ring-blue-500/20' :
-                          selectedOrder.stateNum === 3 ? 'bg-green-900/30 text-green-300 border-green-700 hover:bg-green-900/50 hover:ring-green-500/20' :
-                          selectedOrder.stateNum === 2 ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700 hover:bg-yellow-900/50 hover:ring-yellow-500/20' :
-                          'bg-yellow-900/30 text-yellow-300 border-yellow-700 hover:bg-yellow-900/50 hover:ring-yellow-500/20'
-                        ) : (
-                          selectedOrder.stateNum === 13 ? 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:ring-emerald-200' :
+                            selectedOrder.stateNum === 11 ? 'bg-green-900/30 text-green-300 border-green-700 hover:bg-green-900/50 hover:ring-green-500/20' :
+                              selectedOrder.stateNum === 10 ? 'bg-orange-900/30 text-orange-300 border-orange-700 hover:bg-orange-900/50 hover:ring-orange-500/20' :
+                                (selectedOrder.stateNum === 7 || selectedOrder.stateNum === 8 || selectedOrder.stateNum === 9) ? 'bg-cyan-900/30 text-cyan-300 border-cyan-700 hover:bg-cyan-900/50 hover:ring-cyan-500/20' :
+                                  selectedOrder.stateNum === 6 ? 'bg-blue-900/30 text-blue-300 border-blue-700 hover:bg-blue-900/50 hover:ring-blue-500/20' :
+                                    selectedOrder.stateNum === 5 ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700 hover:bg-yellow-900/50 hover:ring-yellow-500/20' :
+                                      selectedOrder.stateNum === 4 ? 'bg-blue-900/30 text-blue-300 border-blue-700 hover:bg-blue-900/50 hover:ring-blue-500/20' :
+                                        selectedOrder.stateNum === 3 ? 'bg-green-900/30 text-green-300 border-green-700 hover:bg-green-900/50 hover:ring-green-500/20' :
+                                          selectedOrder.stateNum === 2 ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700 hover:bg-yellow-900/50 hover:ring-yellow-500/20' :
+                                            'bg-yellow-900/30 text-yellow-300 border-yellow-700 hover:bg-yellow-900/50 hover:ring-yellow-500/20'
+                      ) : (
+                        selectedOrder.stateNum === 13 ? 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:ring-emerald-200' :
                           selectedOrder.stateNum === 12 ? 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-50 hover:ring-gray-200' :
-                          selectedOrder.stateNum === 11 ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-50 hover:ring-green-200' :
-                          selectedOrder.stateNum === 10 ? 'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-50 hover:ring-orange-200' :
-                          (selectedOrder.stateNum === 7 || selectedOrder.stateNum === 8 || selectedOrder.stateNum === 9) ? 'bg-cyan-100 text-cyan-800 border-cyan-200 hover:bg-cyan-50 hover:ring-cyan-200' :
-                          selectedOrder.stateNum === 6 ? 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:ring-blue-200' :
-                          selectedOrder.stateNum === 5 ? 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:ring-yellow-200' :
-                          selectedOrder.stateNum === 4 ? 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:ring-blue-200' :
-                          selectedOrder.stateNum === 3 ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-50 hover:ring-green-200' :
-                          selectedOrder.stateNum === 2 ? 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:ring-yellow-200' :
-                          'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:ring-yellow-200'
-                        )
-                      }`}>
+                            selectedOrder.stateNum === 11 ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-50 hover:ring-green-200' :
+                              selectedOrder.stateNum === 10 ? 'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-50 hover:ring-orange-200' :
+                                (selectedOrder.stateNum === 7 || selectedOrder.stateNum === 8 || selectedOrder.stateNum === 9) ? 'bg-cyan-100 text-cyan-800 border-cyan-200 hover:bg-cyan-50 hover:ring-cyan-200' :
+                                  selectedOrder.stateNum === 6 ? 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:ring-blue-200' :
+                                    selectedOrder.stateNum === 5 ? 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:ring-yellow-200' :
+                                      selectedOrder.stateNum === 4 ? 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:ring-blue-200' :
+                                        selectedOrder.stateNum === 3 ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-50 hover:ring-green-200' :
+                                          selectedOrder.stateNum === 2 ? 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:ring-yellow-200' :
+                                            'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:ring-yellow-200'
+                      )
+                        }`}>
                         {selectedOrder.stateNum === 13 ? t('client.recentOrders.statuses.delivered') :
-                         selectedOrder.stateNum === 5 ? t('client.recentOrders.statuses.paymentValidated') :
-                         selectedOrder.stateNum === 6 ? t('client.recentOrders.statuses.packagingBox') :
-                         // 7 y 8 etiquetados como 9
-                         (selectedOrder.stateNum === 7 || selectedOrder.stateNum === 8 || selectedOrder.stateNum === 9) ? t('client.recentOrders.statuses.sentFromChina') :
-                         selectedOrder.stateNum === 10 ? t('client.recentOrders.statuses.inCustoms') :
-                         selectedOrder.stateNum === 11 ? t('client.recentOrders.statuses.arriving') :
-                         selectedOrder.stateNum === 12 ? t('client.recentOrders.statuses.inStore') :
-                         selectedOrder.stateNum === 4 ? t('client.recentOrders.statuses.processing') :
-                         selectedOrder.stateNum === 3 ? t('client.recentOrders.statuses.quoted') :
-                         selectedOrder.stateNum === 2 ? t('client.recentOrders.statuses.pending') :
-                         t('client.recentOrders.statuses.pending')}
+                          selectedOrder.stateNum === 5 ? t('client.recentOrders.statuses.paymentValidated') :
+                            selectedOrder.stateNum === 6 ? t('client.recentOrders.statuses.packagingBox') :
+                              // 7 y 8 etiquetados como 9
+                              (selectedOrder.stateNum === 7 || selectedOrder.stateNum === 8 || selectedOrder.stateNum === 9) ? t('client.recentOrders.statuses.sentFromChina') :
+                                selectedOrder.stateNum === 10 ? t('client.recentOrders.statuses.inCustoms') :
+                                  selectedOrder.stateNum === 11 ? t('client.recentOrders.statuses.arriving') :
+                                    selectedOrder.stateNum === 12 ? t('client.recentOrders.statuses.inStore') :
+                                      selectedOrder.stateNum === 4 ? t('client.recentOrders.statuses.processing') :
+                                        selectedOrder.stateNum === 3 ? t('client.recentOrders.statuses.quoted') :
+                                          selectedOrder.stateNum === 2 ? t('client.recentOrders.statuses.pending') :
+                                            t('client.recentOrders.statuses.pending')}
                       </Badge>
                     ) : (
                       <Badge className={getStatusColor(selectedOrder.status)}>
@@ -2657,8 +2784,8 @@ export default function MisPedidosPage() {
                       <span>{selectedOrder.progress}%</span>
                     </div>
                     <div className={`w-full rounded-full h-3 ${mounted && theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`}>
-                      <div 
-                        className={`h-3 rounded-full ${getProgressColor(selectedOrder.progress)}`} 
+                      <div
+                        className={`h-3 rounded-full ${getProgressColor(selectedOrder.progress)}`}
                         style={{ width: `${selectedOrder.progress}%` }}
                       ></div>
                     </div>
@@ -2679,9 +2806,9 @@ export default function MisPedidosPage() {
                             {doc.type === 'image' ? '📷' : '🔗'}
                           </div>
                           <span className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : ''}`}>{doc.label}</span>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             className="h-6 px-2 ml-auto"
                             onClick={() => {
                               if (selectedOrder.pdfRoutes) {
@@ -2690,10 +2817,10 @@ export default function MisPedidosPage() {
                                   window.open(url, '_blank', 'noopener,noreferrer');
                                 } catch (e) {
                                   console.error('No se pudo abrir el PDF:', e);
+                                }
                               }
-                      }
-                    }}>
-                              
+                            }}>
+
                             {t('client.recentOrders.actions.view')}
                           </Button>
                         </div>
@@ -2716,20 +2843,18 @@ export default function MisPedidosPage() {
 
         {/* Modal de Seguimiento (copiado del tracking) */}
         {selectedTrackingOrder && (
-          <div 
-            className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-300 ease-out ${
-              isTrackingModalOpen 
-                ? 'bg-black/50 backdrop-blur-sm opacity-100' 
-                : 'bg-black/0 backdrop-blur-none opacity-0'
-            }`}
+          <div
+            className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-300 ease-out ${isTrackingModalOpen
+              ? 'bg-black/50 backdrop-blur-sm opacity-100'
+              : 'bg-black/0 backdrop-blur-none opacity-0'
+              }`}
             onClick={closeTrackingModal}
           >
-            <div 
-              className={`rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto transition-all duration-300 ease-out transform ${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} ${
-                isTrackingModalOpen 
-                  ? 'scale-100 opacity-100 translate-y-0' 
-                  : 'scale-95 opacity-0 translate-y-8'
-              }`}
+            <div
+              className={`rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto transition-all duration-300 ease-out transform ${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} ${isTrackingModalOpen
+                ? 'scale-100 opacity-100 translate-y-0'
+                : 'scale-95 opacity-0 translate-y-8'
+                }`}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-6">
@@ -2738,8 +2863,8 @@ export default function MisPedidosPage() {
                     <h2 className={`text-2xl font-bold ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{selectedTrackingOrder.product}</h2>
                     <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>{selectedTrackingOrder.id}</p>
                   </div>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={closeTrackingModal}
                     className={mounted && theme === 'dark' ? 'border-slate-600 hover:bg-slate-700' : ''}
@@ -2757,7 +2882,7 @@ export default function MisPedidosPage() {
                   <div className="space-y-2">
                     <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.trackingModal.carrier')}</p>
                     <p className={`font-medium ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{tracking_company[String(selectedTrackingOrder.id)] || '—'
-}</p>
+                    }</p>
                   </div>
                   <div className="space-y-2">
                     <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.trackingModal.estimatedDelivery')}</p>
@@ -2777,11 +2902,10 @@ export default function MisPedidosPage() {
                   <div className="space-y-4">
                     {selectedTrackingOrder.timeline.map((step, index) => (
                       <div key={step.id} className="flex items-start space-x-4">
-                        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                          step.completed 
-                            ? 'bg-green-500 text-white' 
-                            : (mounted && theme === 'dark' ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-600')
-                        }`}>
+                        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${step.completed
+                          ? 'bg-green-500 text-white'
+                          : (mounted && theme === 'dark' ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-600')
+                          }`}>
                           {step.completed ? (
                             <CheckCircle className="w-4 h-4" />
                           ) : (
@@ -2856,8 +2980,8 @@ export default function MisPedidosPage() {
                 💳 {t('client.recentOrders.paymentModal.title')}
               </DialogTitle>
               <DialogDescription className="text-center">
-                {paymentStep === 1 
-                  ? t('client.recentOrders.paymentModal.selectMethod') 
+                {paymentStep === 1
+                  ? t('client.recentOrders.paymentModal.selectMethod')
                   : t('client.recentOrders.paymentModal.confirmDetails')}
               </DialogDescription>
             </DialogHeader>
@@ -2902,17 +3026,16 @@ export default function MisPedidosPage() {
                               </div>
                             </div>
                             <div className="text-right">
-                              <Badge className={`${
-                                mounted && theme === 'dark' ? (
-                                  method.validation === 'automatic' 
-                                    ? 'bg-green-900/30 text-green-300 border-green-700 hover:bg-green-900/50 hover:ring-1 hover:ring-green-500/20 transition-colors' 
-                                    : 'bg-yellow-900/30 text-yellow-300 border-yellow-700 hover:bg-yellow-900/50 hover:ring-1 hover:ring-yellow-500/20 transition-colors'
-                                ) : (
-                                  method.validation === 'automatic' 
-                                    ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-50 hover:ring-1 hover:ring-green-200 transition-colors' 
-                                    : 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:ring-1 hover:ring-yellow-200 transition-colors'
-                                )
-                              }`}>
+                              <Badge className={`${mounted && theme === 'dark' ? (
+                                method.validation === 'automatic'
+                                  ? 'bg-green-900/30 text-green-300 border-green-700 hover:bg-green-900/50 hover:ring-1 hover:ring-green-500/20 transition-colors'
+                                  : 'bg-yellow-900/30 text-yellow-300 border-yellow-700 hover:bg-yellow-900/50 hover:ring-1 hover:ring-yellow-500/20 transition-colors'
+                              ) : (
+                                method.validation === 'automatic'
+                                  ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-50 hover:ring-1 hover:ring-green-200 transition-colors'
+                                  : 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:ring-1 hover:ring-yellow-200 transition-colors'
+                              )
+                                }`}>
                                 {method.validation === 'automatic' ? `⚡ ${t('client.recentOrders.paymentModal.automatic')}` : t('client.recentOrders.paymentModal.manual')}
                               </Badge>
                               <p className={`text-xs mt-1 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{method.currency}</p>
@@ -2941,7 +3064,7 @@ export default function MisPedidosPage() {
                     {/* Información de pago */}
                     <div className="space-y-4 payment-info-card">
                       <h4 className={`font-semibold text-lg ${mounted && theme === 'dark' ? 'text-white' : ''}`}>📋 {t('client.recentOrders.paymentModal.paymentInfo')}</h4>
-                      
+
                       {selectedPaymentMethod.id === 'mobile' && (
                         <div className="space-y-3">
                           <div className={`p-4 rounded-lg ${mounted && theme === 'dark' ? 'bg-slate-700' : 'bg-slate-50'}`}>
@@ -3008,17 +3131,17 @@ export default function MisPedidosPage() {
 
                 {/* Botones de navegación */}
                 <div className={`flex gap-3 pt-4 ${mounted && theme === 'dark' ? 'border-t border-slate-700' : 'border-t'}`}>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={handlePaymentBack}
                     className={`flex-1 ${mounted && theme === 'dark' ? 'border-slate-600 hover:bg-slate-700' : ''}`}
                   >
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     {paymentStep === 1 ? t('client.recentOrders.paymentModal.cancel') : t('client.recentOrders.paymentModal.back')}
                   </Button>
-                  
+
                   {paymentStep === 2 && (
-                    <Button 
+                    <Button
                       onClick={handlePaymentConfirm}
                       disabled={isConfirmingPayment}
                       className="flex-1 bg-green-600 hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -3082,7 +3205,7 @@ export default function MisPedidosPage() {
                   </a>
                   <button
                     type="button"
-                    onClick={() => { navigator.clipboard?.writeText(link).catch(()=>{}); }}
+                    onClick={() => { navigator.clipboard?.writeText(link).catch(() => { }); }}
                     className="text-xs px-3 py-1 rounded-md border border-slate-300 hover:bg-slate-50 text-slate-600"
                   >
                     Copiar enlace
@@ -3093,7 +3216,7 @@ export default function MisPedidosPage() {
           </div>
         </div>
       )}
-      
+
       <style jsx>{`
         @keyframes slideInFromRight {
           from {
@@ -3196,7 +3319,7 @@ export default function MisPedidosPage() {
                 `${t('client.recentOrders.reviews.modal.subtitle', { fallback: 'Pedido' })} #${selectedOrderForReview.id} - ${selectedOrderForReview.product}`}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             {/* Calificación con estrellas */}
             <div>
@@ -3209,13 +3332,12 @@ export default function MisPedidosPage() {
                     key={star}
                     type="button"
                     onClick={() => setReviewRating(star)}
-                    className={`transition-all duration-200 ${
-                      star <= reviewRating
-                        ? 'text-yellow-400 scale-110'
-                        : mounted && theme === 'dark'
+                    className={`transition-all duration-200 ${star <= reviewRating
+                      ? 'text-yellow-400 scale-110'
+                      : mounted && theme === 'dark'
                         ? 'text-slate-500 hover:text-yellow-300'
                         : 'text-slate-300 hover:text-yellow-400'
-                    }`}
+                      }`}
                   >
                     <Star
                       className={`w-8 h-8 ${star <= reviewRating ? 'fill-current' : ''}`}
@@ -3299,7 +3421,7 @@ export default function MisPedidosPage() {
                 `${t('client.recentOrders.reviews.viewModal.subtitle', { fallback: 'Pedido' })} #${selectedOrderForReview.id} - ${selectedOrderForReview.product}`}
             </DialogDescription>
           </DialogHeader>
-          
+
           {(() => {
             if (!selectedOrderForReview) return null;
             const selectedKey = normalizeOrderId(selectedOrderForReview.id);
@@ -3312,54 +3434,53 @@ export default function MisPedidosPage() {
               </div>
             );
             return (
-            <div className="space-y-4 py-4">
-              {/* Calificación mostrada */}
-              <div>
-                <Label className={`text-sm font-semibold ${mounted && theme === 'dark' ? 'text-slate-300' : ''}`}>
-                  {t('client.recentOrders.reviews.viewModal.rating', { fallback: 'Tu Calificación' })}
-                </Label>
-                <div className="flex gap-2 mt-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className={`w-6 h-6 ${
-                        star <= reviewData.rating
-                          ? 'text-yellow-400 fill-yellow-400'
-                          : mounted && theme === 'dark'
-                          ? 'text-slate-600'
-                          : 'text-slate-300'
-                      }`}
-                    />
-                  ))}
-                </div>
-                <p className={`text-sm mt-2 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                  {reviewData.rating}{' '}
-                  {reviewData.rating === 1
-                    ? t('client.recentOrders.reviews.modal.star', { fallback: 'estrella' })
-                    : t('client.recentOrders.reviews.modal.stars', { fallback: 'estrellas' })}
-                </p>
-              </div>
-
-              {/* Texto de la reseña */}
-              {reviewData.reviewText && (
+              <div className="space-y-4 py-4">
+                {/* Calificación mostrada */}
                 <div>
                   <Label className={`text-sm font-semibold ${mounted && theme === 'dark' ? 'text-slate-300' : ''}`}>
-                    {t('client.recentOrders.reviews.viewModal.reviewText', { fallback: 'Tu Reseña' })}
+                    {t('client.recentOrders.reviews.viewModal.rating', { fallback: 'Tu Calificación' })}
                   </Label>
-                  <div className={`mt-2 p-3 rounded-lg ${mounted && theme === 'dark' ? 'bg-slate-700 text-slate-200' : 'bg-slate-50 text-slate-800'}`}>
-                    <p className="text-sm whitespace-pre-wrap">{reviewData.reviewText}</p>
+                  <div className="flex gap-2 mt-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`w-6 h-6 ${star <= reviewData.rating
+                          ? 'text-yellow-400 fill-yellow-400'
+                          : mounted && theme === 'dark'
+                            ? 'text-slate-600'
+                            : 'text-slate-300'
+                          }`}
+                      />
+                    ))}
                   </div>
+                  <p className={`text-sm mt-2 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                    {reviewData.rating}{' '}
+                    {reviewData.rating === 1
+                      ? t('client.recentOrders.reviews.modal.star', { fallback: 'estrella' })
+                      : t('client.recentOrders.reviews.modal.stars', { fallback: 'estrellas' })}
+                  </p>
                 </div>
-              )}
 
-              {/* Fecha */}
-              <div>
-                <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                  {t('client.recentOrders.reviews.viewModal.date', { fallback: 'Fecha' })}:{' '}
-                  {new Date(reviewData.createdAt).toLocaleDateString()}
-                </p>
+                {/* Texto de la reseña */}
+                {reviewData.reviewText && (
+                  <div>
+                    <Label className={`text-sm font-semibold ${mounted && theme === 'dark' ? 'text-slate-300' : ''}`}>
+                      {t('client.recentOrders.reviews.viewModal.reviewText', { fallback: 'Tu Reseña' })}
+                    </Label>
+                    <div className={`mt-2 p-3 rounded-lg ${mounted && theme === 'dark' ? 'bg-slate-700 text-slate-200' : 'bg-slate-50 text-slate-800'}`}>
+                      <p className="text-sm whitespace-pre-wrap">{reviewData.reviewText}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Fecha */}
+                <div>
+                  <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                    {t('client.recentOrders.reviews.viewModal.date', { fallback: 'Fecha' })}:{' '}
+                    {new Date(reviewData.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
               </div>
-            </div>
             );
           })()}
 
@@ -3375,6 +3496,94 @@ export default function MisPedidosPage() {
               {t('client.recentOrders.reviews.viewModal.close', { fallback: 'Cerrar' })}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Alternativa de Producto */}
+      <ReviewAlternativeModal
+        isOpen={isReviewAlternativeModalOpen}
+        onClose={closeReviewAlternativeModal}
+        alternative={selectedAlternative}
+        originalProduct={{
+          name: selectedOrderForAlternative?.product || '',
+          description: selectedOrderForAlternative?.description,
+          imageUrl: selectedOrderForAlternative?.pdfRoutes || undefined,
+        }}
+        onSuccess={handleAlternativeSuccess}
+      />
+
+      {/* Modal de Cancelar Pedido */}
+      <Dialog open={isCancelOrderModalOpen} onOpenChange={setIsCancelOrderModalOpen}>
+        <DialogContent className="w-[95vw] sm:w-full max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <XCircle className="h-5 w-5 text-red-500" />
+              Cancelar Pedido
+            </DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de que deseas cancelar este pedido?
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedOrderForCancel && (
+            <div className="space-y-4">
+              <div className={`p-4 rounded-lg ${mounted && theme === 'dark' ? 'bg-slate-700' : 'bg-slate-50'}`}>
+                <p className={`text-sm font-semibold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                  {selectedOrderForCancel.product}
+                </p>
+                <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                  Pedido #{selectedOrderForCancel.id}
+                </p>
+              </div>
+
+              <div>
+                <Label className={`text-sm font-semibold ${mounted && theme === 'dark' ? 'text-slate-300' : ''}`}>
+                  Razón de cancelación *
+                </Label>
+                <Textarea
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="Por favor indica por qué deseas cancelar este pedido..."
+                  rows={3}
+                  className="mt-2"
+                />
+              </div>
+
+              <div className={`p-3 rounded-lg ${mounted && theme === 'dark' ? 'bg-yellow-900/20 border border-yellow-700' : 'bg-yellow-50 border border-yellow-200'}`}>
+                <p className={`text-xs ${mounted && theme === 'dark' ? 'text-yellow-300' : 'text-yellow-800'}`}>
+                  <strong>Nota:</strong> Una vez cancelado, el pedido no podrá ser reactivado. Se notificará a China sobre la cancelación.
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={closeCancelOrderModal}
+                  disabled={cancellingOrder}
+                  className="flex-1"
+                >
+                  No, mantener pedido
+                </Button>
+                <Button
+                  onClick={handleCancelOrder}
+                  disabled={cancellingOrder || !cancelReason.trim()}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                >
+                  {cancellingOrder ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Cancelando...
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Sí, cancelar pedido
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
