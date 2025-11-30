@@ -142,7 +142,7 @@ export async function PATCH(
                             productName: alternative.alternative_product_name, // NUEVO NOMBRE
                             quantity: fullOrder.quantity || 1,
                             description: fullOrder.description || '-', // ORIGINAL
-                            specifications: fullOrder.specifications || fullOrder.description || '-', // ORIGINAL (Fallback a description si specs está vacío)
+                            specifications: fullOrder.specifications || '-', // ORIGINAL
                             productUrl: originalUrl, // ORIGINAL
                             productImageUrl: alternative.alternative_image_url || null // NUEVA IMAGEN (si hay)
                         };
