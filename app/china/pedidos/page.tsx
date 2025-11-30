@@ -44,7 +44,8 @@ import {
   Tag,
   Trash2,
   List,
-  Send
+  Send,
+  XCircle
 } from 'lucide-react';
 import { Boxes } from 'lucide-react';
 
@@ -63,7 +64,7 @@ interface Pedido {
   cliente: string;
   producto: string;
   cantidad: number;
-  estado: 'pendiente' | 'cotizado' | 'procesando' | 'enviado';
+  estado: 'pendiente' | 'cotizado' | 'procesando' | 'enviado' | 'cancelado';
   cotizado: boolean;
   precio: number | null; // Monto total = unitQuote + shippingPrice
   fecha: string;
@@ -138,6 +139,11 @@ export default function PedidosChina() {
   const { uiItems: notificationsList, unreadCount, markAllAsRead, markOneAsRead } = useNotifications({ role: 'china', userId: chinaId, limit: 10, enabled: true });
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(false);
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const ITEMS_PER_PAGE = 10;
   // Mapear state numérico a texto usado en China
   function mapStateToEstado(state: number): Pedido['estado'] {
     // Rango solicitado para la vista China:
@@ -147,6 +153,7 @@ export default function PedidosChina() {
     if (state >= 5 && state <= 8) return 'enviado';
     if (state === 4) return 'procesando';
     if (state === 3) return 'cotizado';
+    if (state === 0) return 'cancelado';
     if (state === 1 || state === 2) return 'pendiente'; // Estados 1 y 2 son pendientes
     // Fallback: cualquier otro se considera pendiente aquí
     return 'pendiente';
@@ -158,7 +165,8 @@ export default function PedidosChina() {
     const isDark = mounted && theme === 'dark';
     // Colores utilitarios tailwind para Badges
     const base = 'border';
-    if (s <= 0 || isNaN(s)) return { label: t('chinese.ordersPage.badges.unknown'), className: `${base} ${isDark ? 'bg-gray-800 text-gray-300 border-gray-700' : 'bg-gray-100 text-gray-800 border-gray-200'}` };
+    if (s === 0) return { label: t('chinese.ordersPage.badges.cancelled', { defaultValue: 'Cancelado' }), className: `${base} ${isDark ? 'bg-red-900/30 text-red-300 border-red-700' : 'bg-red-100 text-red-800 border-red-200'}` };
+    if (s < 0 || isNaN(s)) return { label: t('chinese.ordersPage.badges.unknown'), className: `${base} ${isDark ? 'bg-gray-800 text-gray-300 border-gray-700' : 'bg-gray-100 text-gray-800 border-gray-200'}` };
     if (s === 1 || s === 2) return { label: t('chinese.ordersPage.badges.pending'), className: `${base} ${isDark ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700' : 'bg-yellow-100 text-yellow-800 border-yellow-200'}` }; // Estados 1 y 2 son pendientes
     if (s === 3) return { label: t('chinese.ordersPage.badges.quoted'), className: `${base} ${isDark ? 'bg-blue-900/30 text-blue-300 border-blue-700' : 'bg-blue-100 text-blue-800 border-blue-200'}` };
     if (s === 4) return { label: t('chinese.ordersPage.badges.processing'), className: `${base} ${isDark ? 'bg-purple-900/30 text-purple-300 border-purple-700' : 'bg-purple-100 text-purple-800 border-purple-200'}` };
@@ -198,8 +206,9 @@ export default function PedidosChina() {
   }
 
   // Fetch pedidos reales filtrando por asignedEChina
-  async function fetchPedidos() {
+  async function fetchPedidos(page: number = 1) {
     setLoading(true);
+    setCurrentPage(page);
     try {
       const supabase = getSupabaseBrowserClient();
       const { data: { user } } = await supabase.auth.getUser();
@@ -209,8 +218,13 @@ export default function PedidosChina() {
         setLoading(false);
         return;
       }
-      const res = await fetch(`/china/pedidos/api/orders?asignedEChina=${empleadoId}`, { cache: 'no-store' });
-      const data = await res.json();
+      const res = await fetch(`/china/pedidos/api/orders?asignedEChina=${empleadoId}&page=${page}&limit=${ITEMS_PER_PAGE}`, { cache: 'no-store' });
+      const responseData = await res.json();
+      const data = responseData.data || [];
+      const total = responseData.total || 0;
+
+      setTotalOrders(total);
+      setTotalPages(Math.ceil(total / ITEMS_PER_PAGE));
       if (!Array.isArray(data)) {
         setPedidos([]);
         setLoading(false);
@@ -259,6 +273,33 @@ export default function PedidosChina() {
       setLoading(false);
     }
   }
+
+  // Cancelar pedido
+  const handleCancelOrder = async (orderId: number) => {
+    if (!confirm(t('chinese.ordersPage.modals.cancelOrder.confirm', { defaultValue: '¿Estás seguro de que quieres cancelar este pedido?' }))) return;
+
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const { error } = await supabase
+        .from('orders')
+        .update({ state: 0 })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      toast({
+        title: t('chinese.ordersPage.toasts.orderCancelled', { defaultValue: 'Pedido cancelado' }),
+        description: t('chinese.ordersPage.toasts.orderCancelledDesc', { defaultValue: 'El pedido ha sido marcado como cancelado.' }),
+      });
+      fetchPedidos(currentPage);
+    } catch (error: any) {
+      console.error('Error cancelling order:', error);
+      toast({
+        title: t('chinese.ordersPage.toasts.errorTitle'),
+        description: error.message || t('chinese.ordersPage.toasts.errorDesc'),
+      });
+    }
+  };
   // Modal proponer alternativa
   const [modalPropAlternativa, setModalPropAlternativa] = useState<{ open: boolean; pedido?: Pedido }>({ open: false });
 
@@ -1746,6 +1787,7 @@ export default function PedidosChina() {
                           <SelectItem value="cotizado">{t('chinese.ordersPage.filters.quoted')}</SelectItem>
                           <SelectItem value="procesando">{t('chinese.ordersPage.filters.processing')}</SelectItem>
                           <SelectItem value="enviado">{t('chinese.ordersPage.filters.shipped')}</SelectItem>
+                          <SelectItem value="cancelado">{t('chinese.ordersPage.filters.cancelled', { defaultValue: 'Cancelado' })}</SelectItem>
                         </SelectContent>
                       </Select>
                     </>
@@ -1940,6 +1982,16 @@ export default function PedidosChina() {
                               return (!pedido.numericState || pedido.numericState < 9) ? (
                                 <>
                                   <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className={`h-7 md:h-8 px-3 md:px-4 text-xs font-semibold transition-all duration-300 ${mounted && theme === 'dark' ? 'border-red-600 text-red-300 hover:bg-red-900/30 hover:border-red-500' : 'border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300'}`}
+                                    onClick={() => handleCancelOrder(pedido.id)}
+                                  >
+                                    <XCircle className="h-3 w-3 mr-1" />
+                                    {t('chinese.ordersPage.modals.selectBoxForOrder.cancel', { defaultValue: 'Cancelar' })}
+                                  </Button>
+
+                                  <Button
                                     onClick={() => setModalCotizar({
                                       open: true,
                                       pedido,
@@ -2014,6 +2066,40 @@ export default function PedidosChina() {
                       </div>
                     )}
                   </div>
+
+                  {/* Paginación */}
+                  {totalOrders > 0 && (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                      <div className="text-sm text-slate-500 dark:text-slate-400">
+                        Mostrando <span className="font-medium">{((currentPage - 1) * ITEMS_PER_PAGE) + 1}</span> a <span className="font-medium">{Math.min(currentPage * ITEMS_PER_PAGE, totalOrders)}</span> de <span className="font-medium">{totalOrders}</span> pedidos
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fetchPedidos(currentPage - 1)}
+                          disabled={currentPage === 1 || loading}
+                          className="h-9"
+                        >
+                          Anterior
+                        </Button>
+                        <div className="flex items-center gap-1 px-2">
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                            Página {currentPage} de {totalPages}
+                          </span>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fetchPedidos(currentPage + 1)}
+                          disabled={currentPage === totalPages || loading}
+                          className="h-9"
+                        >
+                          Siguiente
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
 

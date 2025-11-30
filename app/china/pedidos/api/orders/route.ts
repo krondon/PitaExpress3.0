@@ -12,40 +12,63 @@ function getSupabaseClient() {
 }
 
 // Esta función obtiene los pedidos con el nombre del cliente
-async function getOrdersWithClientName() {
+// Esta función obtiene los pedidos con el nombre del cliente
+async function getOrdersWithClientName(page: number = 1, limit: number = 50, empleadoId?: string | null) {
   const supabase = getSupabaseClient();
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
 
-  // Traer pedidos
-  const { data: orders, error: ordersError } = await supabase
+  // Construir query base
+  let query = supabase
     .from('orders')
-    .select('id, quantity, productName, deliveryType, shippingType, state, client_id, asignedEChina, created_at, description, pdfRoutes, totalQuote')
-    // Incluir también estado 1 (creado) para que la vista de China y el dashboard coincidan
-    .gte('state', 1);
+    .select('id, quantity, productName, deliveryType, shippingType, state, client_id, asignedEChina, created_at, description, pdfRoutes, totalQuote', { count: 'exact' })
+    .gte('state', 0); // Incluir cancelados (estado 0)
+
+  // Filtrar por empleado si se proporciona
+  if (empleadoId) {
+    query = query.eq('asignedEChina', empleadoId);
+  } else {
+    query = query.not('asignedEChina', 'is', null);
+  }
+
+  // Aplicar paginación y orden
+  const { data: orders, count, error: ordersError } = await query
+    .order('created_at', { ascending: false })
+    .range(from, to);
+
   if (ordersError) throw ordersError;
 
+  if (!orders || orders.length === 0) {
+    return { data: [], total: 0 };
+  }
+
   // Traer clientes
+  const clientIds = Array.from(new Set(orders.map(o => o.client_id)));
   const { data: clients, error: clientsError } = await supabase
     .from('clients')
-    .select('user_id, name');
+    .select('user_id, name')
+    .in('user_id', clientIds);
+
   if (clientsError) throw clientsError;
 
-  // Traer TODAS las alternativas (no solo pendientes) para mostrar historial
+  // Traer alternativas para los pedidos de esta página
+  const orderIds = orders.map(o => o.id);
   const { data: alternatives, error: alternativesError } = await supabase
     .from('product_alternatives')
     .select('order_id, status, client_response_notes')
-    .order('created_at', { ascending: false }); // Ordenar por fecha para tomar la más reciente si hay varias
+    .in('order_id', orderIds)
+    .order('created_at', { ascending: false });
 
   if (alternativesError) console.error('Error fetching alternatives:', alternativesError);
 
   // Join manual en JS
-  return orders.map(order => {
-    const client = clients.find(c => c.user_id === order.client_id);
+  const mappedOrders = orders.map(order => {
+    const client = clients?.find(c => c.user_id === order.client_id);
 
     // Buscar alternativas para este pedido
     const orderAlternatives = alternatives?.filter(a => a.order_id === order.id) || [];
 
     // Determinar el estado de la alternativa a mostrar
-    // Prioridad: 1. Pending (hay una activa) -> 2. Accepted (se aceptó una) -> 3. Rejected (se rechazó la última)
     let alternativeStatus: 'pending' | 'accepted' | 'rejected' | null = null;
     let rejectionReason: string | null = null;
 
@@ -60,7 +83,6 @@ async function getOrdersWithClientName() {
     } else if (rejectedAlt) {
       alternativeStatus = 'rejected';
       rejectionReason = rejectedAlt.client_response_notes;
-      console.log(`Order ${order.id}: Found rejected alternative. Notes: ${rejectionReason}`);
     }
 
     return {
@@ -76,11 +98,13 @@ async function getOrdersWithClientName() {
       specifications: order.description,
       pdfRoutes: order.pdfRoutes ?? '',
       totalQuote: order.totalQuote ?? null,
-      hasAlternative: alternativeStatus === 'pending', // Mantener compatibilidad
-      alternativeStatus: alternativeStatus, // Nuevo campo con el estado específico
-      alternativeRejectionReason: rejectionReason, // Razón del rechazo si aplica
+      hasAlternative: alternativeStatus === 'pending',
+      alternativeStatus: alternativeStatus,
+      alternativeRejectionReason: rejectionReason,
     };
   });
+
+  return { data: mappedOrders, total: count || 0 };
 }
 
 // API Route para Next.js App Router (app router)
@@ -88,15 +112,12 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const empleadoId = url.searchParams.get('asignedEChina');
+    const page = parseInt(url.searchParams.get('page') || '1');
+    const limit = parseInt(url.searchParams.get('limit') || '10'); // Default 10 per page
 
-    let orders = await getOrdersWithClientName();
-    if (empleadoId) {
-      orders = orders.filter(order => order.asignedEChina === empleadoId);
-    } else {
-      // Si no se pasa el parámetro, solo mostrar los que tienen asignedEChina no null
-      orders = orders.filter(order => order.asignedEChina);
-    }
-    return Response.json(orders);
+    const result = await getOrdersWithClientName(page, limit, empleadoId);
+
+    return Response.json(result);
   } catch (error: any) {
     return Response.json({ error: error.message }, { status: 500 });
   }
