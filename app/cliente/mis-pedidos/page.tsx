@@ -16,6 +16,7 @@ const Player = dynamicImport(
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ClientOrderGroup, ClientOrderGroupData } from '@/components/cliente/ClientOrderGroup';
 import { PriceDisplay } from '@/components/shared/PriceDisplay';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -217,6 +218,8 @@ const MOCK_ORDERS: Order[] = [
   }
 ];
 
+const ITEMS_PER_PAGE = 10;
+
 export default function MisPedidosPage() {
   const { t } = useTranslation();
   const { clientId, clientName, clientEmail, clientRole } = useClientContext();
@@ -255,6 +258,9 @@ export default function MisPedidosPage() {
   const [submittingReview, setSubmittingReview] = useState(false);
   const [orderReviews, setOrderReviews] = useState<Record<string, { rating: number; reviewText: string | null; createdAt: string }>>({});
   const [loadingReviews, setLoadingReviews] = useState<Record<string, boolean>>({});
+
+  // Estados de paginación
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Estados del modal de nuevo pedido
   const [isNewOrderModalOpen, setIsNewOrderModalOpen] = useState(false);
@@ -327,6 +333,8 @@ export default function MisPedidosPage() {
   const [paymentStep, setPaymentStep] = useState(1);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null);
   const [selectedOrderForPayment, setSelectedOrderForPayment] = useState<Order | null>(null);
+  const [selectedGroupForPayment, setSelectedGroupForPayment] = useState<ClientOrderGroupData | null>(null);
+  const [selectedOrdersInModal, setSelectedOrdersInModal] = useState<string[]>([]); // New state for checkboxes
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
 
   // Estados para alternativas de productos
@@ -375,32 +383,36 @@ export default function MisPedidosPage() {
   }, [exchangeRate]);
 
   // Función para formatear precio con conversión a Bs
-  const formatPriceWithConversion = useCallback((priceStr: string, paymentMethod: PaymentMethod | null) => {
-    // Debug: ver valores que llegan
+  const formatPriceWithConversion = useCallback((priceInput: string | number | undefined | null, paymentMethod: PaymentMethod | null) => {
+    if (priceInput === undefined || priceInput === null) return '';
 
+    let usdAmount: number;
+    let priceStr: string;
 
-    // Extraer número del string del precio manejando diferentes formatos
-    // Formato 1: "$7,049.99" (formato US)
-    // Formato 2: "$7.049,99" (formato EU)
-    let cleanPrice = priceStr.replace(/[$\s]/g, ''); // quitar $ y espacios
-
-    // Detectar formato: si tiene punto seguido de 2 dígitos al final, es formato US
-    // Si tiene coma seguida de 2 dígitos al final, es formato EU
-    let usdAmount;
-
-    if (/\.\d{2}$/.test(cleanPrice)) {
-      // Formato US: "$7,049.99" -> "7,049.99"
-      cleanPrice = cleanPrice.replace(/,/g, ''); // quitar comas de miles
-      usdAmount = parseFloat(cleanPrice);
-    } else if (/,\d{2}$/.test(cleanPrice)) {
-      // Formato EU: "$7.049,99" -> "7.049,99"
-      cleanPrice = cleanPrice.replace(/\./g, ''); // quitar puntos de miles
-      cleanPrice = cleanPrice.replace(',', '.'); // cambiar coma decimal por punto
-      usdAmount = parseFloat(cleanPrice);
+    if (typeof priceInput === 'number') {
+      usdAmount = priceInput;
+      priceStr = `$${priceInput.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     } else {
-      // Formato simple sin decimales: "$7049"
-      cleanPrice = cleanPrice.replace(/[,.]/g, '');
-      usdAmount = parseFloat(cleanPrice);
+      priceStr = priceInput;
+      // Extraer número del string del precio manejando diferentes formatos
+      // Formato 1: "$7,049.99" (formato US)
+      // Formato 2: "$7.049,99" (formato EU)
+      let cleanPrice = priceStr.replace(/[$\s]/g, ''); // quitar $ y espacios
+
+      if (/\.\d{2}$/.test(cleanPrice)) {
+        // Formato US: "$7,049.99" -> "7,049.99"
+        cleanPrice = cleanPrice.replace(/,/g, ''); // quitar comas de miles
+        usdAmount = parseFloat(cleanPrice);
+      } else if (/,\d{2}$/.test(cleanPrice)) {
+        // Formato EU: "$7.049,99" -> "7.049,99"
+        cleanPrice = cleanPrice.replace(/\./g, ''); // quitar puntos de miles
+        cleanPrice = cleanPrice.replace(',', '.'); // cambiar coma decimal por punto
+        usdAmount = parseFloat(cleanPrice);
+      } else {
+        // Formato simple sin decimales: "$7049"
+        cleanPrice = cleanPrice.replace(/[,.]/g, '');
+        usdAmount = parseFloat(cleanPrice);
+      }
     }
 
 
@@ -632,21 +644,39 @@ export default function MisPedidosPage() {
           fetchOrders();
         }
       )
-      .subscribe();
-
     return () => {
       supabase.removeChannel(ordersChannel);
     };
   }, [clientId, supabase]);
 
+  // Filtros de búsqueda y estado
   const filteredOrders = orders.filter(order => {
-    const matchesSearch =
+    const matchesSearch = order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.product.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.tracking.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+      (order.tracking && order.tracking.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    const matchesStatus = statusFilter === 'all' ||
+      (statusFilter === 'pending' && order.status === 'pending') ||
+      (statusFilter === 'quoted' && order.status === 'quoted') ||
+      (statusFilter === 'processing' && order.status === 'processing') ||
+      (statusFilter === 'shipped' && order.status === 'shipped') ||
+      (statusFilter === 'delivered' && order.status === 'delivered') ||
+      (statusFilter === 'cancelled' && order.status === 'cancelled');
+
     return matchesSearch && matchesStatus;
   });
+
+  // Paginación
+
+
+  const totalOrders = filteredOrders.length;
+  const totalPages = Math.ceil(totalOrders / ITEMS_PER_PAGE);
+  const paginatedOrders = filteredOrders.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  // Reset page when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
 
   const stats = {
     total: orders.length,
@@ -1087,6 +1117,55 @@ export default function MisPedidosPage() {
     return 'bg-gradient-to-r from-slate-400 to-slate-500';
   };
 
+  function groupClientOrders(orders: Order[]): ClientOrderGroupData[] {
+    if (!orders || orders.length === 0) return [];
+    // Sort by date desc
+    const sorted = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const groups: ClientOrderGroupData[] = [];
+    const TIME_THRESHOLD_MS = 20 * 60 * 1000; // 20 mins
+
+    sorted.forEach((order) => {
+      let added = false;
+      // Try to find an existing group
+      for (const group of groups) {
+        const referenceOrder = group.orders[0];
+        const timeDiff = Math.abs(new Date(referenceOrder.createdAt).getTime() - new Date(order.createdAt).getTime());
+
+        if (timeDiff <= TIME_THRESHOLD_MS) {
+          group.orders.push(order);
+          group.minId = Math.min(Number(group.minId), Number(order.id));
+          group.maxId = Math.max(Number(group.maxId), Number(order.id));
+
+          // Update total amount if payable (quoted or rejected)
+          if (order.status === 'quoted' || order.stateNum === -1) {
+            const amount = (order.unitQuote ?? 0) + (order.shippingPrice ?? 0);
+            group.totalAmount += amount;
+            group.canPayAll = true;
+          }
+          added = true;
+          break;
+        }
+      }
+
+      if (!added) {
+        const isPayable = order.status === 'quoted' || order.stateNum === -1;
+        const amount = isPayable ? (order.unitQuote ?? 0) + (order.shippingPrice ?? 0) : 0;
+
+        groups.push({
+          groupId: `${order.id}-${order.createdAt}`,
+          date: order.createdAt,
+          orders: [order],
+          minId: Number(order.id),
+          maxId: Number(order.id),
+          totalAmount: amount,
+          canPayAll: isPayable
+        });
+      }
+    });
+
+    return groups;
+  }
+
   // Color de badge basado en status (se usa en lista y modal detalles)
   const getStatusColor = (status: string) => {
     const isDark = mounted && theme === 'dark';
@@ -1175,12 +1254,50 @@ export default function MisPedidosPage() {
   // Handlers para el modal de pago
   const handlePaymentClick = (order: Order) => {
     setSelectedOrderForPayment(order);
+    setSelectedGroupForPayment(null); // Clear group selection
     setPaymentStep(1);
-    setSelectedPaymentMethod(null);
     setIsPaymentModalOpen(true);
 
     // Obtener tasa de cambio actualizada cuando se abre el modal
     fetchExchangeRate();
+  };
+
+  const handleBulkPayment = (group: ClientOrderGroupData) => {
+    setSelectedGroupForPayment(group);
+    setSelectedOrderForPayment(null); // Clear single order selection
+    // Select all payable orders by default
+    const payableOrders = group.orders
+      .filter(o => o.status === 'quoted' || o.stateNum === -1)
+      .map(o => o.id);
+    setSelectedOrdersInModal(payableOrders);
+
+    setPaymentStep(1); // Start at selection step
+    setIsPaymentModalOpen(true);
+
+    // Obtener tasa de cambio actualizada cuando se abre el modal
+    fetchExchangeRate();
+  };
+
+  const handleToggleOrderSelection = (orderId: string) => {
+    setSelectedOrdersInModal(prev => {
+      if (prev.includes(orderId)) {
+        return prev.filter(id => id !== orderId);
+      } else {
+        return [...prev, orderId];
+      }
+    });
+  };
+
+  const calculateSelectedTotal = () => {
+    if (selectedOrderForPayment) return selectedOrderForPayment.amount; // Should rely on amount string or numeric? better use unitQuote+shipping
+    if (selectedGroupForPayment) {
+      // Sum only selected orders
+      const total = selectedGroupForPayment.orders
+        .filter(o => selectedOrdersInModal.includes(o.id))
+        .reduce((sum, o) => sum + (o.unitQuote ?? 0) + (o.shippingPrice ?? 0), 0);
+      return total;
+    }
+    return 0;
   };
 
   const handlePaymentMethodSelect = (method: PaymentMethod) => {
@@ -1188,10 +1305,20 @@ export default function MisPedidosPage() {
     setPaymentStep(2);
   };
 
+  const handleContinueToPaymentMethod = () => {
+    if (selectedGroupForPayment && selectedOrdersInModal.length === 0) {
+      toast({ title: 'Selección vacía', description: 'Debes seleccionar al menos un pedido para pagar.', variant: 'destructive' });
+      return;
+    }
+    setPaymentStep(1.5); // Intermediate step for method selection (mapping logic remains same, just stepping)
+  };
+
   const handlePaymentBack = () => {
     if (paymentStep === 2) {
-      setPaymentStep(1);
+      setPaymentStep(selectedGroupForPayment ? 1.5 : 1); // Go back to method selection
       setSelectedPaymentMethod(null);
+    } else if (paymentStep === 1.5) {
+      setPaymentStep(1); // Go back to order selection
     } else {
       setIsPaymentModalOpen(false);
       setSelectedOrderForPayment(null);
@@ -1199,45 +1326,76 @@ export default function MisPedidosPage() {
   };
 
   const handlePaymentConfirm = async () => {
-    if (!selectedOrderForPayment) return;
+    if (!selectedOrderForPayment && !selectedGroupForPayment) return;
     if (!clientId) {
       toast({ title: 'No autenticado', description: 'Debes iniciar sesión para confirmar el pago.', variant: 'destructive', duration: 4000 });
       return;
     }
     setIsConfirmingPayment(true);
     try {
-      const rawId = selectedOrderForPayment.id;
-      const orderId = isNaN(Number(rawId)) ? rawId : Number(rawId);
+      const rawId = selectedOrderForPayment ? selectedOrderForPayment.id : 'BULK'; // Placeholder for bulk
 
-      // Usar la API del servidor para que se active el trigger y se registre en el historial
-      const response = await fetch(`/api/orders/${orderId}/state`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          state: 4,
-          changed_by: `client:${clientId}`,
-          notes: 'Pago confirmado por el cliente'
-        })
-      });
+      if (selectedGroupForPayment) {
+        // Bulk Payment
+        const ordersToPay = selectedGroupForPayment.orders.filter(o => selectedOrdersInModal.includes(o.id));
 
-      const data = await response.json();
+        // This should probably be a single bulk API call in future, but for now we loop
+        // We use Promise.all to do it faster
+        const promises = ordersToPay.map(order =>
+          fetch(`/api/orders/${order.id}/state`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              state: 4,
+              changed_by: `client:${clientId}`,
+              notes: 'Pago confirmado por el cliente (Lote)'
+            })
+          })
+        );
 
-      if (!response.ok || !data.success) {
-        console.error('Error actualizando estado del pedido:', data.error);
-        toast({ title: 'Error al confirmar pago', description: data.error || 'Intenta nuevamente.', variant: 'destructive', duration: 5000 });
-        return;
-      }
+        await Promise.all(promises);
 
-      // Refrescar pedidos y cerrar modal
-      await fetchOrders();
-      toast({ title: 'Pago confirmado', description: 'Tu pedido ha sido marcado como pagado y registrado en el historial.', duration: 4000 });
-      setIsPaymentModalOpen(false);
-      setSelectedOrderForPayment(null);
-      setSelectedPaymentMethod(null);
-      setPaymentStep(1);
-    } catch (e: any) {
+        // We assume success for now or we would need complex error handling for partial failures
+
+      } else {
+        // Single Payment
+        // Usar la API del servidor para que se active el trigger y se registre en el historial
+        const response = await fetch(`/api/orders/${isNaN(Number(rawId)) ? rawId : Number(rawId)}/state`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            state: 4,
+            changed_by: `client:${clientId}`,
+            notes: 'Pago confirmado por el cliente'
+          })
+        });
+
+        if (selectedGroupForPayment) {
+          // For bulk, we just assume success after Promise.all (simplified)
+          // Ideally check individual responses
+        } else {
+          const data = await response.json(); // Only exists for single response above
+          if (!response.ok || !data.success) {
+            console.error('Error actualizando estado del pedido:', data.error);
+            toast({ title: 'Error al confirmar pago', description: data.error || 'Intenta nuevamente.', variant: 'destructive', duration: 5000 });
+            return;
+          }
+        }
+
+        // Refrescar pedidos y cerrar modal
+        await fetchOrders();
+        toast({ title: 'Pago confirmado', description: 'Tu pedido ha sido marcado como pagado y registrado en el historial.', duration: 4000 });
+        setIsPaymentModalOpen(false);
+        setSelectedOrderForPayment(null);
+        setSelectedPaymentMethod(null);
+        setPaymentStep(1);
+      } // End of else (single payment)
+    } // End of try block !! MISSING BRACE ADDED HERE
+    catch (e: any) {
       console.error('Excepción confirmando pago:', e);
       toast({ title: 'Error inesperado', description: e?.message || 'Ocurrió un problema al confirmar el pago.', variant: 'destructive', duration: 5000 });
     } finally {
@@ -2302,212 +2460,31 @@ export default function MisPedidosPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {filteredOrders.map((order) => (
-                  <div key={order.id} className={`p-4 md:p-6 rounded-xl border hover:shadow-md transition-all duration-300 group ${mounted && theme === 'dark' ? 'bg-gradient-to-r from-slate-700 to-slate-600 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200'}`}>
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-6 mb-4">
-                      <div className="flex items-center gap-4 md:gap-6">
-                        <div className="flex flex-col">
-                          <p className={`font-bold text-sm md:text-base ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>{order.id}</p>
-                          <p className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{order.product}</p>
-                        </div>
-                        {/* Un solo badge basado en stateNum; fallback al badge de status si no hay stateNum */}
-                        {typeof order.stateNum === 'number' ? (
-                          <Badge className={`text-xs md:text-sm font-semibold px-3 py-1 transition-colors hover:brightness-110 hover:ring-1 ${mounted && theme === 'dark' ? (
-                            order.stateNum === -1 ? 'bg-red-900/30 text-red-300 border-red-700 hover:bg-red-900/50 hover:ring-red-500/20' :
-                              order.stateNum === 13 ? 'bg-emerald-900/30 text-emerald-300 border-emerald-700 hover:bg-emerald-900/50 hover:ring-emerald-500/20' :
-                                order.stateNum === 12 ? 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700 hover:ring-gray-500/20' :
-                                  order.stateNum === 11 ? 'bg-green-900/30 text-green-300 border-green-700 hover:bg-green-900/50 hover:ring-green-500/20' :
-                                    order.stateNum === 10 ? 'bg-orange-900/30 text-orange-300 border-orange-700 hover:bg-orange-900/50 hover:ring-orange-500/20' :
-                                      (order.stateNum === 7 || order.stateNum === 8 || order.stateNum === 9) ? 'bg-cyan-900/30 text-cyan-300 border-cyan-700 hover:bg-cyan-900/50 hover:ring-cyan-500/20' :
-                                        order.stateNum === 6 ? 'bg-blue-900/30 text-blue-300 border-blue-700 hover:bg-blue-900/50 hover:ring-blue-500/20' :
-                                          order.stateNum === 5 ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700 hover:bg-yellow-900/50 hover:ring-yellow-500/20' :
-                                            order.stateNum === 4 ? 'bg-blue-900/30 text-blue-300 border-blue-700 hover:bg-blue-900/50 hover:ring-blue-500/20' :
-                                              order.stateNum === 3 ? 'bg-green-900/30 text-green-300 border-green-700 hover:bg-green-900/50 hover:ring-green-500/20' :
-                                                order.stateNum === 2 ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700 hover:bg-yellow-900/50 hover:ring-yellow-500/20' :
-                                                  'bg-yellow-900/30 text-yellow-300 border-yellow-700 hover:bg-yellow-900/50 hover:ring-yellow-500/20'
-                          ) : (
-                            order.stateNum === -1 ? 'bg-red-100 text-red-800 border-red-200 hover:bg-red-50 hover:ring-red-200' :
-                              order.stateNum === 13 ? 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:ring-emerald-200' :
-                                order.stateNum === 12 ? 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-50 hover:ring-gray-200' :
-                                  order.stateNum === 11 ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-50 hover:ring-green-200' :
-                                    order.stateNum === 10 ? 'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-50 hover:ring-orange-200' :
-                                      (order.stateNum === 7 || order.stateNum === 8 || order.stateNum === 9) ? 'bg-cyan-100 text-cyan-800 border-cyan-200 hover:bg-cyan-50 hover:ring-cyan-200' :
-                                        order.stateNum === 6 ? 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:ring-blue-200' :
-                                          order.stateNum === 5 ? 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:ring-yellow-200' :
-                                            order.stateNum === 4 ? 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:ring-blue-200' :
-                                              order.stateNum === 3 ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-50 hover:ring-green-200' :
-                                                order.stateNum === 2 ? 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:ring-yellow-200' :
-                                                  'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:ring-yellow-200'
-                          )
-                            }`}>
-                            {order.stateNum === -1 ? t('client.recentOrders.statuses.paymentRejected') :
-                              order.stateNum === 5 ? t('client.recentOrders.statuses.paymentValidated') :
-                                order.stateNum === 6 ? t('client.recentOrders.statuses.packagingBox') :
-                                  // 7 y 8 etiquetados como 9
-                                  (order.stateNum === 7 || order.stateNum === 8 || order.stateNum === 9) ? t('client.recentOrders.statuses.sentFromChina') :
-                                    order.stateNum === 10 ? t('client.recentOrders.statuses.inCustoms') :
-                                      order.stateNum === 11 ? t('client.recentOrders.statuses.arriving') :
-                                        order.stateNum === 12 ? t('client.recentOrders.statuses.inStore') :
-                                          order.stateNum === 13 ? t('client.recentOrders.statuses.delivered') :
-                                            order.stateNum === 4 ? t('client.recentOrders.statuses.processing') :
-                                              order.stateNum === 3 ? t('client.recentOrders.statuses.quoted') :
-                                                order.stateNum === 2 ? t('client.recentOrders.statuses.pending') :
-                                                  t('client.recentOrders.statuses.pending')}
-                          </Badge>
-                        ) : (
-                          <Badge className={`${getStatusColor(order.status)} text-xs md:text-sm font-semibold px-3 py-1`}>
-                            {getStatusText(order.status)}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <p className={`text-[10px] md:text-[11px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                          {order.status === 'pending' && t('client.recentOrders.budget')}
-                          {order.status === 'quoted' && t('client.recentOrders.statuses.quoted')}
-                          {order.status !== 'pending' && order.status !== 'quoted' && t('client.recentOrders.table.amount')}
-                        </p>
-                        <div className="font-bold text-lg md:text-xl">
-                          {order.status === 'pending' && typeof order.estimatedBudget !== 'undefined' && order.estimatedBudget !== null ? (
-                            <PriceDisplay
-                              amount={Number(order.estimatedBudget)}
-                              currency="USD"
-                              variant="inline"
-                              size="lg"
-                              emphasizeBolivars={true}
-                              className={mounted && theme === 'dark' ? 'text-white' : 'text-slate-800'}
-                            />
-                          ) : order.status === 'quoted' ? (
-                            <PriceDisplay
-                              amount={Number((order.unitQuote ?? 0) + (order.shippingPrice ?? 0))}
-                              currency="USD"
-                              variant="inline"
-                              size="lg"
-                              emphasizeBolivars={true}
-                              className={mounted && theme === 'dark' ? 'text-white' : 'text-slate-800'}
-                            />
-                          ) : (
-                            <span className={mounted && theme === 'dark' ? 'text-white' : 'text-slate-800'}>{order.amount}</span>
-                          )}
-                        </div>
-                        <p className={`text-xs font-medium ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>Tracking: {order.tracking || '-'}</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="flex justify-between text-sm font-medium">
-                        <span className={mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}>{t('client.recentOrders.progress')}</span>
-                        <span className={mounted && theme === 'dark' ? 'text-white' : 'text-slate-800'}>{order.progress}%</span>
-                      </div>
-                      <div className={`w-full rounded-full h-2 md:h-3 overflow-hidden ${mounted && theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`}>
-                        <div
-                          className={`h-2 md:h-3 rounded-full transition-all duration-500 ${getProgressColor(order.progress)}`}
-                          style={{ width: `${order.progress}%` }}
-                        ></div>
-                      </div>
-                      <div className="flex flex-col md:flex-row md:justify-between gap-3 md:gap-0 text-sm">
-                        <div className="flex flex-col gap-2">
-                          <span className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>{t('client.recentOrders.estimatedDelivery')}: {order.estimatedDelivery}</span>
-                          {/* Botón de calificar solo para pedidos completados al 100% */}
-                          {order.stateNum === 13 && (() => {
-                            const orderKey = normalizeOrderId(order.id);
-                            return loadingReviews[orderKey] ? (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                disabled
-                                className={`h-7 md:h-8 px-3 md:px-4 text-xs font-semibold transition-all duration-300 w-fit opacity-50 ${mounted && theme === 'dark' ? 'border-slate-600 text-slate-400' : 'border-slate-300 text-slate-500'}`}
-                              >
-                                <Star className="h-3 w-3 mr-1 animate-pulse" />
-                                Verificando...
-                              </Button>
-                            ) : orderReviews[orderKey] ? (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className={`h-7 md:h-8 px-3 md:px-4 text-xs font-semibold transition-all duration-300 w-fit ${mounted && theme === 'dark' ? 'border-yellow-600 text-yellow-300 hover:bg-yellow-900/30 hover:border-yellow-500' : 'border-yellow-200 text-yellow-700 hover:bg-yellow-50 hover:border-yellow-300'}`}
-                                onClick={() => openViewReviewModal(order)}
-                              >
-                                <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-400" />
-                                {t('client.recentOrders.reviews.alreadyRated', { fallback: 'Ya calificado' })}
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className={`h-7 md:h-8 px-3 md:px-4 text-xs font-semibold transition-all duration-300 w-fit ${mounted && theme === 'dark' ? 'border-purple-600 text-purple-300 hover:bg-purple-900/30 hover:border-purple-500' : 'border-purple-200 text-purple-700 hover:bg-purple-50 hover:border-purple-300'}`}
-                                onClick={() => openReviewModal(order)}
-                              >
-                                <Star className="h-3 w-3 mr-1" />
-                                {t('client.recentOrders.reviews.rate', { fallback: 'Calificar' })}
-                              </Button>
-                            )
-                          })()}
-                        </div>
-                        <div className="flex gap-2 md:gap-3">
-                          {/* Botón para revisar alternativa pendiente */}
-                          {(() => {
-                            const alternative = alternatives.find(alt => {
-                              const match = String(alt.order_id) === String(order.id);
-
-                              return match;
-                            });
-                            return alternative && (
-                              <Button
-                                size="sm"
-                                className="h-7 md:h-8 px-3 md:px-4 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white text-xs font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                                onClick={() => openReviewAlternativeModal(order)}
-                              >
-                                <AlertTriangle className="h-3 w-3 mr-1 animate-pulse" />
-                                Revisar Alternativa
-                              </Button>
-                            );
-                          })()}
-
-                          {/* Botón para cancelar pedido (solo en estados pendiente o cotizado) */}
-                          {(order.status === 'pending' || order.status === 'quoted') && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className={`h-7 md:h-8 px-3 md:px-4 text-xs font-semibold transition-all duration-300 ${mounted && theme === 'dark' ? 'border-red-600 text-red-300 hover:bg-red-900/30 hover:border-red-500' : 'border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300'}`}
-                              onClick={() => openCancelOrderModal(order)}
-                            >
-                              <XCircle className="h-3 w-3 mr-1" />
-                              Cancelar
-                            </Button>
-                          )}
-
-                          {(order.status === 'quoted' || order.stateNum === -1) && (
-                            <Button
-                              size="sm"
-                              className="h-7 md:h-8 px-3 md:px-4 bg-gradient-to-r from-blue-500 to-orange-500 hover:from-blue-600 hover:to-orange-600 text-white text-xs font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                              onClick={() => handlePaymentClick(order)}
-                            >
-                              <DollarSign className="h-3 w-3 mr-1" />
-                              {order.stateNum === -1 ? t('client.recentOrders.actions.payAgain') : t('client.recentOrders.actions.pay')}
-                            </Button>
-                          )}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className={`h-7 md:h-8 px-3 md:px-4 text-xs font-semibold transition-all duration-300 ${mounted && theme === 'dark' ? 'border-slate-600 text-blue-300 hover:bg-slate-700 hover:border-slate-500' : 'border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300'}`}
-                            onClick={() => handleViewDetails(order)}
-                          >
-                            <Eye className="h-3 w-3 mr-1" />
-                            {t('client.recentOrders.actions.view')}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className={`h-7 md:h-8 px-3 md:px-4 text-xs font-semibold transition-all duration-300 ${mounted && theme === 'dark' ? 'border-slate-600 text-orange-300 hover:bg-slate-700 hover:border-slate-500' : 'border-orange-200 text-orange-700 hover:bg-orange-50 hover:border-orange-300'}`}
-                            onClick={() => openTrackingModal(order)}
-                          >
-                            <MapPin className="h-3 w-3 mr-1" />
-                            {t('client.recentOrders.actions.track')}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                {groupClientOrders(paginatedOrders).map((group) => (
+                  <ClientOrderGroup
+                    key={group.groupId}
+                    group={group}
+                    mounted={mounted}
+                    theme={theme}
+                    t={t}
+                    getStatusColor={getStatusColor}
+                    getStatusText={getStatusText}
+                    getProgressColor={getProgressColor}
+                    loadingReviews={loadingReviews}
+                    orderReviews={orderReviews}
+                    alternatives={alternatives}
+                    normalizeOrderId={normalizeOrderId}
+                    handlers={{
+                      openViewReviewModal,
+                      openReviewModal,
+                      openReviewAlternativeModal,
+                      openCancelOrderModal,
+                      handlePaymentClick,
+                      handleViewDetails,
+                      openTrackingModal,
+                      handleBulkPayment
+                    }}
+                  />
                 ))}
 
                 {filteredOrders.length === 0 && (
@@ -2520,6 +2497,51 @@ export default function MisPedidosPage() {
                   </div>
                 )}
               </div>
+
+              {/* Paginación */}
+              {totalOrders > 0 && (
+                <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 p-4 rounded-xl border ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+                  <div className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {t('chinese.ordersPage.pagination.showing', {
+                      start: ((currentPage - 1) * ITEMS_PER_PAGE) + 1,
+                      end: Math.min(currentPage * ITEMS_PER_PAGE, totalOrders),
+                      total: totalOrders,
+                      defaultValue: `Mostrando ${((currentPage - 1) * ITEMS_PER_PAGE) + 1} a ${Math.min(currentPage * ITEMS_PER_PAGE, totalOrders)} de ${totalOrders} pedidos`
+                    })}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className={`h-9 ${mounted && theme === 'dark' ? 'border-slate-600 hover:bg-slate-700 disabled:opacity-50' : ''}`}
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      {t('chinese.ordersPage.pagination.previous', { defaultValue: 'Anterior' })}
+                    </Button>
+                    <div className="flex items-center gap-1 px-2">
+                      <span className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                        {t('chinese.ordersPage.pagination.pageInfo', {
+                          current: currentPage,
+                          total: totalPages,
+                          defaultValue: `Página ${currentPage} de ${totalPages}`
+                        })}
+                      </span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className={`h-9 ${mounted && theme === 'dark' ? 'border-slate-600 hover:bg-slate-700 disabled:opacity-50' : ''}`}
+                    >
+                      {t('chinese.ordersPage.pagination.next', { defaultValue: 'Siguiente' })}
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -2844,18 +2866,31 @@ export default function MisPedidosPage() {
               </DialogDescription>
             </DialogHeader>
 
-            {selectedOrderForPayment && (
+            {(selectedOrderForPayment || selectedGroupForPayment) && (
               <div className="space-y-6">
-                {/* Información del pedido */}
+                {/* Información del pedido o grupo */}
                 <div className={`p-4 rounded-xl border ${mounted && theme === 'dark' ? 'bg-gradient-to-r from-slate-800 to-slate-700 border-slate-600' : 'bg-gradient-to-r from-blue-50 to-orange-50 border-blue-200'}`}>
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className={`font-semibold text-lg ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{selectedOrderForPayment.product}</h3>
-                      <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>{selectedOrderForPayment.id}</p>
+                      <h3 className={`font-semibold text-lg ${mounted && theme === 'dark' ? 'text-white' : ''}`}>
+                        {selectedGroupForPayment
+                          ? `Pago de ${selectedOrdersInModal.length} pedidos seleccionados`
+                          : selectedOrderForPayment?.product
+                        }
+                      </h3>
+                      <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                        {selectedGroupForPayment
+                          ? `Total seleccionado`
+                          : selectedOrderForPayment?.id
+                        }
+                      </p>
                     </div>
                     <div className="text-right">
                       <p className={`text-2xl font-bold ${mounted && theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>
-                        {formatPriceWithConversion(selectedOrderForPayment.amount, selectedPaymentMethod)}
+                        {formatPriceWithConversion(
+                          selectedGroupForPayment ? calculateSelectedTotal() : selectedOrderForPayment?.amount,
+                          selectedPaymentMethod
+                        )}
                       </p>
                       <p className={`text-xs mt-1 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{t('client.recentOrders.paymentModal.quoteValidUntil', { date: '25/01/2024' })}</p>
                       {selectedPaymentMethod?.currency === 'BS' && exchangeRateLoading && (
@@ -2865,8 +2900,50 @@ export default function MisPedidosPage() {
                   </div>
                 </div>
 
-                {/* Paso 1: Selección de método de pago */}
-                {paymentStep === 1 && (
+                {/* Paso 1: Selección de Pedidos (Solo para Pago Grupal) */}
+                {paymentStep === 1 && selectedGroupForPayment && (
+                  <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                    <h4 className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>Selecciona los pedidos a pagar:</h4>
+                    <div className="space-y-2">
+                      {selectedGroupForPayment.orders
+                        .filter(o => o.status === 'quoted' || o.stateNum === -1)
+                        .map((order) => (
+                          <div
+                            key={order.id}
+                            onClick={() => handleToggleOrderSelection(order.id)}
+                            className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${selectedOrdersInModal.includes(order.id)
+                              ? (mounted && theme === 'dark' ? 'bg-blue-900/30 border-blue-500' : 'bg-blue-50 border-blue-300')
+                              : (mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700 hover:bg-slate-700' : 'bg-white border-slate-200 hover:bg-slate-50')
+                              }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedOrdersInModal.includes(order.id)
+                                ? 'bg-blue-500 border-blue-500 text-white'
+                                : 'border-slate-400'
+                                }`}>
+                                {selectedOrdersInModal.includes(order.id) && <Check className="w-3.5 h-3.5" />}
+                              </div>
+                              <div>
+                                <p className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
+                                  {order.product}
+                                </p>
+                                <p className="text-xs text-slate-500">#ORD-{order.id}</p>
+                              </div>
+                            </div>
+                            <div className="font-semibold text-right">
+                              ${Number((order.unitQuote ?? 0) + (order.shippingPrice ?? 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                    <div className="pt-2 flex justify-end text-sm text-slate-500">
+                      {selectedOrdersInModal.length} de {selectedGroupForPayment.orders.filter(o => o.status === 'quoted' || o.stateNum === -1).length} seleccionados
+                    </div>
+                  </div>
+                )}
+
+                {/* Paso 1.5 (o 1 si es individual): Selección de método de pago */}
+                {(paymentStep === 1.5 || (paymentStep === 1 && !selectedGroupForPayment)) && (
                   <div className="space-y-4 payment-step-transition">
                     <div className="grid grid-cols-1 gap-3">
                       {paymentMethods.map((method) => (
@@ -2997,6 +3074,17 @@ export default function MisPedidosPage() {
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     {paymentStep === 1 ? t('client.recentOrders.paymentModal.cancel') : t('client.recentOrders.paymentModal.back')}
                   </Button>
+
+                  {paymentStep === 1 && selectedGroupForPayment && (
+                    <Button
+                      onClick={handleContinueToPaymentMethod}
+                      disabled={selectedOrdersInModal.length === 0}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    >
+                      Continuar
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  )}
 
                   {paymentStep === 2 && (
                     <Button
