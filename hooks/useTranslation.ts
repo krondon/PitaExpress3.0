@@ -34,7 +34,7 @@ export function useTranslation() {
           if (current && typeof current === 'object' && fallbackKey in current) {
             current = current[fallbackKey];
           } else {
-            console.log('[i18n][MISS]', { lang: language, key, tried: keys });
+
             return typeof options?.fallback === 'string' ? options.fallback : key;
           }
         }
@@ -59,7 +59,7 @@ export function useTranslation() {
       return fallbackText;
     }
 
-    console.log('[i18n][HIT]', { lang: usedLanguage, key, result });
+
     return result;
   };
 

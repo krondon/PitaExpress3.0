@@ -108,21 +108,21 @@ export function useAdminOrdersList() {
     const ordersChannel = supabase
       .channel('admin-orders-list-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
-        console.log('Realtime: Orders changed', payload);
+
         fetchData();
       })
       .subscribe((status) => {
-        console.log('Realtime orders subscription status:', status);
+
       });
 
     const clientsChannel = supabase
       .channel('admin-orders-clients-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, (payload) => {
-        console.log('Realtime: Clients changed', payload);
+
         fetchData();
       })
       .subscribe((status) => {
-        console.log('Realtime clients subscription status:', status);
+
       });
 
     return () => {

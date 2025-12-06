@@ -34,7 +34,7 @@ export default function VenezuelaPedidosPage() {
     state: number;
     clientName: string;
     client_id?: string;
-  asignedEVzla?: string;
+    asignedEVzla?: string;
     description?: string;
     pdfRoutes?: string;
   };
@@ -339,7 +339,7 @@ export default function VenezuelaPedidosPage() {
         const safeDeliveryType = sanitizeForFile(orderForPdf?.deliveryType);
         const nombrePDFCorr = `${safeProduct}_${fechaPedidoLegible}_${orderIdCreated}_${safeClient}_${safeDeliveryVzla}.pdf`;
         const folder = safeDeliveryType || 'otros';
-  let uploadKey = `${folder}/${nombrePDFCorr}`;
+        let uploadKey = `${folder}/${nombrePDFCorr}`;
 
         const doUpload = async (key: string) => {
           return await supabase.storage
@@ -359,7 +359,7 @@ export default function VenezuelaPedidosPage() {
             .replace(/--+/g, '-');
           uploadResult = await doUpload(ultraKey);
           if (!uploadResult.error) {
-            console.log('Upload exitoso tras retry con key:', ultraKey);
+
             uploadKey = ultraKey;
           }
         }
@@ -389,7 +389,7 @@ export default function VenezuelaPedidosPage() {
               const j = await patchRes.json();
               if ((j as any)?.error) errMsg += ` - ${(j as any).error}`;
               if ((j as any)?.details) errMsg += ` | ${Array.isArray((j as any).details) ? (j as any).details.join(', ') : (j as any).details}`;
-            } catch {/* ignore */}
+            } catch {/* ignore */ }
             console.error('Error actualizando pedido con PDF URL:', errMsg, { orderIdCreated, pdfUrl });
 
             // Fallback: actualizar directamente via Supabase
@@ -445,10 +445,10 @@ export default function VenezuelaPedidosPage() {
     try {
       const supabase = getSupabaseBrowserClient();
       const { data: { user } } = await supabase.auth.getUser();
-  const empleadoId = user?.id;
-  if (!empleadoId) throw new Error(t('venezuela.pedidos.errors.getUser'));
+      const empleadoId = user?.id;
+      if (!empleadoId) throw new Error(t('venezuela.pedidos.errors.getUser'));
       const res = await fetch(`/venezuela/pedidos/api/orders?asignedEVzla=${encodeURIComponent(String(empleadoId))}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error(t('venezuela.pedidos.errors.fetchOrders'));
+      if (!res.ok) throw new Error(t('venezuela.pedidos.errors.fetchOrders'));
       const data = await res.json();
       // Defensa extra: si por alguna razón el endpoint no filtró correctamente,
       // aplicamos filtro en cliente para mostrar solo pedidos asignados al empleado.
@@ -486,7 +486,7 @@ export default function VenezuelaPedidosPage() {
     if (modalVerCajas.open && modalVerCajas.containerId) {
       fetchBoxesByContainerId(modalVerCajas.containerId);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, modalVerPedidos.open, modalVerPedidos.boxId, modalVerCajas.open, modalVerCajas.containerId]);
 
   // Obtener id del empleado para hook realtime
@@ -515,7 +515,7 @@ export default function VenezuelaPedidosPage() {
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [empleadoId]);
 
   // Realtime para cajas y contenedores: activo siempre que exista empleadoId
@@ -524,14 +524,14 @@ export default function VenezuelaPedidosPage() {
     if (modalVerPedidos.open && modalVerPedidos.boxId) fetchOrdersByBoxId(modalVerPedidos.boxId);
     // Si se está mostrando contenedor con cajas
     if (modalVerCajas.open && modalVerCajas.containerId) fetchBoxesByContainerId(modalVerCajas.containerId);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, modalVerPedidos.open, modalVerPedidos.boxId, modalVerCajas.open, modalVerCajas.containerId]);
 
   const handleRealtimeContainersUpdate = useCallback(() => {
     if (activeTab === 'contenedores') fetchContainers();
     // Si modal abierto de contenedor: refrescar cajas y pedidos de cajas
     if (modalVerCajas.open && modalVerCajas.containerId) fetchBoxesByContainerId(modalVerCajas.containerId);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, modalVerCajas.open, modalVerCajas.containerId]);
 
   useRealtimeVzlaBoxesContainers(handleRealtimeBoxesUpdate, handleRealtimeContainersUpdate, !!empleadoId);
@@ -724,21 +724,19 @@ export default function VenezuelaPedidosPage() {
   if (!mounted) return null;
 
   return (
-    <div className={`min-h-screen flex overflow-x-hidden ${
-      theme === 'dark' ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50'
-    }`}>
-      <Sidebar 
-        isExpanded={sidebarExpanded} 
+    <div className={`min-h-screen flex overflow-x-hidden ${theme === 'dark' ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50'
+      }`}>
+      <Sidebar
+        isExpanded={sidebarExpanded}
         setIsExpanded={setSidebarExpanded}
         isMobileMenuOpen={isMobileMenuOpen}
         onMobileMenuClose={() => setIsMobileMenuOpen(false)}
         userRole="venezuela"
       />
-      
-      <main className={`transition-all duration-300 flex-1 pr-4 ${
-        sidebarExpanded ? 'lg:ml-72 lg:w-[calc(100%-18rem)]' : 'lg:ml-24 lg:w-[calc(100%-6rem)]'
-      }`}>
-        <Header 
+
+      <main className={`transition-all duration-300 flex-1 pr-4 ${sidebarExpanded ? 'lg:ml-72 lg:w-[calc(100%-18rem)]' : 'lg:ml-24 lg:w-[calc(100%-6rem)]'
+        }`}>
+        <Header
           notifications={0}
           notificationsRole="venezuela"
           onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -746,11 +744,11 @@ export default function VenezuelaPedidosPage() {
           subtitle={t('venezuela.pedidos.subtitle')}
           showTitleOnMobile
         />
-        
-  <div className="p-4 md:p-5 lg:p-6 space-y-6">
+
+        <div className="p-4 md:p-5 lg:p-6 space-y-6">
           {/* Header de la página (título duplicado removido; lo muestra el Header de arriba) */}
           <div className="space-y-4">
-            
+
             {/* Tarjetas de estadísticas */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               <Card className="bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-700">
@@ -817,7 +815,7 @@ export default function VenezuelaPedidosPage() {
                 </CardContent>
               </Card>
             </div>
-            
+
             {/* Modal Aviso (reutilizable) */}
             {modalAviso.open && (
               <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" onClick={closeModalAviso}>
@@ -842,7 +840,7 @@ export default function VenezuelaPedidosPage() {
                 </div>
               </div>
             )}
-            
+
             {/* Tabs: Pedidos | Cajas | Contenedores (con indicador deslizante) */}
             <div className="pt-2">
               <div className="relative flex w-full gap-2 rounded-lg border border-slate-200 bg-white/70 dark:border-slate-700 dark:bg-slate-800/60 backdrop-blur px-1 py-1 shadow-sm overflow-hidden">
@@ -850,11 +848,11 @@ export default function VenezuelaPedidosPage() {
                 <span
                   className="absolute top-1 bottom-1 rounded-md bg-slate-900/95 dark:bg-slate-200 transition-all duration-300 ease-out shadow-sm"
                   style={{
-                    left: `${(['pedidos','cajas','contenedores'] as const).indexOf(activeTab) * (100/3)}%`,
+                    left: `${(['pedidos', 'cajas', 'contenedores'] as const).indexOf(activeTab) * (100 / 3)}%`,
                     width: 'calc((100% - 0.5rem * 2) / 3)' // gap-2 => 0.5rem; reutilizamos fórmula del componente interno
                   }}
                 />
-                {(['pedidos','cajas','contenedores'] as const).map(tab => (
+                {(['pedidos', 'cajas', 'contenedores'] as const).map(tab => (
                   <button
                     key={tab}
                     type="button"
@@ -916,196 +914,200 @@ export default function VenezuelaPedidosPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {(() => { const total = sortedOrders.length; const { start, end } = getPageSlice(total, ordersPage); return sortedOrders.slice(start, end).map((order) => {
-                      const stateNum = Number(order.state);
-                      return (
-                        <div
-                          key={order.id}
-                          className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-xl border hover:shadow-md transition-all duration-300 ${theme === 'dark' ? 'bg-gradient-to-r from-slate-800 to-slate-700 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200'}`}
-                        >
-                          <div className="min-w-0 flex items-center gap-4">
-                            <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-blue-900/30' : 'bg-blue-100'}`}><Package className={`h-5 w-5 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} /></div>
-                            <div className="min-w-0 space-y-1">
-                              <h3 className={`font-semibold truncate ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>#ORD-{String(order.id)} • {order.clientName}</h3>
-                              <div className={`flex flex-wrap gap-4 text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                <span className="truncate">{t('venezuela.pedidos.labels.quantity')}: {order.quantity}</span>
-                                <span className="truncate">{t('venezuela.pedidos.labels.deliveryType')}: {order.deliveryType}</span>
-                                <span className="truncate">{t('venezuela.pedidos.labels.shippingType')}: {order.shippingType}</span>
+                    {(() => {
+                      const total = sortedOrders.length; const { start, end } = getPageSlice(total, ordersPage); return sortedOrders.slice(start, end).map((order) => {
+                        const stateNum = Number(order.state);
+                        return (
+                          <div
+                            key={order.id}
+                            className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-xl border hover:shadow-md transition-all duration-300 ${theme === 'dark' ? 'bg-gradient-to-r from-slate-800 to-slate-700 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200'}`}
+                          >
+                            <div className="min-w-0 flex items-center gap-4">
+                              <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-blue-900/30' : 'bg-blue-100'}`}><Package className={`h-5 w-5 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} /></div>
+                              <div className="min-w-0 space-y-1">
+                                <h3 className={`font-semibold truncate ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>#ORD-{String(order.id)} • {order.clientName}</h3>
+                                <div className={`flex flex-wrap gap-4 text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                  <span className="truncate">{t('venezuela.pedidos.labels.quantity')}: {order.quantity}</span>
+                                  <span className="truncate">{t('venezuela.pedidos.labels.deliveryType')}: {order.deliveryType}</span>
+                                  <span className="truncate">{t('venezuela.pedidos.labels.shippingType')}: {order.shippingType}</span>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
-                            {stateNum === 13 && (<Badge className={theme === 'dark' ? 'bg-emerald-900/30 text-emerald-300 border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:ring-1 hover:ring-emerald-200'}>{t('venezuela.pedidos.badges.delivered')}</Badge>)}
-                            {stateNum === 12 && (<Badge className={theme === 'dark' ? 'bg-blue-900/30 text-blue-300 border-blue-700' : 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:border-blue-300 hover:ring-1 hover:ring-blue-200'}>{t('venezuela.pedidos.badges.readyToDeliver')}</Badge>)}
-                            {stateNum === 11 && (<Badge className={theme === 'dark' ? 'bg-emerald-900/30 text-emerald-300 border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:ring-1 hover:ring-emerald-200'}>{t('venezuela.pedidos.badges.received')}</Badge>)}
-                            {stateNum === 10 && (<Badge className={theme === 'dark' ? 'bg-indigo-900/30 text-indigo-300 border-indigo-700' : 'bg-indigo-100 text-indigo-800 border-indigo-200 hover:bg-indigo-50 hover:border-indigo-300 hover:ring-1 hover:ring-indigo-200'}>{t('venezuela.pedidos.badges.customs')}</Badge>)}
-                            {stateNum === 9 && (<Badge className={theme === 'dark' ? 'bg-emerald-900/30 text-emerald-300 border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:ring-1 hover:ring-emerald-200'}>{t('venezuela.pedidos.badges.arrivedVzla')}</Badge>)}
-                            {stateNum === 8 && (<Badge className={theme === 'dark' ? 'bg-emerald-900/30 text-emerald-300 border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:ring-1 hover:ring-emerald-200'}>{t('venezuela.pedidos.badges.onWayVzla')}</Badge>)}
-                            {stateNum === 1 && (<Badge className={theme === 'dark' ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700' : 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:border-yellow-300 hover:ring-1 hover:ring-yellow-200'}>{t('venezuela.pedidos.badges.pending')}</Badge>)}
-                            {stateNum === 2 && (<Badge className={theme === 'dark' ? 'bg-green-900/30 text-green-300 border-green-700' : 'bg-green-100 text-green-800 border-green-200 hover:bg-green-50 hover:border-green-300 hover:ring-1 hover:ring-green-200'}>{t('venezuela.pedidos.badges.reviewing')}</Badge>)}
-                            {stateNum === 3 && (<Badge className={theme === 'dark' ? 'bg-purple-900/30 text-purple-300 border-purple-700' : 'bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-50 hover:border-purple-300 hover:ring-1 hover:ring-purple-200'}>{t('venezuela.pedidos.badges.quoted')}</Badge>)}
-                            {stateNum === 4 && (<Badge className={theme === 'dark' ? 'bg-blue-900/30 text-blue-300 border-blue-700' : 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:border-blue-300 hover:ring-1 hover:ring-blue-200'}>{t('venezuela.pedidos.badges.processing')}</Badge>)}
-                            {(stateNum >= 5 && stateNum <= 7) && (<Badge className={theme === 'dark' ? 'bg-gray-800/50 text-gray-300 border-gray-700' : 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:ring-1 hover:ring-gray-200'}>{t('venezuela.pedidos.badges.inProcess')}</Badge>)}
+                            <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
+                              {stateNum === 13 && (<Badge className={theme === 'dark' ? 'bg-emerald-900/30 text-emerald-300 border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:ring-1 hover:ring-emerald-200'}>{t('venezuela.pedidos.badges.delivered')}</Badge>)}
+                              {stateNum === 12 && (<Badge className={theme === 'dark' ? 'bg-blue-900/30 text-blue-300 border-blue-700' : 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:border-blue-300 hover:ring-1 hover:ring-blue-200'}>{t('venezuela.pedidos.badges.readyToDeliver')}</Badge>)}
+                              {stateNum === 11 && (<Badge className={theme === 'dark' ? 'bg-emerald-900/30 text-emerald-300 border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:ring-1 hover:ring-emerald-200'}>{t('venezuela.pedidos.badges.received')}</Badge>)}
+                              {stateNum === 10 && (<Badge className={theme === 'dark' ? 'bg-indigo-900/30 text-indigo-300 border-indigo-700' : 'bg-indigo-100 text-indigo-800 border-indigo-200 hover:bg-indigo-50 hover:border-indigo-300 hover:ring-1 hover:ring-indigo-200'}>{t('venezuela.pedidos.badges.customs')}</Badge>)}
+                              {stateNum === 9 && (<Badge className={theme === 'dark' ? 'bg-emerald-900/30 text-emerald-300 border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:ring-1 hover:ring-emerald-200'}>{t('venezuela.pedidos.badges.arrivedVzla')}</Badge>)}
+                              {stateNum === 8 && (<Badge className={theme === 'dark' ? 'bg-emerald-900/30 text-emerald-300 border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:ring-1 hover:ring-emerald-200'}>{t('venezuela.pedidos.badges.onWayVzla')}</Badge>)}
+                              {stateNum === 1 && (<Badge className={theme === 'dark' ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700' : 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:border-yellow-300 hover:ring-1 hover:ring-yellow-200'}>{t('venezuela.pedidos.badges.pending')}</Badge>)}
+                              {stateNum === 2 && (<Badge className={theme === 'dark' ? 'bg-green-900/30 text-green-300 border-green-700' : 'bg-green-100 text-green-800 border-green-200 hover:bg-green-50 hover:border-green-300 hover:ring-1 hover:ring-green-200'}>{t('venezuela.pedidos.badges.reviewing')}</Badge>)}
+                              {stateNum === 3 && (<Badge className={theme === 'dark' ? 'bg-purple-900/30 text-purple-300 border-purple-700' : 'bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-50 hover:border-purple-300 hover:ring-1 hover:ring-purple-200'}>{t('venezuela.pedidos.badges.quoted')}</Badge>)}
+                              {stateNum === 4 && (<Badge className={theme === 'dark' ? 'bg-blue-900/30 text-blue-300 border-blue-700' : 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:border-blue-300 hover:ring-1 hover:ring-blue-200'}>{t('venezuela.pedidos.badges.processing')}</Badge>)}
+                              {(stateNum >= 5 && stateNum <= 7) && (<Badge className={theme === 'dark' ? 'bg-gray-800/50 text-gray-300 border-gray-700' : 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:ring-1 hover:ring-gray-200'}>{t('venezuela.pedidos.badges.inProcess')}</Badge>)}
 
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex items-center gap-1 uppercase"
-                              onClick={() => {
-                                if (order.pdfRoutes) {
-                                  const win = window.open(order.pdfRoutes, '_blank');
-                                  if (!win) {
-                                    setModalAviso({ open: true, title: t('venezuela.pedidos.pdf.openError') || 'No se pudo abrir el PDF', description: t('venezuela.pedidos.pdf.notAvailableOrder') || 'Intenta nuevamente o verifica más tarde.' });
-                                  }
-                                } else {
-                                  setModalAviso({ open: true, title: 'Sin PDF', description: 'No hay PDF disponible para este pedido.' });
-                                }
-                              }}
-                            >
-                              <Eye className="w-4 h-4" /> {t('admin.orders.actions.view')}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex items-center gap-1 uppercase"
-                              disabled={stateNum !== 1}
-                              onClick={() => openEditModal(order)}
-                              title={stateNum !== 1 ? t('venezuela.pedidos.edit.disabledTooltip', { defaultValue: 'Solo disponible para pedidos en estado Pendiente (1)' }) : t('venezuela.pedidos.edit.cta', { defaultValue: 'Editar pedido' })}
-                            >
-                              <Pencil className="w-4 h-4" /> {t('admin.orders.actions.edit', { defaultValue: 'Editar' })}
-                            </Button>
-                            <Button
-                              size="icon"
-                              disabled={loading || ![1,8,11,12].includes(stateNum)}
-                              onClick={async () => {
-                                if (stateNum === 1) {
-                                  try {
-                                    const res = await fetch('/venezuela/pedidos/api/send-to-china', {
-                                      method: 'PATCH',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ orderId: order.id })
-                                    });
-                                    if (!res.ok) {
-                                      const err = await res.json().catch(() => ({}));
-                                      throw new Error(err.error || t('venezuela.pedidos.errors.updateOrder'));
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-1 uppercase"
+                                onClick={() => {
+                                  if (order.pdfRoutes) {
+                                    const win = window.open(order.pdfRoutes, '_blank');
+                                    if (!win) {
+                                      setModalAviso({ open: true, title: t('venezuela.pedidos.pdf.openError') || 'No se pudo abrir el PDF', description: t('venezuela.pedidos.pdf.notAvailableOrder') || 'Intenta nuevamente o verifica más tarde.' });
                                     }
-                                    await fetchOrders();
-                                  } catch (err) {
-                                    console.error(err);
-                                    alert((err as Error).message || t('venezuela.pedidos.errors.sendToChina'));
+                                  } else {
+                                    setModalAviso({ open: true, title: 'Sin PDF', description: 'No hay PDF disponible para este pedido.' });
                                   }
-                                  return;
-                                }
-                                if (stateNum === 8) {
-                                  try {
-                                    const res = await fetch('/venezuela/pedidos/api/advance-state', {
-                                      method: 'PATCH',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ orderId: order.id, nextState: 9 })
-                                    });
-                                    if (!res.ok) {
-                                      const err = await res.json().catch(() => ({}));
-                                      throw new Error(err.error || t('venezuela.pedidos.errors.updateOrder'));
+                                }}
+                              >
+                                <Eye className="w-4 h-4" /> {t('admin.orders.actions.view')}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-1 uppercase"
+                                disabled={stateNum !== 1}
+                                onClick={() => openEditModal(order)}
+                                title={stateNum !== 1 ? t('venezuela.pedidos.edit.disabledTooltip', { defaultValue: 'Solo disponible para pedidos en estado Pendiente (1)' }) : t('venezuela.pedidos.edit.cta', { defaultValue: 'Editar pedido' })}
+                              >
+                                <Pencil className="w-4 h-4" /> {t('admin.orders.actions.edit', { defaultValue: 'Editar' })}
+                              </Button>
+                              <Button
+                                size="icon"
+                                disabled={loading || ![1, 8, 11, 12].includes(stateNum)}
+                                onClick={async () => {
+                                  if (stateNum === 1) {
+                                    try {
+                                      const res = await fetch('/venezuela/pedidos/api/send-to-china', {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ orderId: order.id })
+                                      });
+                                      if (!res.ok) {
+                                        const err = await res.json().catch(() => ({}));
+                                        throw new Error(err.error || t('venezuela.pedidos.errors.updateOrder'));
+                                      }
+                                      await fetchOrders();
+                                    } catch (err) {
+                                      console.error(err);
+                                      alert((err as Error).message || t('venezuela.pedidos.errors.sendToChina'));
                                     }
-                                    await fetchOrders();
-                                  } catch (err) {
-                                    console.error(err);
-                                    alert((err as Error).message || t('venezuela.pedidos.errors.updateStatus'));
+                                    return;
                                   }
-                                  return;
-                                }
-                                if (stateNum === 9) {
-                                  try {
-                                    const res = await fetch('/venezuela/pedidos/api/advance-state', {
-                                      method: 'PATCH',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ orderId: order.id, nextState: 10 })
-                                    });
-                                    if (!res.ok) {
-                                      const err = await res.json().catch(() => ({}));
-                                      throw new Error(err.error || t('venezuela.pedidos.errors.updateOrder'));
+                                  if (stateNum === 8) {
+                                    try {
+                                      const res = await fetch('/venezuela/pedidos/api/advance-state', {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ orderId: order.id, nextState: 9 })
+                                      });
+                                      if (!res.ok) {
+                                        const err = await res.json().catch(() => ({}));
+                                        throw new Error(err.error || t('venezuela.pedidos.errors.updateOrder'));
+                                      }
+                                      await fetchOrders();
+                                    } catch (err) {
+                                      console.error(err);
+                                      alert((err as Error).message || t('venezuela.pedidos.errors.updateStatus'));
                                     }
-                                    await fetchOrders();
-                                  } catch (err) {
-                                    console.error(err);
-                                    alert((err as Error).message || t('venezuela.pedidos.errors.updateStatus'));
+                                    return;
                                   }
-                                  return;
-                                }
-                                if (stateNum === 11) {
-                                  try {
-                                    const res = await fetch('/venezuela/pedidos/api/advance-state', {
-                                      method: 'PATCH',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ orderId: order.id, nextState: 12 })
-                                    });
-                                    if (!res.ok) {
-                                      const err = await res.json().catch(() => ({}));
-                                      throw new Error(err.error || t('venezuela.pedidos.errors.updateOrder'));
+                                  if (stateNum === 9) {
+                                    try {
+                                      const res = await fetch('/venezuela/pedidos/api/advance-state', {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ orderId: order.id, nextState: 10 })
+                                      });
+                                      if (!res.ok) {
+                                        const err = await res.json().catch(() => ({}));
+                                        throw new Error(err.error || t('venezuela.pedidos.errors.updateOrder'));
+                                      }
+                                      await fetchOrders();
+                                    } catch (err) {
+                                      console.error(err);
+                                      alert((err as Error).message || t('venezuela.pedidos.errors.updateStatus'));
                                     }
-                                    await fetchOrders();
-                                  } catch (err) {
-                                    console.error(err);
-                                    alert((err as Error).message || t('venezuela.pedidos.errors.updateStatus'));
+                                    return;
                                   }
-                                  return;
-                                }
-                                if (stateNum === 12) {
-                                  try {
-                                    const res = await fetch('/venezuela/pedidos/api/advance-state', {
-                                      method: 'PATCH',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ orderId: order.id, nextState: 13 })
-                                    });
-                                    if (!res.ok) {
-                                      const err = await res.json().catch(() => ({}));
-                                      throw new Error(err.error || t('venezuela.pedidos.errors.updateOrder'));
+                                  if (stateNum === 11) {
+                                    try {
+                                      const res = await fetch('/venezuela/pedidos/api/advance-state', {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ orderId: order.id, nextState: 12 })
+                                      });
+                                      if (!res.ok) {
+                                        const err = await res.json().catch(() => ({}));
+                                        throw new Error(err.error || t('venezuela.pedidos.errors.updateOrder'));
+                                      }
+                                      await fetchOrders();
+                                    } catch (err) {
+                                      console.error(err);
+                                      alert((err as Error).message || t('venezuela.pedidos.errors.updateStatus'));
                                     }
-                                    await fetchOrders();
-                                  } catch (err) {
-                                    console.error(err);
-                                    alert((err as Error).message || t('venezuela.pedidos.errors.updateStatus'));
+                                    return;
                                   }
-                                  return;
-                                }
-                              }}
-                            >
-                              {stateNum >= 13 ? (
-                                <CheckCircle className="w-4 h-4" />
-                              ) : stateNum === 12 ? (
-                                <CheckCircle className="w-4 h-4" />
-                              ) : stateNum === 11 ? (
-                                <Package className="w-4 h-4" />
-                              ) : stateNum === 9 ? (
-                                <Package className="w-4 h-4" />
-                              ) : stateNum === 8 ? (
-                                <Package className="w-4 h-4" />
-                              ) : stateNum === 10 ? (
-                                <Clock className="w-4 h-4" />
-                              ) : (stateNum >= 2 && stateNum <= 7) ? (
-                                <Clock className="w-4 h-4" />
-                              ) : (
-                                <Send className="w-4 h-4" />
-                              )}
-                            </Button>
+                                  if (stateNum === 12) {
+                                    try {
+                                      const res = await fetch('/venezuela/pedidos/api/advance-state', {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ orderId: order.id, nextState: 13 })
+                                      });
+                                      if (!res.ok) {
+                                        const err = await res.json().catch(() => ({}));
+                                        throw new Error(err.error || t('venezuela.pedidos.errors.updateOrder'));
+                                      }
+                                      await fetchOrders();
+                                    } catch (err) {
+                                      console.error(err);
+                                      alert((err as Error).message || t('venezuela.pedidos.errors.updateStatus'));
+                                    }
+                                    return;
+                                  }
+                                }}
+                              >
+                                {stateNum >= 13 ? (
+                                  <CheckCircle className="w-4 h-4" />
+                                ) : stateNum === 12 ? (
+                                  <CheckCircle className="w-4 h-4" />
+                                ) : stateNum === 11 ? (
+                                  <Package className="w-4 h-4" />
+                                ) : stateNum === 9 ? (
+                                  <Package className="w-4 h-4" />
+                                ) : stateNum === 8 ? (
+                                  <Package className="w-4 h-4" />
+                                ) : stateNum === 10 ? (
+                                  <Clock className="w-4 h-4" />
+                                ) : (stateNum >= 2 && stateNum <= 7) ? (
+                                  <Clock className="w-4 h-4" />
+                                ) : (
+                                  <Send className="w-4 h-4" />
+                                )}
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    }); })()}
+                        );
+                      });
+                    })()}
                   </div>
                 )}
-                {(() => { const total = sortedOrders.length; if (total===0) return null; const totalPages=Math.max(1, Math.ceil(total/ITEMS_PER_PAGE)); const { start, end } = getPageSlice(total, ordersPage); const pages=getVisiblePages(totalPages, ordersPage); return (
-                  <div className={`mt-4 pt-4 border-t flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
-                    <p className={`text-xs sm:text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('admin.orders.pagination.showing', { defaultValue: 'Mostrando' })} {Math.min(total, start + 1)} {t('admin.orders.pagination.to', { defaultValue: 'a' })} {end} {t('admin.orders.pagination.of', { defaultValue: 'de' })} {total} {t('admin.orders.pagination.results', { defaultValue: 'resultados' })}</p>
-                    <div className="flex items-center gap-1 justify-end flex-wrap">
-                      <Button variant="outline" size="sm" disabled={ordersPage<=1} onClick={()=>setOrdersPage(p=>Math.max(1,p-1))}>{t('admin.orders.pagination.prev', { defaultValue: 'Anterior' })}</Button>
-                      {pages[0] > 1 && (<><Button variant="outline" size="sm" onClick={()=>setOrdersPage(1)}>1</Button><span className="px-1 text-slate-400">…</span></>)}
-                      {pages.map(p => (<Button key={p} variant={p===ordersPage? 'default':'outline'} size="sm" onClick={()=>setOrdersPage(p)}>{p}</Button>))}
-                      {pages[pages.length-1] < totalPages && (<><span className="px-1 text-slate-400">…</span><Button variant="outline" size="sm" onClick={()=>setOrdersPage(totalPages)}>{totalPages}</Button></>)}
-                      <Button variant="outline" size="sm" disabled={ordersPage>=totalPages} onClick={()=>setOrdersPage(p=>Math.min(totalPages,p+1))}>{t('admin.orders.pagination.next', { defaultValue: 'Siguiente' })}</Button>
+                {(() => {
+                  const total = sortedOrders.length; if (total === 0) return null; const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE)); const { start, end } = getPageSlice(total, ordersPage); const pages = getVisiblePages(totalPages, ordersPage); return (
+                    <div className={`mt-4 pt-4 border-t flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
+                      <p className={`text-xs sm:text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('admin.orders.pagination.showing', { defaultValue: 'Mostrando' })} {Math.min(total, start + 1)} {t('admin.orders.pagination.to', { defaultValue: 'a' })} {end} {t('admin.orders.pagination.of', { defaultValue: 'de' })} {total} {t('admin.orders.pagination.results', { defaultValue: 'resultados' })}</p>
+                      <div className="flex items-center gap-1 justify-end flex-wrap">
+                        <Button variant="outline" size="sm" disabled={ordersPage <= 1} onClick={() => setOrdersPage(p => Math.max(1, p - 1))}>{t('admin.orders.pagination.prev', { defaultValue: 'Anterior' })}</Button>
+                        {pages[0] > 1 && (<><Button variant="outline" size="sm" onClick={() => setOrdersPage(1)}>1</Button><span className="px-1 text-slate-400">…</span></>)}
+                        {pages.map(p => (<Button key={p} variant={p === ordersPage ? 'default' : 'outline'} size="sm" onClick={() => setOrdersPage(p)}>{p}</Button>))}
+                        {pages[pages.length - 1] < totalPages && (<><span className="px-1 text-slate-400">…</span><Button variant="outline" size="sm" onClick={() => setOrdersPage(totalPages)}>{totalPages}</Button></>)}
+                        <Button variant="outline" size="sm" disabled={ordersPage >= totalPages} onClick={() => setOrdersPage(p => Math.min(totalPages, p + 1))}>{t('admin.orders.pagination.next', { defaultValue: 'Siguiente' })}</Button>
+                      </div>
                     </div>
-                  </div>
-                ); })()}
+                  );
+                })()}
               </CardContent>
             </Card>
           )}
@@ -1157,96 +1159,96 @@ export default function VenezuelaPedidosPage() {
                       const total = filtered.length;
                       const { start, end } = getPageSlice(total, boxesPage);
                       return filtered.slice(start, end).map((box, idx) => {
-                      const id = box.box_id ?? box.boxes_id ?? box.id ?? idx;
-                      const created = box.creation_date ?? box.created_at ?? '';
-                      const stateNum = (box.state ?? 1) as number;
-                      const countKey = box.box_id ?? box.boxes_id ?? box.id ?? id;
-                      return (
-        <div key={`${id}`} className={`flex items-center justify-between p-4 rounded-xl border hover:shadow-md transition-all duration-300 min-w-0 overflow-hidden flex-wrap gap-3 md:flex-nowrap ${theme === 'dark' ? 'bg-gradient-to-r from-slate-800 to-slate-700 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200'}`}>
-          <div className="flex items-center gap-4 min-w-0">
-                            <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-indigo-900/30' : 'bg-indigo-100'}`}>
-                              <Boxes className={`h-5 w-5 ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'}`} />
-                            </div>
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-            <h3 className={`font-semibold truncate ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>#BOX-{id}</h3>
+                        const id = box.box_id ?? box.boxes_id ?? box.id ?? idx;
+                        const created = box.creation_date ?? box.created_at ?? '';
+                        const stateNum = (box.state ?? 1) as number;
+                        const countKey = box.box_id ?? box.boxes_id ?? box.id ?? id;
+                        return (
+                          <div key={`${id}`} className={`flex items-center justify-between p-4 rounded-xl border hover:shadow-md transition-all duration-300 min-w-0 overflow-hidden flex-wrap gap-3 md:flex-nowrap ${theme === 'dark' ? 'bg-gradient-to-r from-slate-800 to-slate-700 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200'}`}>
+                            <div className="flex items-center gap-4 min-w-0">
+                              <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-indigo-900/30' : 'bg-indigo-100'}`}>
+                                <Boxes className={`h-5 w-5 ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'}`} />
                               </div>
-                              <div className={`flex items-center gap-4 text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                <span className="flex items-center gap-1"><List className="h-3 w-3" />{t('venezuela.pedidos.labels.orders')} {orderCountsByBoxMain[countKey as any] ?? 0}</span>
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <h3 className={`font-semibold truncate ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>#BOX-{id}</h3>
+                                </div>
+                                <div className={`flex items-center gap-4 text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                  <span className="flex items-center gap-1"><List className="h-3 w-3" />{t('venezuela.pedidos.labels.orders')} {orderCountsByBoxMain[countKey as any] ?? 0}</span>
+                                </div>
                               </div>
                             </div>
-                          </div>
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-end shrink-0">
-                            <Badge className={`border ${
-                              stateNum === 1
-                                ? theme === 'dark' ? 'bg-blue-900/30 text-blue-300 border-blue-700' : 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:border-blue-300 hover:ring-1 hover:ring-blue-200 transition-colors'
-                                : stateNum === 2
-                                ? theme === 'dark' ? 'bg-green-900/30 text-green-300 border-green-700' : 'bg-green-100 text-blue-800 border-green-200 hover:bg-green-50 hover:border-green-300 hover:ring-1 hover:ring-green-200 transition-colors'
-                                : stateNum === 3
-                                ? theme === 'dark' ? 'bg-green-900/30 text-green-300 border-green-700' : 'bg-green-100 text-blue-800 border-green-200 hover:bg-green-50 hover:border-green-300 hover:ring-1 hover:ring-green-200 transition-colors'
-                                : stateNum === 4
-                                ? theme === 'dark' ? 'bg-green-900/30 text-green-300 border-green-700' : 'bg-green-100 text-green-800 border-green-200 hover:bg-green-50 hover:border-green-300 hover:ring-1 hover:ring-green-200 transition-colors'
-                                : stateNum === 5 || stateNum === 6
-                                ? theme === 'dark' ? 'bg-emerald-900/30 text-emerald-300 border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:ring-1 hover:ring-emerald-200 transition-colors'
-                                : theme === 'dark' ? 'bg-gray-800/50 text-gray-300 border-gray-700' : 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:ring-1 hover:ring-gray-200 transition-colors'
-                            }`}>
-                              {stateNum === 1 ? t('venezuela.pedidos.boxesBadges.new') : stateNum === 2 ? t('venezuela.pedidos.boxesBadges.ready') : stateNum === 3 ? t('venezuela.pedidos.boxesBadges.inContainer') : stateNum === 4 ? t('venezuela.pedidos.boxesBadges.traveling') : stateNum === 5 ? t('venezuela.pedidos.boxesBadges.received') : stateNum === 6 ? t('venezuela.pedidos.boxesBadges.completed') : t('venezuela.pedidos.boxesBadges.state', { num: stateNum })}
-                            </Badge>
-                            {/* Botón Recibido: visible cuando boxes.state === 5 o (state === 4 y tiene pedidos air) */}
-                            {(stateNum === 5 || (stateNum === 4 && boxesWithAirShipping[countKey])) && (
+                            <div className="flex items-center gap-3 w-full sm:w-auto justify-end shrink-0">
+                              <Badge className={`border ${stateNum === 1
+                                  ? theme === 'dark' ? 'bg-blue-900/30 text-blue-300 border-blue-700' : 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:border-blue-300 hover:ring-1 hover:ring-blue-200 transition-colors'
+                                  : stateNum === 2
+                                    ? theme === 'dark' ? 'bg-green-900/30 text-green-300 border-green-700' : 'bg-green-100 text-blue-800 border-green-200 hover:bg-green-50 hover:border-green-300 hover:ring-1 hover:ring-green-200 transition-colors'
+                                    : stateNum === 3
+                                      ? theme === 'dark' ? 'bg-green-900/30 text-green-300 border-green-700' : 'bg-green-100 text-blue-800 border-green-200 hover:bg-green-50 hover:border-green-300 hover:ring-1 hover:ring-green-200 transition-colors'
+                                      : stateNum === 4
+                                        ? theme === 'dark' ? 'bg-green-900/30 text-green-300 border-green-700' : 'bg-green-100 text-green-800 border-green-200 hover:bg-green-50 hover:border-green-300 hover:ring-1 hover:ring-green-200 transition-colors'
+                                        : stateNum === 5 || stateNum === 6
+                                          ? theme === 'dark' ? 'bg-emerald-900/30 text-emerald-300 border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:ring-1 hover:ring-emerald-200 transition-colors'
+                                          : theme === 'dark' ? 'bg-gray-800/50 text-gray-300 border-gray-700' : 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:ring-1 hover:ring-gray-200 transition-colors'
+                                }`}>
+                                {stateNum === 1 ? t('venezuela.pedidos.boxesBadges.new') : stateNum === 2 ? t('venezuela.pedidos.boxesBadges.ready') : stateNum === 3 ? t('venezuela.pedidos.boxesBadges.inContainer') : stateNum === 4 ? t('venezuela.pedidos.boxesBadges.traveling') : stateNum === 5 ? t('venezuela.pedidos.boxesBadges.received') : stateNum === 6 ? t('venezuela.pedidos.boxesBadges.completed') : t('venezuela.pedidos.boxesBadges.state', { num: stateNum })}
+                              </Badge>
+                              {/* Botón Recibido: visible cuando boxes.state === 5 o (state === 4 y tiene pedidos air) */}
+                              {(stateNum === 5 || (stateNum === 4 && boxesWithAirShipping[countKey])) && (
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={async () => {
+                                    const nextState = 6;
+                                    try {
+                                      const res = await fetch('/venezuela/pedidos/api/advance-box', {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ boxId: box.box_id ?? box.boxes_id ?? box.id ?? id, nextState })
+                                      });
+                                      if (!res.ok) {
+                                        const err = await res.json().catch(() => ({}));
+                                        throw new Error(err.error || t('venezuela.pedidos.errors.updateBox'));
+                                      }
+                                      // Actualizar pedidos asociados a estado 11
+                                      const supabase = getSupabaseBrowserClient();
+                                      const { data: ordersData } = await supabase.from('orders').select('id').eq('box_id', box.box_id ?? box.boxes_id ?? box.id ?? id);
+                                      if (ordersData) {
+                                        for (const order of ordersData) {
+                                          await fetch(`/api/admin/orders/${order.id}`, {
+                                            method: 'PATCH',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ state: 11 })
+                                          });
+                                        }
+                                      }
+                                      await Promise.all([fetchBoxes(), fetchOrders()]);
+                                    } catch (e) {
+                                      alert((e as Error).message || t('venezuela.pedidos.errors.boxUpdate'));
+                                    }
+                                  }}
+                                  title={stateNum === 4 ? t('venezuela.pedidos.tooltips.markBoxReceivedAir') : t('venezuela.pedidos.tooltips.markBoxReceived')}
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                </Button>
+                              )}
                               <Button
                                 variant="outline"
                                 size="icon"
-                                onClick={async () => {
-                                  const nextState = 6;
-                                  try {
-                                    const res = await fetch('/venezuela/pedidos/api/advance-box', {
-                                      method: 'PATCH',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ boxId: box.box_id ?? box.boxes_id ?? box.id ?? id, nextState })
-                                    });
-                                    if (!res.ok) {
-                                      const err = await res.json().catch(() => ({}));
-                                      throw new Error(err.error || t('venezuela.pedidos.errors.updateBox'));
-                                    }
-                                    // Actualizar pedidos asociados a estado 11
-                                    const supabase = getSupabaseBrowserClient();
-                                    const { data: ordersData } = await supabase.from('orders').select('id').eq('box_id', box.box_id ?? box.boxes_id ?? box.id ?? id);
-                                    if (ordersData) {
-                                      for (const order of ordersData) {
-                                        await fetch(`/api/admin/orders/${order.id}`, {
-                                          method: 'PATCH',
-                                          headers: { 'Content-Type': 'application/json' },
-                                          body: JSON.stringify({ state: 11 })
-                                        });
-                                      }
-                                    }
-                                    await Promise.all([fetchBoxes(), fetchOrders()]);
-                                  } catch (e) {
-                                    alert((e as Error).message || t('venezuela.pedidos.errors.boxUpdate'));
-                                  }
+                                className=""
+                                onClick={() => {
+                                  const boxId = box.box_id ?? box.boxes_id ?? box.id;
+                                  setModalVerPedidos({ open: true, boxId });
+                                  if (boxId !== undefined) fetchOrdersByBoxId(boxId as any);
                                 }}
-                                title={stateNum === 4 ? t('venezuela.pedidos.tooltips.markBoxReceivedAir') : t('venezuela.pedidos.tooltips.markBoxReceived')}
                               >
-                                <CheckCircle className="h-4 w-4" />
+                                <List className="h-4 w-4" />
                               </Button>
-                            )}
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className=""
-                              onClick={() => {
-                                const boxId = box.box_id ?? box.boxes_id ?? box.id;
-                                setModalVerPedidos({ open: true, boxId });
-                                if (boxId !== undefined) fetchOrdersByBoxId(boxId as any);
-                              }}
-                            >
-                              <List className="h-4 w-4" />
-                            </Button>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    }); })()}
+                        );
+                      });
+                    })()}
                   </div>
                 )}
                 {(() => {
@@ -1264,11 +1266,11 @@ export default function VenezuelaPedidosPage() {
                     <div className="mt-4 pt-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <p className="text-xs sm:text-sm text-slate-600">{t('admin.orders.pagination.showing', { defaultValue: 'Mostrando' })} {Math.min(total, start + 1)} {t('admin.orders.pagination.to', { defaultValue: 'a' })} {end} {t('admin.orders.pagination.of', { defaultValue: 'de' })} {total} {t('admin.orders.pagination.results', { defaultValue: 'resultados' })}</p>
                       <div className="flex items-center gap-1 justify-end flex-wrap">
-                        <Button variant="outline" size="sm" disabled={boxesPage<=1} onClick={()=>setBoxesPage(p=>Math.max(1,p-1))}>{t('admin.orders.pagination.prev', { defaultValue: 'Anterior' })}</Button>
-                        {pages[0] > 1 && (<><Button variant="outline" size="sm" onClick={()=>setBoxesPage(1)}>1</Button><span className="px-1 text-slate-400">…</span></>)}
-                        {pages.map(p => (<Button key={p} variant={p===boxesPage? 'default':'outline'} size="sm" onClick={()=>setBoxesPage(p)}>{p}</Button>))}
-                        {pages[pages.length-1] < totalPages && (<><span className="px-1 text-slate-400">…</span><Button variant="outline" size="sm" onClick={()=>setBoxesPage(totalPages)}>{totalPages}</Button></>)}
-                        <Button variant="outline" size="sm" disabled={boxesPage>=totalPages} onClick={()=>setBoxesPage(p=>Math.min(totalPages,p+1))}>{t('admin.orders.pagination.next', { defaultValue: 'Siguiente' })}</Button>
+                        <Button variant="outline" size="sm" disabled={boxesPage <= 1} onClick={() => setBoxesPage(p => Math.max(1, p - 1))}>{t('admin.orders.pagination.prev', { defaultValue: 'Anterior' })}</Button>
+                        {pages[0] > 1 && (<><Button variant="outline" size="sm" onClick={() => setBoxesPage(1)}>1</Button><span className="px-1 text-slate-400">…</span></>)}
+                        {pages.map(p => (<Button key={p} variant={p === boxesPage ? 'default' : 'outline'} size="sm" onClick={() => setBoxesPage(p)}>{p}</Button>))}
+                        {pages[pages.length - 1] < totalPages && (<><span className="px-1 text-slate-400">…</span><Button variant="outline" size="sm" onClick={() => setBoxesPage(totalPages)}>{totalPages}</Button></>)}
+                        <Button variant="outline" size="sm" disabled={boxesPage >= totalPages} onClick={() => setBoxesPage(p => Math.min(totalPages, p + 1))}>{t('admin.orders.pagination.next', { defaultValue: 'Siguiente' })}</Button>
                       </div>
                     </div>
                   );
@@ -1327,86 +1329,86 @@ export default function VenezuelaPedidosPage() {
                       const total = filtered.length;
                       const { start, end } = getPageSlice(total, containersPage);
                       return filtered.slice(start, end).map((container, idx) => {
-                      const id = container.container_id ?? container.containers_id ?? container.id ?? idx;
-                      const created = container.creation_date ?? container.created_at ?? '';
-                      const stateNum = (container.state ?? 1) as number;
-                      return (
-                        <div key={`${id}`} className={`flex items-center justify-between p-4 rounded-xl border hover:shadow-md transition-all duration-300 min-w-0 ${theme === 'dark' ? 'bg-gradient-to-r from-slate-800 to-slate-700 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200'}`}>
-                          <div className="flex items-center gap-4">
-                            <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-indigo-900/30' : 'bg-indigo-100'}`}>
-                              <Boxes className={`h-5 w-5 ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'}`} />
-                            </div>
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <h3 className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>#CONT-{id}</h3>
+                        const id = container.container_id ?? container.containers_id ?? container.id ?? idx;
+                        const created = container.creation_date ?? container.created_at ?? '';
+                        const stateNum = (container.state ?? 1) as number;
+                        return (
+                          <div key={`${id}`} className={`flex items-center justify-between p-4 rounded-xl border hover:shadow-md transition-all duration-300 min-w-0 ${theme === 'dark' ? 'bg-gradient-to-r from-slate-800 to-slate-700 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200'}`}>
+                            <div className="flex items-center gap-4">
+                              <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-indigo-900/30' : 'bg-indigo-100'}`}>
+                                <Boxes className={`h-5 w-5 ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'}`} />
                               </div>
-                              <div className={`flex items-center gap-4 text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <h3 className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>#CONT-{id}</h3>
+                                </div>
+                                <div className={`flex items-center gap-4 text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                            <Badge className={`border ${
-                              stateNum === 1
-                                ? theme === 'dark' ? 'bg-blue-900/30 text-blue-300 border-blue-700' : 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:border-blue-300 hover:ring-1 hover:ring-blue-200 transition-colors'
-                                : stateNum === 2
-                                ? theme === 'dark' ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700' : 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:border-yellow-300 hover:ring-1 hover:ring-yellow-200 transition-colors'
-                                : stateNum === 4
-                                ? theme === 'dark' ? 'bg-emerald-900/30 text-emerald-300 border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:ring-1 hover:ring-emerald-200 transition-colors'
-                                : theme === 'dark' ? 'bg-gray-800/50 text-gray-300 border-gray-700' : 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:ring-1 hover:ring-gray-200 transition-colors'
-                            }`}>
-                              {stateNum === 1
-                                ? t('venezuela.pedidos.containersBadges.new')
-                                : stateNum === 2
-                                ? t('venezuela.pedidos.containersBadges.inTransit')
-                                : stateNum === 3
-                                ? t('venezuela.pedidos.containersBadges.traveling')
-                                : stateNum === 4
-                                ? t('venezuela.pedidos.containersBadges.received')
-                                : t('venezuela.pedidos.containersBadges.state', { num: stateNum })}
-                            </Badge>
-                            {/* Botón Recibido: visible solo cuando containers.state === 3 */}
-                            {stateNum === 3 && (
+                            <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                              <Badge className={`border ${stateNum === 1
+                                  ? theme === 'dark' ? 'bg-blue-900/30 text-blue-300 border-blue-700' : 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:border-blue-300 hover:ring-1 hover:ring-blue-200 transition-colors'
+                                  : stateNum === 2
+                                    ? theme === 'dark' ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700' : 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:border-yellow-300 hover:ring-1 hover:ring-yellow-200 transition-colors'
+                                    : stateNum === 4
+                                      ? theme === 'dark' ? 'bg-emerald-900/30 text-emerald-300 border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:ring-1 hover:ring-emerald-200 transition-colors'
+                                      : theme === 'dark' ? 'bg-gray-800/50 text-gray-300 border-gray-700' : 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:ring-1 hover:ring-gray-200 transition-colors'
+                                }`}>
+                                {stateNum === 1
+                                  ? t('venezuela.pedidos.containersBadges.new')
+                                  : stateNum === 2
+                                    ? t('venezuela.pedidos.containersBadges.inTransit')
+                                    : stateNum === 3
+                                      ? t('venezuela.pedidos.containersBadges.traveling')
+                                      : stateNum === 4
+                                        ? t('venezuela.pedidos.containersBadges.received')
+                                        : t('venezuela.pedidos.containersBadges.state', { num: stateNum })}
+                              </Badge>
+                              {/* Botón Recibido: visible solo cuando containers.state === 3 */}
+                              {stateNum === 3 && (
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={async () => {
+                                    try {
+                                      const res = await fetch('/venezuela/pedidos/api/advance-container', {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ containerId: container.container_id ?? container.containers_id ?? container.id ?? id, nextState: 4 })
+                                      });
+                                      if (!res.ok) {
+                                        const err = await res.json().catch(() => ({}));
+                                        throw new Error(err.error || t('venezuela.pedidos.errors.updateContainer'));
+                                      }
+                                      await Promise.all([fetchContainers(), fetchBoxes(), fetchOrders()]);
+                                    } catch (e) {
+                                      alert((e as Error).message || t('venezuela.pedidos.errors.containerUpdate'));
+                                    }
+                                  }}
+                                  className="text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+                                  title={t('venezuela.pedidos.tooltips.markContainerReceived')}
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                </Button>
+                              )}
                               <Button
                                 variant="outline"
                                 size="icon"
-                                onClick={async () => {
-                                  try {
-                                    const res = await fetch('/venezuela/pedidos/api/advance-container', {
-                                      method: 'PATCH',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ containerId: container.container_id ?? container.containers_id ?? container.id ?? id, nextState: 4 })
-                                    });
-                                    if (!res.ok) {
-                                      const err = await res.json().catch(() => ({}));
-                                      throw new Error(err.error || t('venezuela.pedidos.errors.updateContainer'));
-                                    }
-                                    await Promise.all([fetchContainers(), fetchBoxes(), fetchOrders()]);
-                                  } catch (e) {
-                                    alert((e as Error).message || t('venezuela.pedidos.errors.containerUpdate'));
-                                  }
+                                className=""
+                                onClick={() => {
+                                  const containerId = container.container_id ?? container.containers_id ?? container.id;
+                                  setModalVerCajas({ open: true, containerId });
+                                  if (containerId !== undefined) fetchBoxesByContainerId(containerId as any);
                                 }}
-                                className="text-emerald-700 border-emerald-300 hover:bg-emerald-50"
-                                title={t('venezuela.pedidos.tooltips.markContainerReceived')}
                               >
-                                <CheckCircle className="h-4 w-4" />
+                                <List className="h-4 w-4" />
                               </Button>
-                            )}
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className=""
-                              onClick={() => {
-                                const containerId = container.container_id ?? container.containers_id ?? container.id;
-                                setModalVerCajas({ open: true, containerId });
-                                if (containerId !== undefined) fetchBoxesByContainerId(containerId as any);
-                              }}
-                            >
-                              <List className="h-4 w-4" />
-                            </Button>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    }); })()}
+                        );
+                      });
+                    })()}
                   </div>
                 )}
                 {(() => {
@@ -1424,11 +1426,11 @@ export default function VenezuelaPedidosPage() {
                     <div className={`mt-4 pt-4 border-t flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
                       <p className={`text-xs sm:text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('admin.orders.pagination.showing', { defaultValue: 'Mostrando' })} {Math.min(total, start + 1)} {t('admin.orders.pagination.to', { defaultValue: 'a' })} {end} {t('admin.orders.pagination.of', { defaultValue: 'de' })} {total} {t('admin.orders.pagination.results', { defaultValue: 'resultados' })}</p>
                       <div className="flex items-center gap-1 justify-end flex-wrap">
-                        <Button variant="outline" size="sm" disabled={containersPage<=1} onClick={()=>setContainersPage(p=>Math.max(1,p-1))}>{t('admin.orders.pagination.prev', { defaultValue: 'Anterior' })}</Button>
-                        {pages[0] > 1 && (<><Button variant="outline" size="sm" onClick={()=>setContainersPage(1)}>1</Button><span className={`px-1 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>…</span></>)}
-                        {pages.map(p => (<Button key={p} variant={p===containersPage? 'default':'outline'} size="sm" onClick={()=>setContainersPage(p)}>{p}</Button>))}
-                        {pages[pages.length-1] < totalPages && (<><span className={`px-1 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>…</span><Button variant="outline" size="sm" onClick={()=>setContainersPage(totalPages)}>{totalPages}</Button></>)}
-                        <Button variant="outline" size="sm" disabled={containersPage>=totalPages} onClick={()=>setContainersPage(p=>Math.min(totalPages,p+1))}>{t('admin.orders.pagination.next', { defaultValue: 'Siguiente' })}</Button>
+                        <Button variant="outline" size="sm" disabled={containersPage <= 1} onClick={() => setContainersPage(p => Math.max(1, p - 1))}>{t('admin.orders.pagination.prev', { defaultValue: 'Anterior' })}</Button>
+                        {pages[0] > 1 && (<><Button variant="outline" size="sm" onClick={() => setContainersPage(1)}>1</Button><span className={`px-1 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>…</span></>)}
+                        {pages.map(p => (<Button key={p} variant={p === containersPage ? 'default' : 'outline'} size="sm" onClick={() => setContainersPage(p)}>{p}</Button>))}
+                        {pages[pages.length - 1] < totalPages && (<><span className={`px-1 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>…</span><Button variant="outline" size="sm" onClick={() => setContainersPage(totalPages)}>{totalPages}</Button></>)}
+                        <Button variant="outline" size="sm" disabled={containersPage >= totalPages} onClick={() => setContainersPage(p => Math.min(totalPages, p + 1))}>{t('admin.orders.pagination.next', { defaultValue: 'Siguiente' })}</Button>
                       </div>
                     </div>
                   );
@@ -1439,7 +1441,7 @@ export default function VenezuelaPedidosPage() {
               </CardContent>
             </Card>
           )}
-          
+
           {/* Modales */}
           {/* Modal Editar Pedido */}
           {modalEditOrder.open && (
@@ -1503,9 +1505,8 @@ export default function VenezuelaPedidosPage() {
           {modalVerPedidos.open && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setModalVerPedidos({ open: false })}>
               <div
-                className={`rounded-2xl p-6 max-w-3xl mx-4 w-full max-h-[90vh] overflow-y-auto border ${
-                  theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
-                }`}
+                className={`rounded-2xl p-6 max-w-3xl mx-4 w-full max-h-[90vh] overflow-y-auto border ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+                  }`}
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between mb-4">
@@ -1534,9 +1535,8 @@ export default function VenezuelaPedidosPage() {
                     {ordersByBox.map((o) => (
                       <div
                         key={o.id}
-                        className={`flex items-center justify-between p-4 rounded-xl border ${
-                          theme === 'dark' ? 'bg-gradient-to-r from-slate-800 to-slate-700 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200'
-                        }`}
+                        className={`flex items-center justify-between p-4 rounded-xl border ${theme === 'dark' ? 'bg-gradient-to-r from-slate-800 to-slate-700 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200'
+                          }`}
                       >
                         <div className="flex items-center gap-4">
                           <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-blue-900/30' : 'bg-blue-100'}`}>
@@ -1575,9 +1575,8 @@ export default function VenezuelaPedidosPage() {
           {modalVerCajas.open && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setModalVerCajas({ open: false })}>
               <div
-                className={`rounded-2xl p-6 max-w-3xl mx-4 w-full max-h-[90vh] overflow-y-auto border ${
-                  theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
-                }`}
+                className={`rounded-2xl p-6 max-w-3xl mx-4 w-full max-h-[90vh] overflow-y-auto border ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+                  }`}
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between mb-4">
@@ -1610,9 +1609,8 @@ export default function VenezuelaPedidosPage() {
                       return (
                         <div
                           key={`${id}`}
-                          className={`flex items-center justify-between p-4 rounded-xl border min-w-0 overflow-hidden flex-wrap gap-3 md:flex-nowrap ${
-                            theme === 'dark' ? 'bg-gradient-to-r from-slate-800 to-slate-700 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200'
-                          }`}
+                          className={`flex items-center justify-between p-4 rounded-xl border min-w-0 overflow-hidden flex-wrap gap-3 md:flex-nowrap ${theme === 'dark' ? 'bg-gradient-to-r from-slate-800 to-slate-700 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200'
+                            }`}
                         >
                           <div className="flex items-center gap-4 min-w-0">
                             <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-indigo-900/30' : 'bg-indigo-100'}`}>
@@ -1632,15 +1630,14 @@ export default function VenezuelaPedidosPage() {
                           </div>
                           <div className="flex items-center gap-3 w-full sm:w-auto justify-end shrink-0">
                             <Badge
-                              className={`border ${
-                                stateNum === 1
+                              className={`border ${stateNum === 1
                                   ? theme === 'dark' ? 'bg-blue-900/30 text-blue-300 border-blue-700' : 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:border-blue-300 hover:ring-1 hover:ring-blue-200'
                                   : stateNum === 2
-                                  ? theme === 'dark' ? 'bg-green-900/30 text-green-300 border-green-700' : 'bg-green-100 text-green-800 border-green-200 hover:bg-green-50 hover:border-green-300 hover:ring-1 hover:ring-green-200'
-                                  : stateNum === 5 || stateNum === 6
-                                  ? theme === 'dark' ? 'bg-emerald-900/30 text-emerald-300 border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:ring-1 hover:ring-emerald-200'
-                                  : theme === 'dark' ? 'bg-gray-800/50 text-gray-300 border-gray-700' : 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:ring-1 hover:ring-gray-200'
-                              }`}
+                                    ? theme === 'dark' ? 'bg-green-900/30 text-green-300 border-green-700' : 'bg-green-100 text-green-800 border-green-200 hover:bg-green-50 hover:border-green-300 hover:ring-1 hover:ring-green-200'
+                                    : stateNum === 5 || stateNum === 6
+                                      ? theme === 'dark' ? 'bg-emerald-900/30 text-emerald-300 border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:ring-1 hover:ring-emerald-200'
+                                      : theme === 'dark' ? 'bg-gray-800/50 text-gray-300 border-gray-700' : 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:ring-1 hover:ring-gray-200'
+                                }`}
                             >
                               {stateNum === 1 ? t('venezuela.pedidos.boxesBadges.new') : stateNum === 2 ? t('venezuela.pedidos.boxesBadges.ready') : stateNum === 5 ? t('venezuela.pedidos.boxesBadges.received') : stateNum === 6 ? t('venezuela.pedidos.boxesBadges.completed') : t('venezuela.pedidos.boxesBadges.state', { num: stateNum })}
                             </Badge>

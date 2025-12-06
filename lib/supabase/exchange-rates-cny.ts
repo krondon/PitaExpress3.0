@@ -21,14 +21,14 @@ export interface LatestRateResultCNY {
  * Guarda una nueva tasa de cambio USD→CNY en la base de datos
  */
 export async function saveExchangeRateCNY(
-  rate: number, 
-  source: string, 
+  rate: number,
+  source: string,
   is_fallback: boolean = false,
   api_response?: any
 ): Promise<ExchangeRateRecordCNY | null> {
   try {
     const supabase = getSupabaseServiceRoleClient();
-    
+
     const { data, error } = await supabase
       .from('exchange_rates_cny')
       .insert({
@@ -45,7 +45,7 @@ export async function saveExchangeRateCNY(
       return null;
     }
 
-    console.log(`[ExchangeRate CNY] Saved: ${rate} CNY/USD from ${source}`);
+
     return data;
   } catch (error) {
     console.error('Error in saveExchangeRateCNY:', error);
@@ -59,7 +59,7 @@ export async function saveExchangeRateCNY(
 export async function getLatestValidExchangeRateCNY(): Promise<LatestRateResultCNY | null> {
   try {
     const supabase = getSupabaseServiceRoleClient();
-    
+
     const { data, error } = await supabase
       .rpc('get_latest_valid_exchange_rate_cny');
 
@@ -74,8 +74,8 @@ export async function getLatestValidExchangeRateCNY(): Promise<LatestRateResultC
     }
 
     const result = data[0] as LatestRateResultCNY;
-    console.log(`[ExchangeRate CNY] Latest valid rate: ${result.rate} CNY/USD from ${result.source} (${result.age_minutes} minutes ago)`);
-    
+
+
     return result;
   } catch (error) {
     console.error('Error in getLatestValidExchangeRateCNY:', error);
@@ -89,7 +89,7 @@ export async function getLatestValidExchangeRateCNY(): Promise<LatestRateResultC
 export async function getLatestExchangeRateCNY(): Promise<ExchangeRateRecordCNY | null> {
   try {
     const supabase = getSupabaseServiceRoleClient();
-    
+
     const { data, error } = await supabase
       .from('exchange_rates_cny')
       .select('*')
@@ -118,7 +118,7 @@ export async function getExchangeRateHistoryCNY(
 ): Promise<ExchangeRateRecordCNY[]> {
   try {
     const supabase = getSupabaseServiceRoleClient();
-    
+
     let query = supabase
       .from('exchange_rates_cny')
       .select('*')
@@ -149,7 +149,7 @@ export async function getExchangeRateHistoryCNY(
 export async function cleanupOldExchangeRatesCNY(): Promise<number> {
   try {
     const supabase = getSupabaseServiceRoleClient();
-    
+
     const { data, error } = await supabase
       .rpc('cleanup_old_exchange_rates_cny');
 
@@ -160,7 +160,7 @@ export async function cleanupOldExchangeRatesCNY(): Promise<number> {
 
     const deletedCount = data || 0;
     if (deletedCount > 0) {
-      console.log(`[ExchangeRate CNY] Cleaned up ${deletedCount} old records`);
+
     }
 
     return deletedCount;

@@ -26,7 +26,7 @@ export const FontSizeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Cargar tamaño de fuente desde localStorage al montar
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    
+
     const savedFontSize = localStorage.getItem('pita-font-size') as FontSize;
     if (savedFontSize && ['small', 'medium', 'large'].includes(savedFontSize)) {
       setFontSizeState(savedFontSize);
@@ -42,16 +42,16 @@ export const FontSizeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Función para aplicar la clase CSS al elemento html
   const applyFontSizeClass = (size: FontSize) => {
     if (typeof document === 'undefined') return;
-    
+
     const htmlElement = document.documentElement;
-    
+
     // Remover todas las clases de escala anteriores
     htmlElement.classList.remove(
-      'text-scale-80', 
-      'text-scale-100', 
+      'text-scale-80',
+      'text-scale-100',
       'text-scale-150'
     );
-    
+
     // Aplicar nueva clase según el tamaño
     switch (size) {
       case 'small':
@@ -64,9 +64,9 @@ export const FontSizeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         htmlElement.classList.add('text-scale-150'); // 150% = 24px
         break;
     }
-    
+
     // Debug: verificar que se aplicó
-    console.log('📝 Font size applied:', size, 'Class:', htmlElement.className);
+
   };
 
   // Función para cambiar el tamaño de fuente

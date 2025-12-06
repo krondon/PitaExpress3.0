@@ -45,7 +45,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
   // Preview (no persistir)
   const previewLanguage = (lang: Language) => {
-  console.log('[language][preview] from', language, 'to', lang);
+
     setLanguageState(lang);
     if (typeof document !== 'undefined') {
       document.documentElement.lang = lang;
@@ -54,18 +54,18 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Commit (persistir en localStorage)
   const commitLanguage = (lang: Language) => {
-  console.log('[language][commit] requested', lang, 'currentVisible', language, 'committedBefore', committedLanguage);
+
     setLanguageState(lang);
     setCommittedLanguage(lang);
     localStorage.setItem('pita-language', lang);
     if (typeof document !== 'undefined') {
       document.documentElement.lang = lang;
     }
-  console.log('[language][commit] done -> committed', lang);
+
   };
 
   const revertLanguage = () => {
-  console.log('[language][revert] reverting visible', language, 'to committed', committedLanguage);
+
     setLanguageState(committedLanguage);
     if (typeof document !== 'undefined') {
       document.documentElement.lang = committedLanguage;
@@ -85,7 +85,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [mounted, language]);
 
   return (
-  <LanguageContext.Provider value={{ language, committedLanguage, previewLanguage, commitLanguage, revertLanguage, setLanguage: commitLanguage }}>
+    <LanguageContext.Provider value={{ language, committedLanguage, previewLanguage, commitLanguage, revertLanguage, setLanguage: commitLanguage }}>
       {children}
     </LanguageContext.Provider>
   );

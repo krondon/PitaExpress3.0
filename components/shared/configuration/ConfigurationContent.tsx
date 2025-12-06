@@ -441,13 +441,9 @@ export default function ConfigurationContent({ role, onUserImageUpdate }: Config
       }
 
       if (formData.idioma && ['es', 'en', 'zh'].includes(formData.idioma) && formData.idioma !== committedLanguage) {
-        console.log('[config][saveProfile] committing language USING formData.idioma', {
-          formDataIdioma: formData.idioma,
-          visibleBefore: language,
-          committedBefore: committedLanguage
-        });
+
         commitLanguage(formData.idioma as any);
-        console.log('[config][saveProfile] committed language', { committedLanguageAfter: formData.idioma });
+
       }
       toast({ title: t('admin.configuration.messages.profileUpdated'), description: t('admin.configuration.messages.profileUpdatedDesc'), variant: 'default', duration: 5000 });
       // Actualizar baseline tras guardar
@@ -516,17 +512,17 @@ export default function ConfigurationContent({ role, onUserImageUpdate }: Config
   useEffect(() => {
     return () => {
       if (didSaveRef.current) {
-        console.log('[config][unmount] skip revert (already saved)');
+
         return;
       }
       const { formIdioma, baselineIdioma, visible, committed } = unmountLanguageRef.current;
       const hasUnsaved = formIdioma !== baselineIdioma;
       const visibleDiffers = visible !== committed;
       if (hasUnsaved && visibleDiffers) {
-        console.log('[config][unmount] reverting unsaved language change', unmountLanguageRef.current);
+
         revertLanguage();
       } else {
-        console.log('[config][unmount] no revert needed', unmountLanguageRef.current);
+
       }
     };
   }, [revertLanguage]);
@@ -969,7 +965,7 @@ function AdminReviewsSection() {
           table: 'order_reviews'
         },
         (payload) => {
-          console.log('🔄 Nueva reseña detectada en tiempo real:', payload);
+
 
           // Mostrar notificación si es una nueva reseña (INSERT)
           if (payload.eventType === 'INSERT') {
@@ -989,7 +985,7 @@ function AdminReviewsSection() {
         }
       )
       .subscribe((status) => {
-        console.log('📡 Estado de suscripción Realtime (reviews):', status);
+
       });
 
     // Cleanup al desmontar

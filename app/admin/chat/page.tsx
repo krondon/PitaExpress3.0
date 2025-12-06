@@ -67,9 +67,7 @@ export default function AdminChatPage() {
 
     // Callback estable para nuevos mensajes
     const handleNewMessage = useCallback((message: ChatMessage) => {
-        console.log('📨 Mensaje recibido en admin, sender:', message.sender_id, 'selected:', selectedUserId);
         if (message.sender_id === selectedUserId) {
-            console.log('✅ Agregando mensaje al estado');
             addMessage(message);
         }
     }, [selectedUserId, addMessage]);

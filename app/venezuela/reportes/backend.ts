@@ -101,7 +101,7 @@ export async function getMetricasPorMes() {
     pedidosPorMes[mes].totalPedidos++;
     pedidosPorMes[mes].states.push(order.state);
     if (order.state === 8) pedidosPorMes[mes].completados++;
-    if ([1,2,3,4].includes(order.state)) pedidosPorMes[mes].pendientes++;
+    if ([1, 2, 3, 4].includes(order.state)) pedidosPorMes[mes].pendientes++;
     if (order.reputation !== null && order.reputation !== undefined) {
       pedidosPorMes[mes].reputaciones.push(order.reputation);
     }
@@ -128,7 +128,7 @@ export async function getMetricasPorMes() {
     }));
 
   return resultado;
-  }
+}
 
 // Obtener meses únicos de la columna 'created_at' de la tabla 'orders'
 export async function getMesesConPedidos() {
@@ -177,7 +177,7 @@ export async function getReportesSatisfaccionPorMes() {
       // Ordenar por fecha (mes más reciente primero)
       const getDate = (mes: string) => {
         const [nombreMes, anio] = mes.split(' ');
-        const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+        const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
         return new Date(parseInt(anio), meses.indexOf(nombreMes.toLowerCase()));
       };
       return getDate(b[0]).getTime() - getDate(a[0]).getTime();
@@ -257,10 +257,10 @@ export async function getPedidosReportes() {
       estado: estadosMap[order.state] || 'DESCONOCIDO',
       valor: ingresoFijo,
       satisfaccion: order.reputation !== null && order.reputation !== undefined ? order.reputation : null,
-      fechaPedido: order.created_at ? new Date(order.created_at).toISOString().slice(0,10) : '',
+      fechaPedido: order.created_at ? new Date(order.created_at).toISOString().slice(0, 10) : '',
       productName: order.productName || '',
     };
   });
-  console.log('Pedidos obtenidos:', pedidos.length);
+
   return { error: null, pedidos };
 }

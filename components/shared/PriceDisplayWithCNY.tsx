@@ -20,16 +20,16 @@ export const PriceDisplayWithCNY: React.FC<PriceDisplayWithCNYProps> = ({
   className = ''
 }) => {
   const { formatCNYPrice, loading: cnyLoading, cnyRate, error } = useCNYConversion();
-  
+
   // Debug logs
-  console.log('[PriceDisplayWithCNY] CNY Rate:', cnyRate, 'Loading:', cnyLoading, 'Error:', error);
+
 
   // Si no es USD o no queremos mostrar CNY, usar el componente original SIN Bolívares
   if (currency !== 'USD' || !showCNY) {
     return (
-      <PriceDisplay 
-        amount={amount} 
-        currency={currency === 'CNY' ? 'USD' : currency} 
+      <PriceDisplay
+        amount={amount}
+        currency={currency === 'CNY' ? 'USD' : currency}
         variant={variant === 'large' ? 'card' : variant}
         className={className}
         showBoth={false} // CRÍTICO: No mostrar Bolívares en China

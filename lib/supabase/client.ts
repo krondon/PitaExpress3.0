@@ -48,8 +48,8 @@ export function debugSupabaseRealtime() {
   // @ts-ignore - propiedades internas
   const channels = client.realtime?.channels || [];
   console.group('[Supabase Realtime Debug]');
-  console.log('Canales activos:', channels.map((c: any) => c.topic));
+
   // @ts-ignore
-  console.log('Socket estado:', client.realtime?.socket?.connectionState());
+
   console.groupEnd();
 }

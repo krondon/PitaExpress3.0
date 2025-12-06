@@ -377,11 +377,7 @@ export default function MisPedidosPage() {
   // Función para formatear precio con conversión a Bs
   const formatPriceWithConversion = useCallback((priceStr: string, paymentMethod: PaymentMethod | null) => {
     // Debug: ver valores que llegan
-    console.log('🔍 Debug conversion:', {
-      priceStr,
-      paymentMethod: paymentMethod?.currency,
-      exchangeRate
-    });
+
 
     // Extraer número del string del precio manejando diferentes formatos
     // Formato 1: "$7,049.99" (formato US)
@@ -407,12 +403,7 @@ export default function MisPedidosPage() {
       usdAmount = parseFloat(cleanPrice);
     }
 
-    console.log('💰 Price parsing:', {
-      original: priceStr,
-      cleaned: cleanPrice,
-      usdAmount,
-      isNaN: isNaN(usdAmount)
-    });
+
 
     if (isNaN(usdAmount)) return priceStr;
 
@@ -424,12 +415,7 @@ export default function MisPedidosPage() {
         maximumFractionDigits: 2
       });
 
-      console.log('🔄 Conversion calculation:', {
-        usdAmount,
-        exchangeRate,
-        bsAmount,
-        formattedBs
-      });
+
 
       return `${priceStr} [${formattedBs} Bs]`;
     }
@@ -642,7 +628,7 @@ export default function MisPedidosPage() {
           filter: `client_id=eq.${clientId}`,
         },
         (payload) => {
-          console.log('Realtime: Mis pedidos changed', payload);
+
           fetchOrders();
         }
       )
@@ -706,24 +692,24 @@ export default function MisPedidosPage() {
 
   // Función para obtener timeline real desde la API
   const fetchOrderTimeline = async (orderId: string): Promise<TrackingOrder['timeline']> => {
-    console.log('🔍 fetchOrderTimeline llamado para order:', orderId);
+
 
     // DESACTIVAR CACHÉ TEMPORALMENTE PARA DEBUG
     // if (timelineData[orderId]) {
-    //   console.log('📱 Usando timeline desde caché para order:', orderId);
+
     //   return timelineData[orderId]; // usar caché si existe
     // }
 
     // DESACTIVAR LOADING CHECK TEMPORALMENTE
     // if (timelineLoading[orderId]) {
-    //   console.log('⏳ Timeline ya está cargando para order:', orderId);
+
     //   return generateFallbackTimeline(); // evitar múltiples requests
     // }
 
     // setTimelineLoading(prev => ({ ...prev, [orderId]: true })); // CACHÉ DESACTIVADO
 
     try {
-      console.log('🌐 Haciendo fetch a /api/orders/' + orderId + '/timeline');
+
       const response = await fetch(`/api/orders/${orderId}/timeline`);
 
       if (!response.ok) {
@@ -732,22 +718,22 @@ export default function MisPedidosPage() {
 
       const data = await response.json();
 
-      console.log('📦 Respuesta del timeline API:', data);
-      console.log('🎯 TIMELINE EN RESPUESTA:', data.timeline);
+
+
 
       if (data.success && data.timeline) {
         const timeline = data.timeline;
-        console.log('✅ Timeline obtenido exitosamente:', timeline);
+
         // setTimelineData(prev => ({ ...prev, [orderId]: timeline })); // CACHÉ DESACTIVADO
         return timeline;
       } else {
         console.error('❌ Error fetching timeline:', data.error);
-        console.log('🔄 Usando fallback timeline');
+
         return generateFallbackTimeline();
       }
     } catch (error) {
       console.error('🚨 Network error fetching timeline:', error);
-      console.log('🔄 Usando fallback timeline por error de red');
+
       return generateFallbackTimeline();
     } finally {
       // setTimelineLoading(prev => ({ ...prev, [orderId]: false })); // CACHÉ DESACTIVADO
@@ -777,7 +763,7 @@ export default function MisPedidosPage() {
 
   // Construir objeto de tracking a partir de un pedido
   const buildTrackingFromOrder = async (order: Order): Promise<TrackingOrder> => {
-    console.log('🏗️ buildTrackingFromOrder llamado para order:', order);
+
 
     const mapStatus = (s: Order['status']): TrackingOrder['status'] => {
       if (s === 'shipped') return 'in-transit';
@@ -788,12 +774,12 @@ export default function MisPedidosPage() {
     };
 
     const status = mapStatus(order.status);
-    console.log('📊 Status mapeado:', order.status, '->', status);
+
 
     // Obtener timeline real desde la API
-    console.log('🕐 Obteniendo timeline para order ID:', order.id);
+
     const timeline = await fetchOrderTimeline(order.id);
-    console.log('📅 Timeline recibido:', timeline);
+
 
     const trackingOrder = {
       id: order.id,
@@ -808,7 +794,7 @@ export default function MisPedidosPage() {
       timeline,
     };
 
-    console.log('🎯 TrackingOrder final construido:', trackingOrder);
+
     return trackingOrder;
   };
 
@@ -861,7 +847,7 @@ export default function MisPedidosPage() {
 
     try {
       const response = await fetch(`/api/orders/${orderId}/review?userId=${encodeURIComponent(clientId)}`);
-      console.log('[reviews][fetch]', { orderId, status: response.status, ok: response.ok });
+
       if (response.ok) {
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('application/json')) {
@@ -877,7 +863,7 @@ export default function MisPedidosPage() {
               },
             }));
           } else {
-            console.log('[reviews][fetch] no review in payload', data);
+
           }
         }
       } else {
@@ -1312,7 +1298,7 @@ export default function MisPedidosPage() {
 
   // Lógica interna para crear un pedido individual (reutilizable)
   const createOrderInternal = async (orderData: NewOrderData, overrideAssignee?: string): Promise<{ success: boolean; asignedEChina?: string }> => {
-    console.log('createOrderInternal called', orderData);
+
     // Generar nombre del PDF con fecha legible dd-mm-yyyy
     const fechaObj = new Date();
     const dd = String(fechaObj.getDate()).padStart(2, '0');
@@ -1522,7 +1508,7 @@ export default function MisPedidosPage() {
         // Si es el primer éxito y no teníamos líder, lo establecemos
         if (!leaderAssignee && result.asignedEChina) {
           leaderAssignee = result.asignedEChina;
-          console.log('Leader assignee set to:', leaderAssignee);
+
         }
       }
     }
@@ -2462,7 +2448,7 @@ export default function MisPedidosPage() {
                           {(() => {
                             const alternative = alternatives.find(alt => {
                               const match = String(alt.order_id) === String(order.id);
-                              if (match) console.log('🎯 Found alternative match for order:', order.id);
+
                               return match;
                             });
                             return alternative && (

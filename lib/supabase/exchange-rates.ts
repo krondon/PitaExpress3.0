@@ -21,14 +21,14 @@ export interface LatestRateResult {
  * Guarda una nueva tasa de cambio en la base de datos
  */
 export async function saveExchangeRate(
-  rate: number, 
-  source: string, 
+  rate: number,
+  source: string,
   is_fallback: boolean = false,
   api_response?: any
 ): Promise<ExchangeRateRecord | null> {
   try {
     const supabase = getSupabaseServiceRoleClient();
-    
+
     const { data, error } = await supabase
       .from('exchange_rates')
       .insert({
@@ -45,7 +45,7 @@ export async function saveExchangeRate(
       return null;
     }
 
-    console.log(`[ExchangeRate] Saved: ${rate} Bs/USD from ${source}`);
+
     return data;
   } catch (error) {
     console.error('Error in saveExchangeRate:', error);
@@ -59,7 +59,7 @@ export async function saveExchangeRate(
 export async function getLatestValidExchangeRate(): Promise<LatestRateResult | null> {
   try {
     const supabase = getSupabaseServiceRoleClient();
-    
+
     const { data, error } = await supabase
       .rpc('get_latest_valid_exchange_rate');
 
@@ -74,8 +74,8 @@ export async function getLatestValidExchangeRate(): Promise<LatestRateResult | n
     }
 
     const result = data[0] as LatestRateResult;
-    console.log(`[ExchangeRate] Latest valid rate: ${result.rate} Bs/USD from ${result.source} (${result.age_minutes} minutes ago)`);
-    
+
+
     return result;
   } catch (error) {
     console.error('Error in getLatestValidExchangeRate:', error);
@@ -89,7 +89,7 @@ export async function getLatestValidExchangeRate(): Promise<LatestRateResult | n
 export async function getLatestExchangeRate(): Promise<ExchangeRateRecord | null> {
   try {
     const supabase = getSupabaseServiceRoleClient();
-    
+
     const { data, error } = await supabase
       .from('exchange_rates')
       .select('*')
@@ -118,7 +118,7 @@ export async function getExchangeRateHistory(
 ): Promise<ExchangeRateRecord[]> {
   try {
     const supabase = getSupabaseServiceRoleClient();
-    
+
     let query = supabase
       .from('exchange_rates')
       .select('*')
@@ -149,7 +149,7 @@ export async function getExchangeRateHistory(
 export async function cleanupOldExchangeRates(): Promise<number> {
   try {
     const supabase = getSupabaseServiceRoleClient();
-    
+
     const { data, error } = await supabase
       .rpc('cleanup_old_exchange_rates');
 
@@ -160,7 +160,7 @@ export async function cleanupOldExchangeRates(): Promise<number> {
 
     const deletedCount = data || 0;
     if (deletedCount > 0) {
-      console.log(`[ExchangeRate] Cleaned up ${deletedCount} old records`);
+
     }
 
     return deletedCount;

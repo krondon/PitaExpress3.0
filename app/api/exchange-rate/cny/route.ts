@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { 
-  saveExchangeRateCNY, 
-  getLatestValidExchangeRateCNY, 
+import {
+  saveExchangeRateCNY,
+  getLatestValidExchangeRateCNY,
   getLatestExchangeRateCNY,
   isValidExchangeRateCNY,
-  cleanupOldExchangeRatesCNY 
+  cleanupOldExchangeRatesCNY
 } from '@/lib/supabase/exchange-rates-cny';
 
 // Función para obtener la tasa de cambio USD → CNY con múltiples APIs
@@ -43,8 +43,8 @@ async function fetchUSDToCNYRate(): Promise<number> {
   // Intentar cada API en orden
   for (const api of apis) {
     try {
-      console.log(`[CNY] Trying ${api.name}...`);
-      
+
+
       const response = await fetch(api.url, {
         method: 'GET',
         headers: {
@@ -60,18 +60,18 @@ async function fetchUSDToCNYRate(): Promise<number> {
 
       const data = await response.json();
       const rate = api.parser(data);
-      
+
       if (!rate) {
         throw new Error(`CNY rate not found in ${api.name} response`);
       }
 
       const parsedRate = parseFloat(rate);
-      
+
       if (!isValidExchangeRateCNY(parsedRate)) {
         throw new Error(`Invalid CNY exchange rate value from ${api.name}: ${parsedRate}`);
       }
 
-      console.log(`[CNY] Success with ${api.name}: ${parsedRate}`);
+
       return parsedRate;
 
     } catch (error) {
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
 
     try {
       apiRate = await fetchUSDToCNYRate();
-      console.log(`[ExchangeRate CNY] API success: ${apiRate} CNY/USD`);
+
     } catch (error) {
       apiError = error;
       console.error('[ExchangeRate CNY] All APIs failed:', error);
@@ -126,12 +126,12 @@ export async function GET(request: NextRequest) {
     }
 
     // 3. APIs fallaron, intentar usar última tasa válida de BD
-    console.log('[ExchangeRate CNY] APIs failed, checking database for last valid rate...');
+
     const lastValidRate = await getLatestValidExchangeRateCNY();
 
     if (lastValidRate) {
-      console.log(`[ExchangeRate CNY] Using last valid rate from DB: ${lastValidRate.rate} CNY/USD (${lastValidRate.age_minutes} min ago)`);
-      
+
+
       // Guardar registro de que usamos fallback
       await saveExchangeRateCNY(lastValidRate.rate, lastValidRate.source, true, {
         fallback_reason: 'APIs failed',
@@ -152,12 +152,12 @@ export async function GET(request: NextRequest) {
     }
 
     // 4. No hay tasa válida en BD, usar cualquier tasa (incluso fallback anterior)
-    console.log('[ExchangeRate CNY] No valid rates in DB, checking for any rate...');
+
     const anyLastRate = await getLatestExchangeRateCNY();
 
     if (anyLastRate) {
-      console.log(`[ExchangeRate CNY] Using any last rate from DB: ${anyLastRate.rate} CNY/USD`);
-      
+
+
       return NextResponse.json({
         success: true,
         rate: anyLastRate.rate,
@@ -172,7 +172,7 @@ export async function GET(request: NextRequest) {
     // 5. Último recurso: tasa por defecto y guardarla
     console.error('[ExchangeRate CNY] No rates available anywhere, using hardcoded default');
     const defaultRate = 7.25; // Tasa aproximada USD → CNY
-    
+
     await saveExchangeRateCNY(defaultRate, 'Hardcoded Default', true, {
       fallback_reason: 'No rates available in APIs or database',
       api_error: apiError?.message
@@ -190,7 +190,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Critical error in CNY exchange rate endpoint:', error);
-    
+
     return NextResponse.json({
       success: false,
       error: 'Error crítico al obtener tasa de cambio USD→CNY',
@@ -210,7 +210,7 @@ export async function POST(request: NextRequest) {
     // Si hay tasa manual, guardarla y usarla
     if (manualRate && isValidExchangeRateCNY(parseFloat(manualRate))) {
       const rate = parseFloat(manualRate);
-      
+
       // Guardar tasa manual en BD
       await saveExchangeRateCNY(rate, 'Manual', false, {
         manual_update: true,
@@ -230,7 +230,7 @@ export async function POST(request: NextRequest) {
     // Si no hay tasa manual, obtener de API y guardar
     try {
       const apiRate = await fetchUSDToCNYRate();
-      
+
       // Guardar tasa de API en BD
       await saveExchangeRateCNY(apiRate, 'Oficial PBOC (Manual Refresh)', false, {
         manual_refresh: true,
@@ -248,7 +248,7 @@ export async function POST(request: NextRequest) {
     } catch (apiError: any) {
       // Si falla API, usar última tasa válida de BD
       const lastValidRate = await getLatestValidExchangeRateCNY();
-      
+
       if (lastValidRate) {
         return NextResponse.json({
           success: true,
@@ -268,7 +268,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Error in POST CNY exchange rate:', error);
-    
+
     return NextResponse.json({
       success: false,
       error: error.message || 'Failed to update USD→CNY exchange rate',

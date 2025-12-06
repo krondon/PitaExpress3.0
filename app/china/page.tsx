@@ -98,7 +98,7 @@ export default function ChinaDashboard() {
   const router = useRouter();
   // Obtener el id del empleado de China autenticado (debe declararse antes de usarlo en callbacks)
   const { chinaId } = useChinaContext();
-  
+
   // Pedidos asignados al empleado China autenticado
   const { data: chinaOrders, loading: ordersLoading, error: ordersError, refetch: refetchChinaOrders } = useChinaOrders(refreshTrigger);
   // Pending count como en /china/pedidos: mismo mapeo y misma fuente (pedidos asignados al usuario)
@@ -135,14 +135,14 @@ export default function ChinaDashboard() {
     clientsInfo?.find((client: any) => client.user_id === order.client_id)?.name ?? order.client_id
   );
 
-  console.log('China Dashboard: chinaId =', chinaId);
+
 
   // Notificaciones para China (per-user read)
   const { uiItems: notificationsList, unreadCount, markAllAsRead, markOneAsRead } = useNotifications({ role: 'china', userId: chinaId, limit: 10, enabled: true });
 
   // Función para actualizar pedidos en realtime
   const handleOrdersUpdate = useCallback(() => {
-    console.log('Realtime China: Triggering orders update via refetch');
+
     refetchChinaOrders();
   }, [refetchChinaOrders]);
 
@@ -152,7 +152,7 @@ export default function ChinaDashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { theme } = useTheme();
-  
+
   // Fallback: refresco periódico ligero para robustez (10s)
   useEffect(() => {
     if (!chinaId) return;
@@ -167,15 +167,15 @@ export default function ChinaDashboard() {
   useEffect(() => {
     fetchAssignedPedidosPending();
   }, [fetchAssignedPedidosPending]);
-  
+
   // Badges estandarizados para pedidos según estado numérico
   function getOrderBadge(stateNum?: number) {
     const s = Number(stateNum ?? 0);
     const isDark = mounted && theme === 'dark';
     const base = 'border';
-  if (s <= 0 || isNaN(s)) return { label: t('admin.orders.china.badges.unknown'), className: `${base} ${isDark ? 'bg-gray-800 text-gray-300 border-gray-700' : 'bg-gray-100 text-gray-800 border-gray-200'}` };
-  if (s === 1) return { label: t('admin.orders.china.filters.pending'), className: `${base} ${isDark ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700' : 'bg-yellow-100 text-yellow-800 border-yellow-200'}` };
-  if (s === 2) return { label: t('admin.orders.china.filters.pending'), className: `${base} ${isDark ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700' : 'bg-yellow-100 text-yellow-800 border-yellow-200'}` };
+    if (s <= 0 || isNaN(s)) return { label: t('admin.orders.china.badges.unknown'), className: `${base} ${isDark ? 'bg-gray-800 text-gray-300 border-gray-700' : 'bg-gray-100 text-gray-800 border-gray-200'}` };
+    if (s === 1) return { label: t('admin.orders.china.filters.pending'), className: `${base} ${isDark ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700' : 'bg-yellow-100 text-yellow-800 border-yellow-200'}` };
+    if (s === 2) return { label: t('admin.orders.china.filters.pending'), className: `${base} ${isDark ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700' : 'bg-yellow-100 text-yellow-800 border-yellow-200'}` };
     if (s === 3) return { label: t('admin.orders.china.badges.quoted'), className: `${base} ${isDark ? 'bg-blue-900/30 text-blue-300 border-blue-700' : 'bg-blue-100 text-blue-800 border-blue-200'}` };
     if (s === 4) return { label: t('admin.orders.china.badges.processing'), className: `${base} ${isDark ? 'bg-purple-900/30 text-purple-300 border-purple-700' : 'bg-purple-100 text-purple-800 border-purple-200'}` };
     if (s === 5) return { label: t('admin.orders.china.badges.readyToPack'), className: `${base} ${isDark ? 'bg-amber-900/30 text-amber-300 border-amber-700' : 'bg-amber-100 text-amber-800 border-amber-200'}` };
@@ -378,11 +378,10 @@ export default function ChinaDashboard() {
         onMobileMenuClose={() => setIsMobileMenuOpen(false)}
         userRole="china"
       />
-      
-      <main className={`flex-1 transition-all duration-300 ${
-        sidebarExpanded ? 'lg:ml-72 lg:w-[calc(100%-18rem)]' : 'lg:ml-24 lg:w-[calc(100%-6rem)]'
-      }`}>
-        <Header 
+
+      <main className={`flex-1 transition-all duration-300 ${sidebarExpanded ? 'lg:ml-72 lg:w-[calc(100%-18rem)]' : 'lg:ml-24 lg:w-[calc(100%-6rem)]'
+        }`}>
+        <Header
           notifications={unreadCount || 0}
           onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           title={t('chinese.title')}
@@ -394,7 +393,7 @@ export default function ChinaDashboard() {
           notificationsRole="china"
           notificationsUserId={chinaId}
         />
-        
+
         <div className="p-4 md:p-5 lg:p-6 space-y-6 md:space-y-8">
           {/* Header del Dashboard con Bienvenida */}
           <div className={`rounded-xl p-4 md:p-6 lg:p-8 text-white relative overflow-hidden ${mounted && theme === 'dark' ? 'bg-gradient-to-r from-blue-900 via-blue-800 to-orange-900' : 'bg-gradient-to-r from-blue-500 via-blue-600 to-orange-500'}`}>
@@ -431,7 +430,7 @@ export default function ChinaDashboard() {
                   <div className={`text-xl md:text-2xl lg:text-3xl font-bold ${mounted && theme === 'dark' ? 'text-blue-300' : 'text-blue-900'}`}>{pedidosPendientes}</div>
                   <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-blue-700'}`}>{t('chinese.status')}</p>
                   <div className={`mt-2 w-full rounded-full h-2 ${mounted && theme === 'dark' ? 'bg-blue-900/50' : 'bg-blue-200'}`}>
-                    <div className={`h-2 rounded-full ${mounted && theme === 'dark' ? 'bg-blue-500' : 'bg-blue-500'}`} style={{width: `${(pedidosPendientes / Math.max(1, totalPedidos)) * 100}%`}}></div>
+                    <div className={`h-2 rounded-full ${mounted && theme === 'dark' ? 'bg-blue-500' : 'bg-blue-500'}`} style={{ width: `${(pedidosPendientes / Math.max(1, totalPedidos)) * 100}%` }}></div>
                   </div>
                 </CardContent>
               </Card>
@@ -447,7 +446,7 @@ export default function ChinaDashboard() {
                   <div className={`text-xl md:text-2xl lg:text-3xl font-bold ${mounted && theme === 'dark' ? 'text-orange-300' : 'text-orange-900'}`}>{pedidosEnProceso}</div>
                   <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-orange-700'}`}>{t('chinese.status')}</p>
                   <div className={`mt-2 w-full rounded-full h-2 ${mounted && theme === 'dark' ? 'bg-orange-900/50' : 'bg-orange-200'}`}>
-                    <div className={`h-2 rounded-full ${mounted && theme === 'dark' ? 'bg-orange-500' : 'bg-orange-500'}`} style={{width: `${(pedidosEnProceso / totalPedidos) * 100}%`}}></div>
+                    <div className={`h-2 rounded-full ${mounted && theme === 'dark' ? 'bg-orange-500' : 'bg-orange-500'}`} style={{ width: `${(pedidosEnProceso / totalPedidos) * 100}%` }}></div>
                   </div>
                 </CardContent>
               </Card>
@@ -463,7 +462,7 @@ export default function ChinaDashboard() {
                   <div className={`text-xl md:text-2xl lg:text-3xl font-bold ${mounted && theme === 'dark' ? 'text-blue-200' : 'text-blue-900'}`}>{pedidosEnviados}</div>
                   <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-blue-700'}`}>{t('chinese.inTransit')}</p>
                   <div className={`mt-2 w-full rounded-full h-2 ${mounted && theme === 'dark' ? 'bg-blue-900/50' : 'bg-blue-200'}`}>
-                    <div className={`h-2 rounded-full ${mounted && theme === 'dark' ? 'bg-blue-500' : 'bg-blue-500'}`} style={{width: `${(pedidosEnviados / totalPedidos) * 100}%`}}></div>
+                    <div className={`h-2 rounded-full ${mounted && theme === 'dark' ? 'bg-blue-500' : 'bg-blue-500'}`} style={{ width: `${(pedidosEnviados / totalPedidos) * 100}%` }}></div>
                   </div>
                 </CardContent>
               </Card>
@@ -512,24 +511,24 @@ export default function ChinaDashboard() {
                   <CardTitle className={`text-lg md:text-xl font-semibold ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{t('chinese.recentOrders')}</CardTitle>
                   <p className={`text-xs md:text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('chinese.recentOrdersSubtitle')}</p>
                 </CardHeader>
-                                  <CardContent>
-                    <div className="space-y-3 md:space-y-4">
-                      {pedidosRecientes.length === 0 ? (
-                        <div className={`text-center text-sm md:text-base ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{t('chinese.noOrders')}</div>
-                      ) : (
-                        pedidosRecientes.map((order: any, idx: number) => (
-                          <div key={order.id} className={`flex flex-col md:flex-row md:items-center justify-between p-3 rounded-xl border gap-3 ${mounted && theme === 'dark' ? 'bg-gradient-to-r from-slate-700 to-slate-600 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200'}`}>
-                            <div className="flex items-center gap-3">
-                              <div className={`p-2 rounded-lg ${mounted && theme === 'dark' ? 'bg-blue-900/30' : 'bg-blue-100'}`}>
-                                <Package className={`h-4 w-4 ${mounted && theme === 'dark' ? 'text-blue-300' : 'text-blue-600'}`} />
-                              </div>
-                              <div>
-                                <p className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{order.id}</p>
-                                <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{order.productName}</p>
-                                <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{t('chinese.client')}: {nombresClientesRecientes[idx]}</p>
-                              </div>
+                <CardContent>
+                  <div className="space-y-3 md:space-y-4">
+                    {pedidosRecientes.length === 0 ? (
+                      <div className={`text-center text-sm md:text-base ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{t('chinese.noOrders')}</div>
+                    ) : (
+                      pedidosRecientes.map((order: any, idx: number) => (
+                        <div key={order.id} className={`flex flex-col md:flex-row md:items-center justify-between p-3 rounded-xl border gap-3 ${mounted && theme === 'dark' ? 'bg-gradient-to-r from-slate-700 to-slate-600 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200'}`}>
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded-lg ${mounted && theme === 'dark' ? 'bg-blue-900/30' : 'bg-blue-100'}`}>
+                              <Package className={`h-4 w-4 ${mounted && theme === 'dark' ? 'text-blue-300' : 'text-blue-600'}`} />
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div>
+                              <p className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{order.id}</p>
+                              <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{order.productName}</p>
+                              <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{t('chinese.client')}: {nombresClientesRecientes[idx]}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
                             <Badge className={getOrderBadge(order.state).className}>
                               {getOrderBadge(order.state).label}
                             </Badge>

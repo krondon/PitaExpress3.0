@@ -44,41 +44,41 @@ export function useAdminUsers() {
     const employeesChannel = supabase
       .channel('admin-employees-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'employees' }, (payload) => {
-        console.log('Realtime: Employees changed', payload);
+
         fetchData();
       })
       .subscribe((status) => {
-        console.log('Realtime employees subscription status:', status);
+
       });
 
     const clientsChannel = supabase
       .channel('admin-clients-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, (payload) => {
-        console.log('Realtime: Clients changed', payload);
+
         fetchData();
       })
       .subscribe((status) => {
-        console.log('Realtime clients subscription status:', status);
+
       });
 
     const adminsChannel = supabase
       .channel('admin-administrators-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'administrators' }, (payload) => {
-        console.log('Realtime: Administrators changed', payload);
+
         fetchData();
       })
       .subscribe((status) => {
-        console.log('Realtime administrators subscription status:', status);
+
       });
 
     const userlevelChannel = supabase
       .channel('admin-userlevel-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'userlevel' }, (payload) => {
-        console.log('Realtime: Userlevel changed', payload);
+
         fetchData();
       })
       .subscribe((status) => {
-        console.log('Realtime userlevel subscription status:', status);
+
       });
 
     return () => {

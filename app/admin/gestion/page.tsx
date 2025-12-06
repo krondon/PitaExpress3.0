@@ -4,15 +4,15 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
-import { 
-  Save, 
-  RefreshCw, 
-  DollarSign, 
-  Plane, 
-  Ship, 
-  Package, 
-  Calculator, 
-  Clock, 
+import {
+  Save,
+  RefreshCw,
+  DollarSign,
+  Plane,
+  Ship,
+  Package,
+  Calculator,
+  Clock,
   Percent,
   Globe,
   Settings,
@@ -102,16 +102,10 @@ export default function ConfiguracionPage() {
     };
     checkUser();
   }, [supabase, mounted]);
-  // Log cuando el componente se monta
-  useEffect(() => {
-    console.log('[Admin] Component MOUNTED');
-    return () => {
-      console.log('[Admin] Component UNMOUNTED');
-    };
-  }, []);
+
 
   // (Eliminado segundo useEffect duplicado de sesión)
-  
+
   const { t } = useTranslation();
   const { getTimeAgo, translateSource } = useTimeTranslations();
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
@@ -131,19 +125,19 @@ export default function ConfiguracionPage() {
     paymentDeadlineDays: 3,
     alertsAfterDays: 7,
     sessionTimeout: 60,
-  auto_update_exchange_rate: false,
-  auto_update_exchange_rate_cny: false,
-  auto_update_binance_rate: false,
-  auto_update_binance_rate_sell: false
+    auto_update_exchange_rate: false,
+    auto_update_exchange_rate_cny: false,
+    auto_update_binance_rate: false,
+    auto_update_binance_rate_sell: false
   });
-  
+
   // Referencia al estado base para detectar cambios
   const baseConfigRef = useRef<BusinessConfig | null>(null);
   const [baselineVersion, setBaselineVersion] = useState(0);
-  
+
   // Estado de fetching en curso (carga inicial / refetch)
   const [isFetching, setIsFetching] = useState(true);
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   // Estado para auditoría
@@ -192,13 +186,11 @@ export default function ConfiguracionPage() {
         return merged;
       });
       setBaselineVersion(v => v + 1);
-      console.log('[Realtime] Config actualizada vía evento', eventType, mapped);
     } else {
       // Aunque no haya cambios de valores (porque ya estaban aplicados localmente) igual registrar auditoría
-      console.log('[Realtime] Evento sin cambios de valores, aplicando solo auditoría', eventType);
     }
     if (row.updated_at) {
-      try { setLastSaved(new Date(row.updated_at)); } catch {}
+      try { setLastSaved(new Date(row.updated_at)); } catch { }
     }
     if (row.admin_id) {
       const sameAdmin = lastAdmin?.id === row.admin_id;
@@ -213,7 +205,7 @@ export default function ConfiguracionPage() {
           fetch(`/api/admin-name?uid=${row.admin_id}`)
             .then(r => r.json())
             .then(r => { if (r.success && r.name) { setLastAdminName(r.name); sessionStorage.setItem(cacheKey, r.name); } })
-            .catch(() => {});
+            .catch(() => { });
         }
       }
     }
@@ -238,13 +230,13 @@ export default function ConfiguracionPage() {
 
   // Callback estable para actualizar la tasa CNY - SIMPLIFICADO
   const handleRateUpdateCNY = useCallback((newRate: number) => {
-    console.log('[Admin] handleRateUpdateCNY called with:', newRate);
+
     // SIMPLIFICADO: Solo actualizar si es diferente
     setConfig(prev => {
       if (prev.cnyRate === newRate) return prev;
       return { ...prev, cnyRate: newRate };
     });
-    
+
     // Forzar detección de cambios para activar el botón de guardar
     setBaselineVersion(v => v + 1);
   }, []);
@@ -256,7 +248,7 @@ export default function ConfiguracionPage() {
   // Función para guardar tasa manual en la base de datos
   const saveManualRate = useCallback(async (manualRate: number) => {
     if (!manualRate || isNaN(manualRate) || manualRate <= 0) return;
-    
+
     try {
       const response = await fetch('/api/exchange-rate', {
         method: 'POST',
@@ -267,13 +259,13 @@ export default function ConfiguracionPage() {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         toast({
           title: t('admin.management.financial.manualRateSaved'),
-          description: t('admin.management.financial.manualRateSavedDescription', { 
-            rate: manualRate.toFixed(2), 
-            currency: 'Bs/USD' 
+          description: t('admin.management.financial.manualRateSavedDescription', {
+            rate: manualRate.toFixed(2),
+            currency: 'Bs/USD'
           }),
           variant: "default",
           duration: 3000,
@@ -295,7 +287,7 @@ export default function ConfiguracionPage() {
   // Función para guardar tasa manual CNY en la base de datos
   const saveManualRateCNY = useCallback(async (manualRate: number) => {
     if (!manualRate || isNaN(manualRate) || manualRate <= 0) return;
-    
+
     try {
       const response = await fetch('/api/exchange-rate/cny', {
         method: 'POST',
@@ -306,13 +298,13 @@ export default function ConfiguracionPage() {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         toast({
           title: t('admin.management.financial.manualRateSaved'),
-          description: t('admin.management.financial.manualRateSavedDescription', { 
-            rate: manualRate.toFixed(4), 
-            currency: 'CNY/USD' 
+          description: t('admin.management.financial.manualRateSavedDescription', {
+            rate: manualRate.toFixed(4),
+            currency: 'CNY/USD'
           }),
           variant: "default",
           duration: 3000,
@@ -336,16 +328,16 @@ export default function ConfiguracionPage() {
     const cleaned = sanitizeCost(raw);
     // Permitir vacío, pero si no es vacío, convertir a número
     const finalValue = cleaned === '' ? '' : (isNaN(parseFloat(cleaned)) ? '' : parseFloat(cleaned));
-  setConfig(prev => ({ ...prev, [field]: finalValue }));
-    
+    setConfig(prev => ({ ...prev, [field]: finalValue }));
+
     // Forzar detección de cambios para activar el botón de guardar
     setBaselineVersion(v => {
-      console.log('[Admin] Incrementing baselineVersion from', v, 'to', v + 1, 'for field:', field);
+
       return v + 1;
     });
 
     // Si es tasa CNY y la actualización automática está desactivada, guardar en BD solo si es número > 0
-  if (field === 'cnyRate' && !config.auto_update_exchange_rate_cny && typeof finalValue === 'number' && finalValue > 0) {
+    if (field === 'cnyRate' && !config.auto_update_exchange_rate_cny && typeof finalValue === 'number' && finalValue > 0) {
       if (manualRateTimeoutRefCNY.current) {
         clearTimeout(manualRateTimeoutRefCNY.current);
       }
@@ -355,7 +347,7 @@ export default function ConfiguracionPage() {
     }
 
     // Si es tasa USD y la actualización automática está desactivada, guardar en BD solo si es número > 0
-  if (field === 'usdRate' && !config.auto_update_exchange_rate && typeof finalValue === 'number' && finalValue > 0) {
+    if (field === 'usdRate' && !config.auto_update_exchange_rate && typeof finalValue === 'number' && finalValue > 0) {
       if (manualRateTimeoutRef.current) {
         clearTimeout(manualRateTimeoutRef.current);
       }
@@ -391,10 +383,10 @@ export default function ConfiguracionPage() {
   const [exchangeRateErrorCNY, setExchangeRateErrorCNY] = useState<string | null>(null);
   const [exchangeRateLastUpdatedCNY, setExchangeRateLastUpdatedCNY] = useState<Date | null>(null);
   const [exchangeRateSourceCNY, setExchangeRateSourceCNY] = useState<string>('');
-  
+
   // Inicializar información de CNY cuando se activa el switch
   useEffect(() => {
-  if (config.auto_update_exchange_rate_cny && !exchangeRateLastUpdatedCNY) {
+    if (config.auto_update_exchange_rate_cny && !exchangeRateLastUpdatedCNY) {
       // Si el switch está activo pero no hay fecha de actualización, inicializar
       setExchangeRateLastUpdatedCNY(new Date());
       setExchangeRateSourceCNY(t('admin.management.financial.sources.pbocOfficial'));
@@ -402,10 +394,9 @@ export default function ConfiguracionPage() {
   }, [config.auto_update_exchange_rate_cny, exchangeRateLastUpdatedCNY, t]);
   // Estado para el ícono Wi-Fi de CNY (debe reflejar el estado del switch)
   const isAutoUpdatingCNY = config.auto_update_exchange_rate_cny;
-  
+
   // Debug: Log del estado del switch CNY
-  console.log('[Admin] CNY Switch State - config.auto_update_exchange_rate_cny:', config.auto_update_exchange_rate_cny);
-  console.log('[Admin] CNY Switch State - config.cnyRate:', config.cnyRate);
+
 
   // Memoizar el valor de autoUpdate Binance para evitar loops infinitos
   const autoUpdateBinance = useMemo(() => config.auto_update_binance_rate, [config.auto_update_binance_rate]);
@@ -465,16 +456,14 @@ export default function ConfiguracionPage() {
 
   // Callback para recibir actualizaciones del ExchangeRateManager
   const handleExchangeRateUpdate = useCallback((newRate: number) => {
-    console.log('[Admin] Received rate update from ExchangeRateManager:', newRate);
-    console.log('[Admin] Current config.cnyRate:', config.cnyRate);
-    console.log('[Admin] Updating currentExchangeRateCNY from', currentExchangeRateCNY, 'to', newRate);
-    
+
+
     setCurrentExchangeRateCNY(newRate);
     setExchangeRateLastUpdatedCNY(new Date());
     setExchangeRateSourceCNY('Oficial PBOC');
     setExchangeRateLoadingCNY(false);
     setExchangeRateErrorCNY(null);
-    
+
     // Actualizar el config para que el input muestre el valor de la API inmediatamente
     setConfig(prev => {
       if (prev.cnyRate === newRate) return prev;
@@ -489,24 +478,24 @@ export default function ConfiguracionPage() {
 
   // Función de refrescar CNY - SIMPLE
   const refreshRateCNY = useCallback(() => {
-    console.log('[Admin] Manual refresh CNY requested');
+
     // Forzar actualización manual
     setExchangeRateLoadingCNY(true);
     setExchangeRateErrorCNY(null);
-    
+
     // Simular llamada a API (esto debería conectarse con el hook real)
     setTimeout(() => {
       const newRate = 7.14; // Valor simulado - debería venir de la API real
       setExchangeRateLoadingCNY(false);
       setExchangeRateLastUpdatedCNY(new Date());
       setExchangeRateSourceCNY(t('admin.management.financial.liveApi'));
-      
+
       // Mostrar mensaje de "Tasa actualizada"
       toast({
         title: t('admin.management.financial.rateUpdated'),
-        description: t('admin.management.financial.rateUpdatedDescription', { 
-          rate: newRate, 
-          currency: 'CNY/USD' 
+        description: t('admin.management.financial.rateUpdatedDescription', {
+          rate: newRate,
+          currency: 'CNY/USD'
         }),
         variant: "default",
         duration: 3000,
@@ -519,11 +508,11 @@ export default function ConfiguracionPage() {
     const now = new Date();
     const diffMs = now.getTime() - exchangeRateLastUpdatedCNY.getTime();
     const diffMins = Math.floor(diffMs / (1000 * 60));
-    
+
     if (diffMins < 1) return 'Hace menos de 1 minuto';
     if (diffMins === 1) return 'Hace 1 minuto';
     if (diffMins < 60) return `Hace ${diffMins} minutos`;
-    
+
     const diffHours = Math.floor(diffMins / 60);
     if (diffHours === 1) return 'Hace 1 hora';
     return `Hace ${diffHours} horas`;
@@ -531,7 +520,7 @@ export default function ConfiguracionPage() {
 
   // ========== BINANCE RATE (USDT → VES) - MODO MANUAL ==========
   // Sin auto-actualización, solo edición manual del campo
-  
+
   // Estado para la calculadora de conversión USDT → VES
   const [usdtAmount, setUsdtAmount] = useState<number>(100); // Para calculadora de compra
   const [usdtAmountSell, setUsdtAmountSell] = useState<number>(100); // Para calculadora de venta
@@ -565,7 +554,7 @@ export default function ConfiguracionPage() {
         setConfig(mapped);
         baseConfigRef.current = { ...mapped };
         if (db.updated_at) {
-          try { setLastSaved(new Date(db.updated_at)); } catch {}
+          try { setLastSaved(new Date(db.updated_at)); } catch { }
         }
         if (db.admin_id) {
           const cacheKey = `adminName:${db.admin_id}`;
@@ -581,7 +570,7 @@ export default function ConfiguracionPage() {
           setLastAdmin({ id: db.admin_id, updated_at: db.updated_at || new Date().toISOString() });
         }
         setBaselineVersion(v => v + 1);
-        console.log('[Admin] Config fetched (mount/refetch)');
+
       } else {
         console.warn('[Admin] Config API returned empty');
       }
@@ -683,30 +672,30 @@ export default function ConfiguracionPage() {
             .then(r => r.json())
             .then(r => { if (r.success && r.name) { setLastAdminName(r.name); sessionStorage.setItem(cacheKey, r.name); } });
         }
-      } catch {}
+      } catch { }
       toast({
         title: t('admin.management.messages.configSaved'),
         description: t('admin.management.messages.configSavedGlobal'),
       });
       // Actualizar baseline para futuras comparaciones
       baseConfigRef.current = {
-  usdRate: config.usdRate,
-  auto_update_exchange_rate: config.auto_update_exchange_rate,
-  cnyRate: config.cnyRate,
-  auto_update_exchange_rate_cny: config.auto_update_exchange_rate_cny,
-  binanceRate: config.binanceRate,
-  binanceRateSell: config.binanceRateSell,
-  auto_update_binance_rate: config.auto_update_binance_rate,
-  auto_update_binance_rate_sell: config.auto_update_binance_rate_sell,
-  profitMargin: config.profitMargin,
-  airShippingRate: config.airShippingRate,
-  seaShippingRate: config.seaShippingRate,
-  alertsAfterDays: config.alertsAfterDays,
-  sessionTimeout: config.sessionTimeout,
-  maxQuotationsPerMonth: config.maxQuotationsPerMonth,
-  maxModificationsPerOrder: config.maxModificationsPerOrder,
-  quotationValidityDays: config.quotationValidityDays,
-  paymentDeadlineDays: config.paymentDeadlineDays
+        usdRate: config.usdRate,
+        auto_update_exchange_rate: config.auto_update_exchange_rate,
+        cnyRate: config.cnyRate,
+        auto_update_exchange_rate_cny: config.auto_update_exchange_rate_cny,
+        binanceRate: config.binanceRate,
+        binanceRateSell: config.binanceRateSell,
+        auto_update_binance_rate: config.auto_update_binance_rate,
+        auto_update_binance_rate_sell: config.auto_update_binance_rate_sell,
+        profitMargin: config.profitMargin,
+        airShippingRate: config.airShippingRate,
+        seaShippingRate: config.seaShippingRate,
+        alertsAfterDays: config.alertsAfterDays,
+        sessionTimeout: config.sessionTimeout,
+        maxQuotationsPerMonth: config.maxQuotationsPerMonth,
+        maxModificationsPerOrder: config.maxModificationsPerOrder,
+        quotationValidityDays: config.quotationValidityDays,
+        paymentDeadlineDays: config.paymentDeadlineDays
       };
       setBaselineVersion(v => v + 1); // forzar recomputo de hasChanges
       // Refetch inmediato (garantizar sólo datos de API como fuente)
@@ -784,10 +773,10 @@ export default function ConfiguracionPage() {
         return updated;
       });
       if (data.config?.updated_at) {
-        try { setLastSaved(new Date(data.config.updated_at)); } catch {}
+        try { setLastSaved(new Date(data.config.updated_at)); } catch { }
       }
       // Evitar incrementar baselineVersion innecesariamente (ya sincronizado)
-      console.log('[AutoPersist] Tasa sincronizada', partial);
+
     } catch (e) {
       console.error('[AutoPersist] Error', e);
       // Si falla, marcar cambio pendiente para permitir Guardar manual
@@ -872,13 +861,13 @@ export default function ConfiguracionPage() {
       }
     }
   }, [currentExchangeRateBinanceSell, config.auto_update_binance_rate_sell, scheduleAutoPersist]);
-  
+
   const hasChanges = useMemo(() => {
     if (!baseConfigRef.current) {
-      console.log('[Admin] hasChanges: baseConfigRef.current is null');
+
       return false;
     }
-    
+
     // Validar que ningún campo relevante sea 0 o vacío
     const requiredFields: (keyof BusinessConfig)[] = [
       'airShippingRate',
@@ -896,12 +885,7 @@ export default function ConfiguracionPage() {
       }
     }
     const hasChangesResult = JSON.stringify(baseConfigRef.current) !== JSON.stringify(configRef.current);
-    console.log('[Admin] hasChanges calculation:', {
-      baselineVersion,
-      hasChanges: hasChangesResult,
-      baseConfig: baseConfigRef.current,
-      currentConfig: configRef.current
-    });
+
     return hasChangesResult;
   }, [baselineVersion]); // Solo depende de baselineVersion, no de config
 
@@ -929,7 +913,7 @@ export default function ConfiguracionPage() {
 
   const applySingleDay = (field: keyof BusinessConfig, raw: string) => {
     let onlyDigits = raw.replace(/\D/g, '');
-    if (onlyDigits.length > 4) onlyDigits = onlyDigits.slice(0,4);
+    if (onlyDigits.length > 4) onlyDigits = onlyDigits.slice(0, 4);
     let num = onlyDigits === '' ? 0 : parseInt(onlyDigits, 10);
     if (num > MAX_DAY_VALUE) num = MAX_DAY_VALUE;
     updateConfig(field, num);
@@ -976,17 +960,17 @@ export default function ConfiguracionPage() {
       }
     >
       {/* ExchangeRateManager independiente */}
-      <ExchangeRateManager 
-  onRateUpdate={handleExchangeRateUpdate} 
-  autoUpdate={config.auto_update_exchange_rate_cny}
+      <ExchangeRateManager
+        onRateUpdate={handleExchangeRateUpdate}
+        autoUpdate={config.auto_update_exchange_rate_cny}
       />
-      
-      <Sidebar 
-        isExpanded={sidebarExpanded} 
+
+      <Sidebar
+        isExpanded={sidebarExpanded}
         setIsExpanded={setSidebarExpanded}
         isMobileMenuOpen={isMobileMenuOpen}
         onMobileMenuClose={handleMobileMenuClose}
-        userRole="admin" 
+        userRole="admin"
       />
 
       <main className={`flex-1 transition-all duration-300 ${sidebarExpanded ? 'lg:ml-72 lg:w-[calc(100%-18rem)]' : 'lg:ml-24 lg:w-[calc(100%-6rem)]'}`}>
@@ -1006,13 +990,13 @@ export default function ConfiguracionPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
                 </Button>
-                
+
                 <div>
                   <h1 className={`text-xl md:text-2xl lg:text-3xl font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('admin.management.header.title')}</h1>
                   <p className={`text-sm md:text-base ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('admin.management.header.subtitle')}</p>
                 </div>
               </div>
-              
+
               <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
                 {(lastSaved || lastAdmin) && (
                   <div className={`text-xs md:text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
@@ -1024,18 +1008,18 @@ export default function ConfiguracionPage() {
                       <>
                         <span className="mx-1">|</span>
                         <span>
-                          {t('admin.management.financial.changeMadeBy', { 
+                          {t('admin.management.financial.changeMadeBy', {
                             userName: lastAdminName || lastAdmin.id,
-                            date: new Date(lastAdmin.updated_at).toLocaleString('es-VE') 
+                            date: new Date(lastAdmin.updated_at).toLocaleString('es-VE')
                           })}
                         </span>
                       </>
                     )}
                   </div>
                 )}
-                <Button 
+                <Button
                   onClick={() => {
-                    console.log('[Admin] Save button clicked, hasChanges:', hasChanges, 'isLoading:', isLoading);
+
                     handleSave();
                   }}
                   disabled={isLoading || !hasChanges}
@@ -1053,7 +1037,7 @@ export default function ConfiguracionPage() {
           </div>
         </header>
 
-  <div className={`w-full max-w-none space-y-6 md:space-y-8 ${mounted && theme === 'dark' ? 'bg-slate-900' : ''}`}>
+        <div className={`w-full max-w-none space-y-6 md:space-y-8 ${mounted && theme === 'dark' ? 'bg-slate-900' : ''}`}>
           {/* Alert de advertencia */}
           <Alert className={`border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-900/30`}>
             <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
@@ -1082,10 +1066,10 @@ export default function ConfiguracionPage() {
                   <CardHeader>
                     <CardTitle className={`flex items-center text-black dark:text-white text-base md:text-lg`}>
                       <Plane className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
-{t('admin.management.shipping.airExpress')}
+                      {t('admin.management.shipping.airExpress')}
                     </CardTitle>
                     <CardDescription className={`text-black dark:text-slate-300 text-sm`}>
-{t('admin.management.shipping.airDescription')}
+                      {t('admin.management.shipping.airDescription')}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -1105,9 +1089,9 @@ export default function ConfiguracionPage() {
                       </div>
                       <p className={`text-xs text-slate-500 dark:text-slate-400`}>{t('admin.management.shipping.costPerKg')}</p>
                     </div>
-                    
+
                     <Separator />
-                    
+
                     {/* Eliminados campos de días de entrega para envío aéreo */}
                   </CardContent>
                 </Card>
@@ -1117,7 +1101,7 @@ export default function ConfiguracionPage() {
                   <CardHeader>
                     <CardTitle className={`flex items-center text-black dark:text-white text-base md:text-lg`}>
                       <Ship className="w-5 h-5 mr-2 text-teal-600 dark:text-teal-400" />
-{t('admin.management.shipping.seaEconomic')}
+                      {t('admin.management.shipping.seaEconomic')}
                     </CardTitle>
                     <CardDescription className={`text-black dark:text-slate-300 text-sm`}>
                       {t('admin.management.shipping.seaDescription')}
@@ -1140,9 +1124,9 @@ export default function ConfiguracionPage() {
                       </div>
                       <p className={`text-xs text-slate-500 dark:text-slate-400`}>{t('admin.management.shipping.costPerCubicMeter')}</p>
                     </div>
-                    
+
                     <Separator />
-                    
+
                     {/* Eliminados campos de días de entrega para envío marítimo */}
                   </CardContent>
                 </Card>
@@ -1259,8 +1243,8 @@ export default function ConfiguracionPage() {
                           type="number"
                           step="0.0001"
                           min={0}
-                          value={config.auto_update_exchange_rate_cny ? 
-                            (currentExchangeRateCNY !== null ? currentExchangeRateCNY : '') : 
+                          value={config.auto_update_exchange_rate_cny ?
+                            (currentExchangeRateCNY !== null ? currentExchangeRateCNY : '') :
                             config.cnyRate}
                           onChange={(e) => applyCost('cnyRate', e.target.value)}
                           className={exchangeRateErrorCNY ? 'border-red-300 pr-12' : 'pr-12'}
@@ -1337,8 +1321,8 @@ export default function ConfiguracionPage() {
                       {t('admin.management.financial.binanceRateTitle')} (Compra)
                     </CardTitle>
                     <CardDescription className={`text-black dark:text-slate-300 text-sm`}>
-                      {t('admin.management.financial.binanceRateBuyDesc') !== 'admin.management.financial.binanceRateBuyDesc' 
-                        ? t('admin.management.financial.binanceRateBuyDesc') 
+                      {t('admin.management.financial.binanceRateBuyDesc') !== 'admin.management.financial.binanceRateBuyDesc'
+                        ? t('admin.management.financial.binanceRateBuyDesc')
                         : 'Tasa de compra VES → USDT (5 ofertas más altas)'}
                     </CardDescription>
                   </CardHeader>
@@ -1354,8 +1338,8 @@ export default function ConfiguracionPage() {
                           type="number"
                           step="0.01"
                           min={0}
-                          value={config.auto_update_binance_rate ? 
-                            (currentExchangeRateBinance !== null ? parseFloat(currentExchangeRateBinance.toFixed(2)) : '') : 
+                          value={config.auto_update_binance_rate ?
+                            (currentExchangeRateBinance !== null ? parseFloat(currentExchangeRateBinance.toFixed(2)) : '') :
                             config.binanceRate}
                           onChange={(e) => {
                             const val = parseFloat(e.target.value) || 0;
@@ -1391,8 +1375,8 @@ export default function ConfiguracionPage() {
                             <WifiOff className="h-4 w-4 text-gray-400" />
                           )}
                           <Label htmlFor="autoUpdateBinance" className="text-xs cursor-pointer">
-                            {t('admin.management.financial.autoUpdateBinance') !== 'admin.management.financial.autoUpdateBinance' 
-                              ? t('admin.management.financial.autoUpdateBinance') 
+                            {t('admin.management.financial.autoUpdateBinance') !== 'admin.management.financial.autoUpdateBinance'
+                              ? t('admin.management.financial.autoUpdateBinance')
                               : 'Actualización automática Binance'}
                           </Label>
                         </div>
@@ -1430,7 +1414,7 @@ export default function ConfiguracionPage() {
                           <Calculator className={`w-5 h-5 text-orange-600 dark:text-orange-400`} />
                           <h4 className={`text-sm font-semibold text-orange-900 dark:text-orange-200`}>{t('admin.management.financial.calculadoraTitle')}</h4>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {/* Input USDT */}
                           <div className="space-y-2">
@@ -1484,8 +1468,8 @@ export default function ConfiguracionPage() {
                       {t('admin.management.financial.binanceRateTitle')} (Venta)
                     </CardTitle>
                     <CardDescription className={`text-black dark:text-slate-300 text-sm`}>
-                      {t('admin.management.financial.binanceRateSellDesc') !== 'admin.management.financial.binanceRateSellDesc' 
-                        ? t('admin.management.financial.binanceRateSellDesc') 
+                      {t('admin.management.financial.binanceRateSellDesc') !== 'admin.management.financial.binanceRateSellDesc'
+                        ? t('admin.management.financial.binanceRateSellDesc')
                         : 'Tasa de venta USDT → VES (5 ofertas más altas)'}
                     </CardDescription>
                   </CardHeader>
@@ -1501,8 +1485,8 @@ export default function ConfiguracionPage() {
                           type="number"
                           step="0.01"
                           min={0}
-                          value={config.auto_update_binance_rate_sell ? 
-                            (currentExchangeRateBinanceSell !== null ? parseFloat(currentExchangeRateBinanceSell.toFixed(2)) : '') : 
+                          value={config.auto_update_binance_rate_sell ?
+                            (currentExchangeRateBinanceSell !== null ? parseFloat(currentExchangeRateBinanceSell.toFixed(2)) : '') :
                             config.binanceRateSell}
                           onChange={(e) => {
                             const val = parseFloat(e.target.value) || 0;
@@ -1538,8 +1522,8 @@ export default function ConfiguracionPage() {
                             <WifiOff className="h-4 w-4 text-gray-400" />
                           )}
                           <Label htmlFor="autoUpdateBinanceSell" className="text-xs cursor-pointer">
-                            {t('admin.management.financial.autoUpdateBinanceSell') !== 'admin.management.financial.autoUpdateBinanceSell' 
-                              ? t('admin.management.financial.autoUpdateBinanceSell') 
+                            {t('admin.management.financial.autoUpdateBinanceSell') !== 'admin.management.financial.autoUpdateBinanceSell'
+                              ? t('admin.management.financial.autoUpdateBinanceSell')
                               : 'Actualización automática Binance [Venta]'}
                           </Label>
                         </div>
@@ -1577,7 +1561,7 @@ export default function ConfiguracionPage() {
                           <Calculator className={`w-5 h-5 text-orange-600 dark:text-orange-400`} />
                           <h4 className={`text-sm font-semibold text-orange-900 dark:text-orange-200`}>{t('admin.management.financial.calculadoraTitle')}</h4>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {/* Input USDT */}
                           <div className="space-y-2">
@@ -1639,7 +1623,7 @@ export default function ConfiguracionPage() {
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="profit" className="text-sm md:text-base">{t('admin.management.financial.profitMargin')}</Label>
-                        <Input
+                      <Input
                         id="profit"
                         type="number"
                         min={0}
@@ -1657,7 +1641,7 @@ export default function ConfiguracionPage() {
                           updateConfig('profitMargin', value);
                         }}
                         className={config.profitMargin < 0 || config.profitMargin > 100 ? 'border-red-400' : ''}
-                          disabled={isLoading}
+                        disabled={isLoading}
                       />
                       {(config.profitMargin < 0 || config.profitMargin > 100) && (
                         <p className={`text-xs text-red-600 dark:text-red-400`}>El margen debe estar entre 0% y 100%.</p>
@@ -1714,8 +1698,8 @@ export default function ConfiguracionPage() {
                 <div className={`text-center p-3 bg-white dark:bg-slate-700 rounded-lg`}>
                   <p className={`text-slate-600 dark:text-slate-300`}>{t('admin.management.summary.margin')}</p>
                   <p className={`font-bold text-purple-600 dark:text-purple-400`}>{config.profitMargin}%</p>
+                </div>
               </div>
-            </div>
             </CardContent>
           </Card>
         </div>

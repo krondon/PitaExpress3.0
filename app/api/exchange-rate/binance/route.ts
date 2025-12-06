@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { 
-  saveBinanceRate, 
-  getLatestValidBinanceRate, 
+import {
+  saveBinanceRate,
+  getLatestValidBinanceRate,
   getLatestBinanceRate,
   isValidBinanceRate,
-  cleanupOldBinanceRates 
+  cleanupOldBinanceRates
 } from '@/lib/supabase/exchange-rates-binance';
 
 interface ApiConfig {
@@ -34,7 +34,7 @@ async function fetchBinanceRate(tradeType: 'BUY' | 'SELL' = 'BUY'): Promise<numb
         tradeType: tradeType // BUY para compra, SELL para venta
       },
       parser: (data: any) => {
-        console.log('[Binance Rate] Binance Direct raw data:', JSON.stringify(data, null, 2));
+
         // Formato: { code: "000000", data: [{ adv: { price: "299.50" } }] }
         if (data.data && Array.isArray(data.data) && data.data.length > 0) {
           // Ordenar ofertas por precio descendente (más caras primero) y tomar las top 5
@@ -43,7 +43,7 @@ async function fetchBinanceRate(tradeType: 'BUY' | 'SELL' = 'BUY'): Promise<numb
             const precioB = parseFloat(b.adv?.price || '0');
             return precioB - precioA; // Orden descendente (más caras primero)
           });
-          
+
           const top5MasCaras = anunciosOrdenados.slice(0, 5); // Top 5 ofertas más caras
           const precios = top5MasCaras
             .map((anuncio: any) => {
@@ -53,12 +53,12 @@ async function fetchBinanceRate(tradeType: 'BUY' | 'SELL' = 'BUY'): Promise<numb
               return null;
             })
             .filter((precio: number | null): precio is number => precio !== null);
-          
+
           if (precios.length > 0) {
             // Calcular promedio de las top 5 tasas más caras
             const promedio = precios.reduce((sum: number, precio: number) => sum + precio, 0) / precios.length;
-            console.log(`[Binance Rate] Calculated average from ${precios.length} highest offers: ${promedio.toFixed(2)} VES/USDT`);
-            console.log(`[Binance Rate] Prices used: ${precios.map(p => p.toFixed(2)).join(', ')}`);
+
+
             return promedio;
           }
         }
@@ -70,10 +70,10 @@ async function fetchBinanceRate(tradeType: 'BUY' | 'SELL' = 'BUY'): Promise<numb
       url: 'https://pydolarvenezuela-api.vercel.app/api/v1/dollar/page?page=bcv',
       method: 'GET' as const,
       parser: (data: any) => {
-        console.log('[Binance Rate] PyDolar raw data:', JSON.stringify(data, null, 2));
+
         // Intentar encontrar Binance en los monitores
         if (data.monitors && Array.isArray(data.monitors)) {
-          const binanceMonitor = data.monitors.find((m: any) => 
+          const binanceMonitor = data.monitors.find((m: any) =>
             m.title && (m.title.toLowerCase().includes('binance') || m.key === 'binance')
           );
           if (binanceMonitor && binanceMonitor.price) {
@@ -88,9 +88,9 @@ async function fetchBinanceRate(tradeType: 'BUY' | 'SELL' = 'BUY'): Promise<numb
       url: 'https://api.dollarvzla.com/v1/exchange-rates',
       method: 'GET' as const,
       parser: (data: any) => {
-        console.log('[Binance Rate] DollarVzla raw data:', JSON.stringify(data, null, 2));
+
         if (data.exchangeRates && Array.isArray(data.exchangeRates)) {
-          const binanceRate = data.exchangeRates.find((rate: any) => 
+          const binanceRate = data.exchangeRates.find((rate: any) =>
             rate.sourceCode && rate.sourceCode.toLowerCase().includes('binance')
           );
           if (binanceRate && binanceRate.value) {
@@ -107,14 +107,14 @@ async function fetchBinanceRate(tradeType: 'BUY' | 'SELL' = 'BUY'): Promise<numb
   // Intentar cada API en orden
   for (const api of apis) {
     try {
-      console.log(`[Binance Rate] Trying ${api.name}...`);
-      
+
+
       const fetchOptions: RequestInit = {
         method: api.method || 'GET',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
-          'User-Agent': api.name === 'Binance-P2P-Direct' 
+          'User-Agent': api.name === 'Binance-P2P-Direct'
             ? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             : 'MornaProject/1.0'
         },
@@ -135,20 +135,20 @@ async function fetchBinanceRate(tradeType: 'BUY' | 'SELL' = 'BUY'): Promise<numb
 
       const data = await response.json();
       const rate = api.parser(data);
-      
+
       if (!rate) {
         console.error(`[Binance Rate] ${api.name} - No se pudo extraer tasa de la respuesta`);
         throw new Error(`Binance rate not found in ${api.name} response`);
       }
 
       const parsedRate = parseFloat(rate.toString());
-      
+
       if (!isValidBinanceRate(parsedRate)) {
         console.error(`[Binance Rate] ${api.name} - Tasa inválida: ${parsedRate}`);
         throw new Error(`Invalid Binance rate value from ${api.name}: ${parsedRate}`);
       }
 
-      console.log(`✅ [Binance Rate] Success with ${api.name}: ${parsedRate} VES/USDT`);
+
       return parsedRate;
 
     } catch (error: any) {
@@ -170,7 +170,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const forceRefresh = searchParams.get('force') === 'true';
     const tradeType = (searchParams.get('tradeType') as 'BUY' | 'SELL') || 'BUY';
-    
+
     // 1. Intentar obtener de APIs externas primero
     let apiRate: number | null = null;
     let apiSource = tradeType === 'SELL' ? 'Binance P2P (Venta)' : 'Binance P2P';
@@ -178,7 +178,7 @@ export async function GET(request: NextRequest) {
 
     try {
       apiRate = await fetchBinanceRate(tradeType);
-      console.log(`✅ [Binance Rate API] Success (${tradeType}): ${apiRate} VES/USDT`);
+
     } catch (error) {
       apiError = error;
       console.error('❌ [Binance Rate API] All external APIs failed:', error);
@@ -208,12 +208,12 @@ export async function GET(request: NextRequest) {
     }
 
     // 3. APIs fallaron, intentar usar última tasa válida de BD
-    console.log('[Binance Rate API] APIs failed, checking database for last valid rate...');
+
     const lastValidRate = await getLatestValidBinanceRate(tradeType);
 
     if (lastValidRate) {
-      console.log(`[Binance Rate API] Using last valid rate from DB: ${lastValidRate.rate} VES/USDT (${lastValidRate.age_minutes} min ago)`);
-      
+
+
       // Guardar registro de que usamos fallback
       await saveBinanceRate(lastValidRate.rate, lastValidRate.source, true, {
         fallback_reason: 'APIs failed',
@@ -234,12 +234,12 @@ export async function GET(request: NextRequest) {
     }
 
     // 4. No hay tasa válida en BD, usar cualquier tasa (incluso fallback anterior)
-    console.log('[Binance Rate API] No valid rates in DB, checking for any rate...');
+
     const anyLastRate = await getLatestBinanceRate(tradeType);
 
     if (anyLastRate) {
-      console.log(`[Binance Rate API] Using any last rate from DB: ${anyLastRate.rate} VES/USDT`);
-      
+
+
       return NextResponse.json({
         success: true,
         rate: anyLastRate.rate,
@@ -254,7 +254,7 @@ export async function GET(request: NextRequest) {
     // 5. Último recurso: tasa por defecto
     console.error('[Binance Rate API] No rates available anywhere, using hardcoded default');
     const defaultRate = 299.51; // Tasa aproximada USDT → VES según Monitor Venezuela
-    
+
     await saveBinanceRate(defaultRate, 'Hardcoded Default', true, {
       fallback_reason: 'No rates available in APIs or database',
       api_error: apiError?.message
@@ -272,7 +272,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Critical error in Binance rate endpoint:', error);
-    
+
     return NextResponse.json({
       success: false,
       error: 'Error crítico al obtener tasa de Binance',
@@ -293,7 +293,7 @@ export async function POST(request: NextRequest) {
     // Si hay tasa manual, guardarla y usarla
     if (manualRate && isValidBinanceRate(parseFloat(manualRate))) {
       const rate = parseFloat(manualRate);
-      
+
       // Guardar tasa manual en BD
       await saveBinanceRate(rate, 'Manual', false, {
         manual_update: true,
@@ -313,7 +313,7 @@ export async function POST(request: NextRequest) {
     // Si no hay tasa manual, obtener de API y guardar
     try {
       const apiRate = await fetchBinanceRate(tradeTypeValue);
-      
+
       // Guardar tasa de API en BD
       await saveBinanceRate(apiRate, 'Binance P2P (Manual Refresh)', false, {
         manual_refresh: true,
@@ -331,7 +331,7 @@ export async function POST(request: NextRequest) {
     } catch (apiError: any) {
       // Si falla API, usar última tasa válida de BD
       const lastValidRate = await getLatestValidBinanceRate(tradeTypeValue);
-      
+
       if (lastValidRate) {
         return NextResponse.json({
           success: true,
@@ -350,7 +350,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Error in POST Binance rate:', error);
-    
+
     return NextResponse.json({
       success: false,
       error: error.message || 'Failed to update Binance rate',

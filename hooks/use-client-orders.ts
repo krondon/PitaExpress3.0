@@ -61,7 +61,7 @@ export function useClientOrders() {
           filter: `client_id=eq.${clientId}`,
         },
         (payload) => {
-          console.log('Realtime: Client orders changed', payload);
+
           result.refetch();
         }
       )

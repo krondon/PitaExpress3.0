@@ -30,7 +30,7 @@ export async function saveBinanceRate(
 ): Promise<void> {
   try {
     const supabase = getSupabaseBrowserClient();
-    
+
     const { error } = await supabase
       .from('exchange_rates_binance')
       .insert({
@@ -47,7 +47,7 @@ export async function saveBinanceRate(
       throw error;
     }
 
-    console.log(`[Binance Rate] Saved: ${rate} VES/USDT (${tradeType}) from ${source}`);
+
   } catch (error) {
     console.error('Error in saveBinanceRate:', error);
     // No lanzar error para no interrumpir el flujo
@@ -65,7 +65,7 @@ export async function getLatestValidBinanceRate(tradeType: 'BUY' | 'SELL' = 'BUY
 } | null> {
   try {
     const supabase = getSupabaseBrowserClient();
-    
+
     // Query directa más simple (sin función SQL)
     const oneDayAgo = new Date();
     oneDayAgo.setHours(oneDayAgo.getHours() - 24);
@@ -87,7 +87,7 @@ export async function getLatestValidBinanceRate(tradeType: 'BUY' | 'SELL' = 'BUY
     }
 
     if (!data || data.length === 0) {
-      console.log(`[Binance Rate] No valid rate found in last 24h for ${tradeType}`);
+
       return null;
     }
 
@@ -98,7 +98,7 @@ export async function getLatestValidBinanceRate(tradeType: 'BUY' | 'SELL' = 'BUY
     const rateTime = new Date(rateData.timestamp);
     const ageMinutes = Math.floor((now.getTime() - rateTime.getTime()) / (1000 * 60));
 
-    console.log(`[Binance Rate] Found valid rate in DB (${tradeType}):`, rateData.rate, 'from', rateData.source);
+
 
     return {
       rate: parseFloat(rateData.rate),
@@ -122,7 +122,7 @@ export async function getLatestBinanceRate(tradeType: 'BUY' | 'SELL' = 'BUY'): P
 } | null> {
   try {
     const supabase = getSupabaseBrowserClient();
-    
+
     const { data, error } = await supabase
       .from('exchange_rates_binance')
       .select('*')
@@ -132,7 +132,7 @@ export async function getLatestBinanceRate(tradeType: 'BUY' | 'SELL' = 'BUY'): P
       .single();
 
     if (error || !data) {
-      console.log(`[Binance Rate] No rate found in database for ${tradeType}`);
+
       return null;
     }
 
@@ -157,7 +157,7 @@ export async function getBinanceRateHistory(
 ): Promise<ExchangeRateBinance[]> {
   try {
     const supabase = getSupabaseBrowserClient();
-    
+
     // Si hay función SQL, usarla; si no, query directa
     let query = supabase
       .from('exchange_rates_binance')
@@ -202,7 +202,7 @@ export async function getBinanceRateHistory(
 export async function cleanupOldBinanceRates(): Promise<void> {
   try {
     const supabase = getSupabaseBrowserClient();
-    
+
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -214,7 +214,7 @@ export async function cleanupOldBinanceRates(): Promise<void> {
     if (error) {
       console.error('Error cleaning up old Binance rates:', error);
     } else {
-      console.log('[Binance Rate] Cleaned up old rates (>30 days)');
+
     }
   } catch (error) {
     console.error('Error in cleanupOldBinanceRates:', error);

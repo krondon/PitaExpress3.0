@@ -57,12 +57,11 @@ export default function ChinaChatPage() {
                     .single();
 
                 if (!error && adminData) {
-                    console.log('✅ Admin encontrado:', adminData);
+
                     setAdminId(adminData.id);
                     setAdminName('Administrador');
                 } else {
-                    console.log('⚠️ No se encontró admin con user_level="Admin"');
-                    console.log('Error:', error);
+
                 }
             } catch (error) {
                 console.error('❌ Error fetching admin:', error);
@@ -95,9 +94,9 @@ export default function ChinaChatPage() {
 
     // Callback estable para nuevos mensajes
     const handleNewMessage = useCallback((message: ChatMessage) => {
-        console.log('📨 Mensaje recibido en china, sender:', message.sender_id, 'admin:', adminId);
+
         if (message.sender_id === adminId) {
-            console.log('✅ Agregando mensaje al estado');
+
             addMessage(message);
         }
     }, [adminId, addMessage]);

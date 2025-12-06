@@ -16,7 +16,7 @@ export function useRealtimeAdmin(onOrdersUpdate: () => void, onUsersUpdate: () =
           table: 'orders',
         },
         (payload) => {
-          console.log('Realtime: Orders changed', payload);
+
           onOrdersUpdate();
         }
       )
@@ -33,7 +33,7 @@ export function useRealtimeAdmin(onOrdersUpdate: () => void, onUsersUpdate: () =
           table: 'users',
         },
         (payload) => {
-          console.log('Realtime: Users changed', payload);
+
           onUsersUpdate();
         }
       )
@@ -50,7 +50,7 @@ export function useRealtimeAdmin(onOrdersUpdate: () => void, onUsersUpdate: () =
           table: 'alerts',
         },
         (payload) => {
-          console.log('Realtime: Alerts changed', payload);
+
           onAlertsUpdate();
         }
       )

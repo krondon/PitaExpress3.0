@@ -37,7 +37,7 @@ export function useRealtimeBusinessConfig(onRow: RealtimeHandler) {
         table: 'business_config'
       }, (payload: any) => {
         const row: BusinessConfigRow = payload.new || payload.old || {};
-        console.log('[Realtime][business_config] EVENTO', payload.eventType, 'updated_at=', row?.updated_at, 'row.id=', row?.id);
+
         try {
           onRow(row, payload.eventType);
         } catch (e) {
@@ -45,14 +45,14 @@ export function useRealtimeBusinessConfig(onRow: RealtimeHandler) {
         }
       })
       .subscribe((status) => {
-        console.log('[Realtime][business_config] Estado canal =>', status);
+
       });
 
     return () => {
       try {
         supabase.removeChannel(channel);
         subscribedRef.current = false;
-        console.log('[Realtime][business_config] Canal cerrado');
+
       } catch (e) {
         console.warn('[Realtime][business_config] Error cerrando canal', e);
       }

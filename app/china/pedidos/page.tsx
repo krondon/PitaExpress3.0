@@ -297,10 +297,10 @@ export default function PedidosChina() {
         return;
       }
       // DEBUG: Log alternative statuses
-      console.log('Orders loaded:', data.length);
+
       data.forEach((p: any) => {
         if (p.alternativeStatus) {
-          console.log(`Order ${p.id} has alternative status: ${p.alternativeStatus}`);
+
         }
       });
 

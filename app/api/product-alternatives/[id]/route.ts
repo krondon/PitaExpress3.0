@@ -147,7 +147,7 @@ export async function PATCH(
                             productImageUrl: alternative.alternative_image_url || null // NUEVA IMAGEN (si hay)
                         };
 
-                        console.log('Regenerating PDF for order:', fullOrder.id);
+
                         const pdfBuffer = await generateOrderPDF(pdfData);
 
                         // Subir PDF a Storage
@@ -173,7 +173,7 @@ export async function PATCH(
                                 .update({ pdfRoutes: publicUrl })
                                 .eq('id', fullOrder.id);
 
-                            console.log('PDF regenerated and updated:', publicUrl);
+
                         }
                     }
                 } catch (pdfError) {

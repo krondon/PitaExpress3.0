@@ -30,7 +30,7 @@ export async function GET(
   try {
     const { id } = await params;
     const orderId = parseInt(id);
-    
+
     if (isNaN(orderId)) {
       return NextResponse.json(
         { error: 'ID de pedido inválido' },
@@ -65,7 +65,7 @@ export async function GET(
       return generateBasicTimeline(order);
     }
 
-    console.log('Timeline data received:', timeline);
+
 
     // Obtener historial completo para información adicional
     const { data: history, error: historyError } = await supabase
@@ -85,7 +85,7 @@ export async function GET(
       completed: step.completed || false
     }));
 
-    console.log('🎯 FORMATTED TIMELINE:', formattedTimeline);
+
 
     return NextResponse.json({
       success: true,
@@ -98,9 +98,9 @@ export async function GET(
   } catch (error: any) {
     console.error('Error in timeline API:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Error interno del servidor',
-        details: error.message 
+        details: error.message
       },
       { status: 500 }
     );

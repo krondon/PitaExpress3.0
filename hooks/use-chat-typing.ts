@@ -17,7 +17,7 @@ export function useChatTyping({ currentUserId, conversationUserId }: UseChatTypi
     // Notificar que el usuario está escribiendo (usando Broadcast - NO toca BD)
     const notifyTyping = useCallback(() => {
         if (!currentUserId || !conversationUserId || !channelRef.current) {
-            console.log('⚠️ No se puede notificar typing: falta info o canal');
+
             return;
         }
 
@@ -31,7 +31,7 @@ export function useChatTyping({ currentUserId, conversationUserId }: UseChatTypi
         const lastBroadcast = (window as any).__lastTypingBroadcast || 0;
 
         if (now - lastBroadcast > 1000) {
-            console.log('⌨️ Enviando broadcast de typing');
+
 
             // Enviar mensaje broadcast (efímero, no se guarda en BD)
             channelRef.current.send({
@@ -49,7 +49,7 @@ export function useChatTyping({ currentUserId, conversationUserId }: UseChatTypi
 
         // Auto-limpiar después de 1.5 segundos de inactividad
         typingTimeoutRef.current = setTimeout(() => {
-            console.log('⏱️ Timeout: dejó de escribir, enviando typing:false');
+
             if (channelRef.current) {
                 channelRef.current.send({
                     type: 'broadcast',
@@ -92,7 +92,7 @@ export function useChatTyping({ currentUserId, conversationUserId }: UseChatTypi
             return;
         }
 
-        console.log('🔌 Configurando canal broadcast para typing');
+
 
         // Crear canal único para esta conversación
         const channelName = `chat:${[currentUserId, conversationUserId].sort().join('-')}`;
@@ -103,22 +103,22 @@ export function useChatTyping({ currentUserId, conversationUserId }: UseChatTypi
         // Escuchar eventos de typing
         channel
             .on('broadcast', { event: 'typing' }, (payload) => {
-                console.log('📡 Broadcast recibido:', payload);
+
 
                 const { userId, isTyping } = payload.payload;
 
                 // Solo mostrar si es del otro usuario
                 if (userId === conversationUserId) {
-                    console.log(`${isTyping ? '✍️' : '🛑'} Otro usuario ${isTyping ? 'está' : 'dejó de'} escribir`);
+
                     setIsOtherUserTyping(isTyping);
                 }
             })
             .subscribe((status) => {
-                console.log('📡 Estado del canal broadcast:', status);
+
             });
 
         return () => {
-            console.log('🔌 Desconectando canal broadcast');
+
             supabase.removeChannel(channel);
             channelRef.current = null;
             stopTyping();

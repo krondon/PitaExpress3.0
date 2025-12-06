@@ -47,7 +47,7 @@ export default function NuevoPedidoModal({ isOpen, onClose, onSubmit }: NuevoPed
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
+
     if (name === 'cantidad' || name === 'precioUnitario') {
       const parsedValue = value.trim() === '' ? null : parseFloat(value);
       setFormData(prev => ({ ...prev, [name]: parsedValue }));
@@ -65,8 +65,8 @@ export default function NuevoPedidoModal({ isOpen, onClose, onSubmit }: NuevoPed
     if (!formData.cliente.trim()) newErrors.cliente = 'Requerido'
     if (!formData.telefono.trim()) newErrors.telefono = 'Requerido'
     if (!formData.producto.trim()) newErrors.producto = 'Requerido'
-    if (formData.cantidad === null || formData.cantidad <= 0) newErrors.cantidad 
-    if (formData.precioUnitario === null || formData.precioUnitario <= 0) newErrors.precioUnitario 
+    if (formData.cantidad === null || formData.cantidad <= 0) newErrors.cantidad
+    if (formData.precioUnitario === null || formData.precioUnitario <= 0) newErrors.precioUnitario
     if (!formData.direccionEntrega.trim()) newErrors.direccionEntrega = 'Requerido'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -90,17 +90,15 @@ export default function NuevoPedidoModal({ isOpen, onClose, onSubmit }: NuevoPed
   if (!isVisible) return null
 
   return (
-    <div 
-      className={`fixed inset-0 bg-black flex items-center justify-center z-50 transition-all duration-200 ease-out ${
-        isAnimating ? 'bg-opacity-50' : 'bg-opacity-0'
-      }`}
-    >
-      <Card 
-        className={`w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto shadow-xl border-0 bg-white/70 backdrop-blur-sm transition-all duration-300 ease-out ${
-          isAnimating 
-            ? 'opacity-100 scale-100 translate-y-0' 
-            : 'opacity-0 scale-95 translate-y-4'
+    <div
+      className={`fixed inset-0 bg-black flex items-center justify-center z-50 transition-all duration-200 ease-out ${isAnimating ? 'bg-opacity-50' : 'bg-opacity-0'
         }`}
+    >
+      <Card
+        className={`w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto shadow-xl border-0 bg-white/70 backdrop-blur-sm transition-all duration-300 ease-out ${isAnimating
+            ? 'opacity-100 scale-100 translate-y-0'
+            : 'opacity-0 scale-95 translate-y-4'
+          }`}
       >
         <CardHeader className="flex flex-row items-center justify-between pb-4">
           <CardTitle className="text-lg">Nuevo Pedido - China (Al Detal)</CardTitle>
@@ -120,9 +118,8 @@ export default function NuevoPedidoModal({ isOpen, onClose, onSubmit }: NuevoPed
                   placeholder="Nombre del cliente"
                   value={formData.cliente}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#EE3C23] focus:border-transparent ${
-                    errors.cliente ? 'border-[#EE3C23]' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#EE3C23] focus:border-transparent ${errors.cliente ? 'border-[#EE3C23]' : 'border-gray-300'
+                    }`}
                 />
                 {errors.cliente && <p className="text-[#EE3C23] text-xs mt-1">{errors.cliente}</p>}
               </div>
@@ -135,9 +132,8 @@ export default function NuevoPedidoModal({ isOpen, onClose, onSubmit }: NuevoPed
                   placeholder="+86 xxx xxx xxxx"
                   value={formData.telefono}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#EE3C23] focus:border-transparent ${
-                    errors.telefono ? 'border-[#EE3C23]' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#EE3C23] focus:border-transparent ${errors.telefono ? 'border-[#EE3C23]' : 'border-gray-300'
+                    }`}
                 />
                 {errors.telefono && <p className="text-[#EE3C23] text-xs mt-1">{errors.telefono}</p>}
               </div>
@@ -149,9 +145,8 @@ export default function NuevoPedidoModal({ isOpen, onClose, onSubmit }: NuevoPed
                 name="producto"
                 value={formData.producto}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#EE3C23] focus:border-transparent ${
-                  errors.producto ? 'border-[#EE3C23]' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#EE3C23] focus:border-transparent ${errors.producto ? 'border-[#EE3C23]' : 'border-gray-300'
+                  }`}
               >
                 <option value="">Seleccionar producto</option>
                 <option value="electronica">Electrónica</option>
@@ -175,9 +170,8 @@ export default function NuevoPedidoModal({ isOpen, onClose, onSubmit }: NuevoPed
                   max="100"
                   value={formData.cantidad ?? ''}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#EE3C23] focus:border-transparent ${
-                    errors.cantidad ? 'border-[#EE3C23]' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#EE3C23] focus:border-transparent ${errors.cantidad ? 'border-[#EE3C23]' : 'border-gray-300'
+                    }`}
                 />
                 {errors.cantidad && <p className="text-[#EE3C23] text-xs mt-1">{errors.cantidad}</p>}
               </div>
@@ -192,9 +186,8 @@ export default function NuevoPedidoModal({ isOpen, onClose, onSubmit }: NuevoPed
                   step="0.01"
                   value={formData.precioUnitario ?? ''}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#EE3C23] focus:border-transparent ${
-                    errors.precioUnitario ? 'border-[#EE3C23]' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#EE3C23] focus:border-transparent ${errors.precioUnitario ? 'border-[#EE3C23]' : 'border-gray-300'
+                    }`}
                 />
                 {errors.precioUnitario && <p className="text-[#EE3C23] text-xs mt-1">{errors.precioUnitario}</p>}
               </div>
@@ -208,9 +201,8 @@ export default function NuevoPedidoModal({ isOpen, onClose, onSubmit }: NuevoPed
                 rows={3}
                 value={formData.direccionEntrega}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#EE3C23] focus:border-transparent resize-none ${
-                  errors.direccionEntrega ? 'border-[#EE3C23]' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#EE3C23] focus:border-transparent resize-none ${errors.direccionEntrega ? 'border-[#EE3C23]' : 'border-gray-300'
+                  }`}
               />
               {errors.direccionEntrega && <p className="text-[#EE3C23] text-xs mt-1">{errors.direccionEntrega}</p>}
             </div>
@@ -235,7 +227,7 @@ export function QuickActionsWithModal() {
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const handleSubmit = (data: FormData) => {
-    console.log('Datos del pedido:', data)
+
   }
 
   return (
@@ -245,7 +237,7 @@ export function QuickActionsWithModal() {
           <CardTitle className="text-lg">Acciones Rápidas</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <Button 
+          <Button
             onClick={() => setIsModalOpen(true)}
             className="w-full bg-gradient-to-r from-[#EE3C23] to-[#d63419] hover:from-[#d63419] hover:to-[#c22e15] text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5"
           >

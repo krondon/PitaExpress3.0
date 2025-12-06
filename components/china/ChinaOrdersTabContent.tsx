@@ -1006,9 +1006,9 @@ export default function ChinaOrdersTabContent() {
   });
 
   // Agrupar pedidos filtrados para visualización
-  console.log('[DEBUG] Pedidos filtrados:', pedidosFiltrados.length);
+
   const visibleGroups = groupOrders(pedidosFiltrados);
-  console.log('[DEBUG] Grupos visibles:', visibleGroups.length, visibleGroups);
+
   // Local helpers to map badge state to translated text
   const getOrderBadgeLabel = (stateNum?: number) => {
     const s = Number(stateNum ?? 0);

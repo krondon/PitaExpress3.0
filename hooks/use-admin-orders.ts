@@ -59,11 +59,11 @@ export function useAdminOrders() {
     const ordersChannel = supabase
       .channel('admin-orders-stats-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
-        console.log('Realtime: Orders stats changed', payload);
+
         fetchData();
       })
       .subscribe((status) => {
-        console.log('Realtime orders stats subscription status:', status);
+
       });
 
     return () => {

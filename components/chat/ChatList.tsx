@@ -68,14 +68,14 @@ export function ChatList({ onSelectConversation, selectedUserId, currentUserId }
                 .rpc('get_chat_conversations_v2', { current_user_id: currentUserId });
 
             if (!rpcError && rpcData) {
-                console.log('✅ Conversaciones cargadas vía RPC v2');
+
                 setConversations(rpcData);
                 setLoading(false);
                 return;
             }
 
             // Fallback: Lógica manual si la RPC no existe
-            console.log('⚠️ RPC falló o no existe, usando lógica manual:', rpcError?.message);
+
 
             // 1. Obtener conversaciones ocultas
             const { data: hiddenConversations } = await supabase
