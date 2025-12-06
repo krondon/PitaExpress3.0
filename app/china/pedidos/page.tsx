@@ -1529,15 +1529,18 @@ export default function PedidosChina() {
         </div>
 
         {/* Lista de Pedidos (Acordeón) */}
-        {expanded && (
-          <div className="divide-y">
-            {group.orders.map((pedido) => (
-              <div key={pedido.id} className="p-4 hover:bg-slate-50/50 transition-colors">
-                {renderPedidoRow(pedido)}
-              </div>
-            ))}
+        {/* Lista de Pedidos (Acordeón) con Animación */}
+        <div className={`grid transition-all duration-300 ease-in-out ${expanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+          <div className="overflow-hidden">
+            <div className="p-4 pl-8 space-y-3 bg-slate-50/50 border-t">
+              {group.orders.map((pedido) => (
+                <div key={pedido.id} className="bg-white border rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200">
+                  {renderPedidoRow(pedido)}
+                </div>
+              ))}
+            </div>
           </div>
-        )}
+        </div>
       </div>
     );
   }
