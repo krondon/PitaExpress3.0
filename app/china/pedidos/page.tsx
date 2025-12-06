@@ -110,6 +110,15 @@ interface ContainerItem {
   [key: string]: any;
 }
 
+interface OrderGroup {
+  groupId: string;
+  clientName: string;
+  date: string;
+  orders: Pedido[];
+  minId: number;
+  maxId: number;
+}
+
 // Utilidad para convertir un SVG público a PNG DataURL para incrustar en PDF
 async function svgToPngDataUrl(path: string, size = 120): Promise<string> {
   const resp = await fetch(path);
@@ -128,6 +137,63 @@ async function svgToPngDataUrl(path: string, size = 120): Promise<string> {
 }
 
 // Elimina los datos de ejemplo
+
+// Función para agrupar pedidos
+function groupOrders(orders: Pedido[]): OrderGroup[] {
+  if (!orders || orders.length === 0) return [];
+
+  // 1. Ordenar por fecha descendente (más reciente primero)
+  const sorted = [...orders].sort((a, b) =>
+    new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
+  );
+
+  const groups: OrderGroup[] = [];
+  const TIME_THRESHOLD_MS = 20 * 60 * 1000; // 20 minutos
+
+  sorted.forEach((order) => {
+    // Intentar encontrar un grupo existente donde encaje
+    // Criterio: Mismo cliente Y diferencia de tiempo < 20 min con el último del grupo
+    let added = false;
+
+    // Buscamos en los grupos existentes (idealmente los más recientes primero)
+    for (const group of groups) {
+      if (group.clientName !== order.cliente) continue;
+
+      // Verificar tiempo con el último pedido añadido al grupo (que debería ser el más cercano temporalmente)
+      // Como iteramos sorted (desc), los grupos también se van llenando en orden.
+      // Pero ojo: al iterar sorted, 'order' es más viejo que los que ya están en 'groups' (si se crearon antes en el loop).
+      // Actually, sorted is DESC (newest first).
+      // So 'order' is OLDER than previous ones processed.
+      // We check if 'order' is close enough to the *oldest* (or any) order in the group?
+      // Let's stick to simple logic: compare with the first order of the group (which is the newest in that group).
+
+      const referenceOrder = group.orders[0]; // El más reciente del grupo
+      const timeDiff = Math.abs(new Date(referenceOrder.fecha).getTime() - new Date(order.fecha).getTime());
+
+      if (timeDiff <= TIME_THRESHOLD_MS) {
+        group.orders.push(order);
+        // Actualizar min/max ID
+        group.minId = Math.min(group.minId, order.id);
+        group.maxId = Math.max(group.maxId, order.id);
+        added = true;
+        break;
+      }
+    }
+
+    if (!added) {
+      groups.push({
+        groupId: `${order.cliente}-${order.fecha}`,
+        clientName: order.cliente,
+        date: order.fecha,
+        orders: [order],
+        minId: order.id,
+        maxId: order.id
+      });
+    }
+  });
+
+  return groups;
+}
 
 export default function PedidosChina() {
   const { t } = useTranslation();
@@ -1382,11 +1448,307 @@ export default function PedidosChina() {
     }
   }
 
+
+
+  // Filtrar pedidos localmente
   const pedidosFiltrados = pedidos.filter(p => {
-    const estadoOk = filtroEstado === 'todos' || p.estado === filtroEstado;
-    const clienteOk = !filtroCliente || p.cliente.toLowerCase().includes(filtroCliente.toLowerCase());
-    return estadoOk && clienteOk;
+    if (filtroEstado !== 'todos' && p.estado !== filtroEstado) return false;
+    if (filtroCliente && !p.cliente.toLowerCase().includes(filtroCliente.toLowerCase())) return false;
+    return true;
   });
+
+  // Agrupar pedidos filtrados para visualización
+  const visibleGroups = groupOrders(pedidosFiltrados);
+
+  // Componente de Grupo (Batch Header)
+  function OrderBatchGroup({ group }: { group: OrderGroup }) {
+    const [expanded, setExpanded] = useState(true);
+    const { t } = useTranslation();
+
+    // Formatear fecha relativa (ej: "Hace 5 min")
+    const getTimeAgo = (dateStr: string) => {
+      const diff = Date.now() - new Date(dateStr).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return 'Hace un momento';
+      if (mins < 60) return `Hace ${mins} min`;
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) return `Hace ${hours} h`;
+      return new Date(dateStr).toLocaleDateString();
+    };
+
+    return (
+      <div className="mb-6 border rounded-lg shadow-sm bg-white overflow-hidden">
+        {/* Header del Lote */}
+        <div
+          className="p-4 bg-slate-50 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-slate-100 transition-colors"
+          onClick={() => setExpanded(!expanded)}
+        >
+          <div className="flex items-start gap-4">
+            {/* Icono / Avatar Cliente */}
+            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold shrink-0">
+              {group.clientName.charAt(0).toUpperCase()}
+            </div>
+
+            <div>
+              {/* Título Principal: Rango de IDs */}
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <span className="font-mono text-blue-600">
+                  {group.orders.length > 1
+                    ? `#ORD-${group.minId} - ${group.maxId}`
+                    : `#ORD-${group.minId}`
+                  }
+                </span>
+                {group.orders.length > 1 && (
+                  <Badge variant="secondary" className="text-xs font-normal">
+                    {group.orders.length} pedidos
+                  </Badge>
+                )}
+              </h3>
+
+              {/* Subtítulo: Cliente y Fecha */}
+              <div className="text-sm text-slate-500 flex items-center gap-2 mt-1">
+                <User className="h-3 w-3" />
+                <span className="font-medium">{group.clientName}</span>
+                <span>•</span>
+                <Calendar className="h-3 w-3" />
+                <span>{getTimeAgo(group.date)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Acciones Derecha */}
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <div className={`transform transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}>
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-500">
+                  <path d="M3.13523 6.15803C3.3241 5.95657 3.64052 5.94637 3.84197 6.13523L7.5 9.56464L11.158 6.13523C11.3595 5.94637 11.6759 5.95657 11.8648 6.15803C12.0536 6.35949 12.0434 6.67591 11.842 6.86477L7.84197 10.6148C7.64964 10.7951 7.35036 10.7951 7.15803 10.6148L3.15803 6.86477C2.95657 6.67591 2.94637 6.35949 3.13523 6.15803Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
+                </svg>
+              </div>
+            </Button>
+          </div>
+        </div>
+
+        {/* Lista de Pedidos (Acordeón) */}
+        {expanded && (
+          <div className="divide-y">
+            {group.orders.map((pedido) => (
+              <div key={pedido.id} className="p-4 hover:bg-slate-50/50 transition-colors">
+                {renderPedidoRow(pedido)}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Helper para renderizar la fila de pedido
+  const renderPedidoRow = (p: Pedido) => {
+    // Badges de alternativa
+    const renderAlternativeBadge = () => {
+      if (p.alternativeStatus === 'pending') {
+        return (
+          <Badge className="hidden sm:inline-block bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700">
+            {t('chinese.ordersPage.badges.alternativeSent', { defaultValue: 'Alternativa enviada' })}
+          </Badge>
+        );
+      }
+      if (p.alternativeStatus === 'accepted') {
+        return (
+          <Badge className="hidden sm:inline-block bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700">
+            {t('chinese.ordersPage.badges.alternativeAccepted', { defaultValue: 'Alternativa aceptada' })}
+          </Badge>
+        );
+      }
+      if (p.alternativeStatus === 'rejected') {
+        return (
+          <Badge className="hidden sm:inline-block bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700">
+            {t('chinese.ordersPage.badges.alternativeRejected', { defaultValue: 'Alternativa rechazada' })}
+          </Badge>
+        );
+      }
+      return null;
+    };
+
+    return (
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 justify-between rounded-xl transition-all duration-300">
+        {/* Columna izquierda */}
+        <div className="flex items-start sm:items-center gap-4 flex-1 min-w-0">
+          <div className={`p-3 rounded-lg shrink-0 ${mounted && theme === 'dark' ? 'bg-blue-900/30' : 'bg-blue-100'}`}>
+            <Package className={`h-5 w-5 ${mounted && theme === 'dark' ? 'text-blue-300' : 'text-blue-600'}`} />
+          </div>
+          <div className="space-y-1 w-full min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className={`font-semibold text-sm sm:text-base ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>#ORD-{p.id}</h3>
+              {renderAlternativeBadge()}
+              {/* Badge estado principal */}
+              {p.numericState === 2 ? (
+                <Badge className={`hidden sm:inline-block border ${mounted && theme === 'dark' ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700' : 'bg-yellow-100 text-yellow-800 border-yellow-200'}`}>
+                  {t('chinese.ordersPage.filters.status.pending', { defaultValue: 'Pendiente' })}
+                </Badge>
+              ) : (
+                <Badge className={`hidden sm:inline-block ${getOrderBadge(p.numericState).className}`}>
+                  {getOrderBadge(p.numericState).label}
+                </Badge>
+              )}
+            </div>
+            <p className={`text-xs sm:text-sm truncate max-w-full ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{p.producto}</p>
+            <div className={`flex flex-wrap gap-x-4 gap-y-1 text-[11px] sm:text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+              <span className="flex items-center gap-1 min-w-[110px]">
+                <User className="h-3 w-3" /> {p.cliente}
+              </span>
+              <span className="flex items-center gap-1">
+                <Tag className="h-3 w-3" /> {t('chinese.ordersPage.orders.qtyShort', { defaultValue: 'Cant' })}: {p.cantidad}
+              </span>
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" /> {new Date(p.fecha).toLocaleDateString('es-ES')}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Columna derecha / acciones */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
+          {p.precio && (
+            <div className="hidden sm:block text-right space-y-1">
+              <PriceDisplayWithCNY
+                amount={p.precio}
+                currency="USD"
+                variant="inline"
+                className="text-sm font-semibold text-green-600"
+              />
+            </div>
+          )}
+          <div className="flex w-full sm:w-auto flex-wrap items-center gap-2 justify-end sm:justify-end">
+            {p.estado === 'enviado' && (p.numericState ?? 0) < 6 && (
+              <Button
+                size="sm"
+                className="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700"
+                onClick={() => {
+                  setModalEmpaquetar({ open: true, pedidoId: p.id });
+                  if (boxes.length === 0) fetchBoxes();
+                }}
+              >
+                <Boxes className="h-4 w-4" />
+                <span className="hidden sm:inline">{t('chinese.ordersPage.orders.pack', { defaultValue: 'Empaquetar' })}</span>
+              </Button>
+            )}
+            {p.estado === 'enviado' && (p.numericState ?? 0) >= 6 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-1 text-amber-700 border-amber-300 hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={(p.numericState ?? 0) >= 9}
+                onClick={() => {
+                  if ((p.numericState ?? 0) >= 9) return;
+                  handleUnpackOrder(p.id);
+                }}
+              >
+                <span className="hidden sm:inline">{t('chinese.ordersPage.orders.unpack', { defaultValue: 'Desempaquetar' })}</span>
+                <Boxes className="h-4 w-4 sm:hidden" aria-label="Desempaquetar" />
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (p.pdfRoutes) {
+                  const bust = p.pdfRoutes.includes('?') ? `&t=${Date.now()}` : `?t=${Date.now()}`;
+                  window.open(p.pdfRoutes + bust, '_blank', 'noopener,noreferrer');
+                } else {
+                  toast({ title: t('chinese.ordersPage.orders.pdfMissingToastTitle', { defaultValue: 'PDF no disponible' }) });
+                }
+              }}
+              className="flex items-center gap-1"
+            >
+              <Eye className="h-4 w-4" />
+              <span className="hidden sm:inline">{t('chinese.ordersPage.orders.view', { defaultValue: 'Ver' })}</span>
+            </Button>
+
+            {p.estado === 'pendiente' && (() => {
+              // Ocultar botones si hay una alternativa pendiente
+              if (p.alternativeStatus === 'pending') return null;
+
+              return (!p.numericState || p.numericState < 9) ? (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`h-7 md:h-8 px-3 md:px-4 text-xs font-semibold transition-all duration-300 ${mounted && theme === 'dark' ? 'border-red-600 text-red-300 hover:bg-red-900/30 hover:border-red-500' : 'border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300'}`}
+                    onClick={() => handleCancelOrder(p.id)}
+                  >
+                    <XCircle className="h-3 w-3 mr-1" />
+                    {t('chinese.ordersPage.modals.selectBoxForOrder.cancel', { defaultValue: 'Cancelar' })}
+                  </Button>
+
+                  <Button
+                    onClick={() => setModalCotizar({
+                      open: true,
+                      pedido: p,
+                      precioUnitario: p.unitQuote || 0,
+                      precioEnvio: p.shippingPrice || 0,
+                      altura: p.height || 0,
+                      anchura: p.width || 0,
+                      largo: p.long || 0,
+                      peso: p.weight || 0,
+                      precioUnitarioInput: (p.unitQuote || 0).toString(),
+                      precioEnvioInput: (p.shippingPrice || 0).toString(),
+                      alturaInput: (p.height || 0).toString(),
+                      anchuraInput: (p.width || 0).toString(),
+                      largoInput: (p.long || 0).toString(),
+                      pesoInput: (p.weight || 0).toString(),
+                    })}
+                    size="sm"
+                    className="flex items-center gap-1 bg-orange-600 hover:bg-orange-700"
+                  >
+                    <Calculator className="h-4 w-4" />
+                    <span className="hidden sm:inline">{t('chinese.ordersPage.orders.quote', { defaultValue: 'Cotizar' })}</span>
+                  </Button>
+                  {p.alternativeStatus !== 'accepted' && (
+                    <Button
+                      onClick={() => setModalPropAlternativa({ open: true, pedido: p })}
+                      size="sm"
+                      className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700"
+                      title={t('chinese.ordersPage.tooltips.proposeAlternative', { defaultValue: 'Proponer alternativa' })}
+                    >
+                      <Send className="h-4 w-4" />
+                      <span className="hidden sm:inline">{t('chinese.ordersPage.orders.proposeAlternative', { defaultValue: 'Alternativa' })}</span>
+                    </Button>
+                  )}
+                </>
+              ) : null;
+            })()}
+            {p.estado !== 'pendiente' && (!p.numericState || p.numericState < 9) ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setModalCotizar({
+                  open: true,
+                  pedido: p,
+                  precioUnitario: p.unitQuote || 0,
+                  precioEnvio: p.shippingPrice || 0,
+                  altura: p.height || 0,
+                  anchura: p.width || 0,
+                  largo: p.long || 0,
+                  peso: p.weight || 0,
+                  precioUnitarioInput: (p.unitQuote || 0).toString(),
+                  precioEnvioInput: (p.shippingPrice || 0).toString(),
+                  alturaInput: (p.height || 0).toString(),
+                  anchuraInput: (p.width || 0).toString(),
+                  largoInput: (p.long || 0).toString(),
+                  pesoInput: (p.weight || 0).toString(),
+                })}
+                className="flex items-center gap-1"
+              >
+                <Pencil className="h-4 w-4" />
+                <span className="hidden sm:inline">{t('chinese.ordersPage.orders.editQuote', { defaultValue: 'Editar' })}</span>
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // Filtrado de cajas por ID mostrado
   const cajasFiltradas = boxes.filter((box, idx) => {
@@ -1852,228 +2214,8 @@ export default function PedidosChina() {
               {activeTab === 'pedidos' && (
                 <>
                   <div className="space-y-4">
-                    {pedidosFiltrados.map((pedido) => (
-                      <div
-                        key={pedido.id}
-                        className={`flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 justify-between p-4 rounded-xl ${mounted && theme === 'dark' ? 'bg-gradient-to-r from-slate-800 to-slate-700 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200'} border hover:shadow-md transition-all duration-300`}
-                      >
-                        {/* Columna izquierda */}
-                        <div className="flex items-start sm:items-center gap-4 flex-1 min-w-0">
-                          <div className={`p-3 rounded-lg shrink-0 ${mounted && theme === 'dark' ? 'bg-blue-900/30' : 'bg-blue-100'}`}>
-                            <Package className={`h-5 w-5 ${mounted && theme === 'dark' ? 'text-blue-300' : 'text-blue-600'}`} />
-                          </div>
-                          <div className="space-y-1 w-full min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h3 className={`font-semibold text-sm sm:text-base ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>#ORD-{pedido.id}</h3>
-                              {/* Badge estado principal: forzamos 'Pendiente' explícito para state 2 */}
-                              {/* Badge estado principal: Prioridad a Alternativas */}
-                              {(() => {
-                                if (pedido.alternativeStatus === 'pending') {
-                                  return (
-                                    <Badge className="hidden sm:inline-block bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700">
-                                      {t('chinese.ordersPage.badges.alternativeSent')}
-                                    </Badge>
-                                  );
-                                }
-                                if (pedido.alternativeStatus === 'accepted') {
-                                  return (
-                                    <Badge className="hidden sm:inline-block bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700">
-                                      {t('chinese.ordersPage.badges.alternativeAccepted')}
-                                    </Badge>
-                                  );
-                                }
-                                if (pedido.alternativeStatus === 'rejected') {
-                                  return (
-                                    <Badge className="hidden sm:inline-block bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700">
-                                      {t('chinese.ordersPage.badges.alternativeRejected')}
-                                    </Badge>
-                                  );
-                                }
-                                // Default status
-                                if (pedido.numericState === 2) {
-                                  return <Badge className={`hidden sm:inline-block border ${mounted && theme === 'dark' ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700' : 'bg-yellow-100 text-yellow-800 border-yellow-200'}`}>{t('chinese.ordersPage.filters.status.pending')}</Badge>;
-                                }
-                                return <Badge className={`hidden sm:inline-block ${getOrderBadge(pedido.numericState).className}`}>{getOrderBadge(pedido.numericState).label}</Badge>;
-                              })()}
-                            </div>
-                            <p className={`text-xs sm:text-sm truncate max-w-full ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{pedido.producto}</p>
-                            <div className={`flex flex-wrap gap-x-4 gap-y-1 text-[11px] sm:text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                              <span className="flex items-center gap-1 min-w-[110px]">
-                                <User className="h-3 w-3" /> {pedido.cliente}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Tag className="h-3 w-3" /> {t('chinese.ordersPage.orders.qtyShort')}: {pedido.cantidad}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" /> {new Date(pedido.fecha).toLocaleDateString('es-ES')}
-                              </span>
-                            </div>
-                            {pedido.precio && (
-                              <div className="sm:hidden mt-1 text-[11px] text-green-700 font-medium">
-                                <PriceDisplayWithCNY
-                                  amount={pedido.precio}
-                                  currency="USD"
-                                  variant="inline"
-                                  className="inline mr-2"
-                                />
-                                · Total:
-                                <PriceDisplayWithCNY
-                                  amount={pedido.precio}
-                                  currency="USD"
-                                  variant="inline"
-                                  className="inline ml-1"
-                                />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        {/* Columna derecha / acciones */}
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
-                          {pedido.precio && (
-                            <div className="hidden sm:block text-right space-y-1">
-                              <PriceDisplayWithCNY
-                                amount={pedido.precio}
-                                currency="USD"
-                                variant="inline"
-                                className="text-sm font-semibold text-green-600"
-                              />
-                              <div className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                                Total: <PriceDisplayWithCNY
-                                  amount={pedido.precio}
-                                  currency="USD"
-                                  variant="inline"
-                                  className="text-xs"
-                                />
-                              </div>
-                            </div>
-                          )}
-                          <div className="flex w-full sm:w-auto flex-wrap items-center gap-2 justify-end sm:justify-end">
-                            {pedido.estado === 'enviado' && (pedido.numericState ?? 0) < 6 && (
-                              <Button
-                                size="sm"
-                                className="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700"
-                                onClick={() => {
-                                  setModalEmpaquetar({ open: true, pedidoId: pedido.id });
-                                  if (boxes.length === 0) fetchBoxes();
-                                }}
-                              >
-                                <Boxes className="h-4 w-4" />
-                                <span className="hidden sm:inline">{t('chinese.ordersPage.orders.pack')}</span>
-                              </Button>
-                            )}
-                            {pedido.estado === 'enviado' && (pedido.numericState ?? 0) >= 6 && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex items-center gap-1 text-amber-700 border-amber-300 hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                disabled={(pedido.numericState ?? 0) >= 9}
-                                onClick={() => {
-                                  if ((pedido.numericState ?? 0) >= 9) return;
-                                  handleUnpackOrder(pedido.id);
-                                }}
-                              >
-                                <span className="hidden sm:inline">{t('chinese.ordersPage.orders.unpack')}</span>
-                                <Boxes className="h-4 w-4 sm:hidden" aria-label="Desempaquetar" />
-                              </Button>
-                            )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                if (pedido.pdfRoutes) {
-                                  const bust = pedido.pdfRoutes.includes('?') ? `&t=${Date.now()}` : `?t=${Date.now()}`;
-                                  window.open(pedido.pdfRoutes + bust, '_blank', 'noopener,noreferrer');
-                                } else {
-                                  alert('No hay PDF disponible para este pedido.');
-                                }
-                              }}
-                              className="flex items-center gap-1"
-                            >
-                              <Eye className="h-4 w-4" />
-                              <span className="hidden sm:inline">{t('chinese.ordersPage.orders.view')}</span>
-                            </Button>
-                            {pedido.estado === 'pendiente' && (() => {
-                              // Ocultar botones si hay una alternativa pendiente
-                              if (pedido.alternativeStatus === 'pending') return null;
-
-                              return (!pedido.numericState || pedido.numericState < 9) ? (
-                                <>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className={`h-7 md:h-8 px-3 md:px-4 text-xs font-semibold transition-all duration-300 ${mounted && theme === 'dark' ? 'border-red-600 text-red-300 hover:bg-red-900/30 hover:border-red-500' : 'border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300'}`}
-                                    onClick={() => handleCancelOrder(pedido.id)}
-                                  >
-                                    <XCircle className="h-3 w-3 mr-1" />
-                                    {t('chinese.ordersPage.modals.selectBoxForOrder.cancel', { defaultValue: 'Cancelar' })}
-                                  </Button>
-
-                                  <Button
-                                    onClick={() => setModalCotizar({
-                                      open: true,
-                                      pedido,
-                                      precioUnitario: pedido.unitQuote || 0,
-                                      precioEnvio: pedido.shippingPrice || 0,
-                                      altura: pedido.height || 0,
-                                      anchura: pedido.width || 0,
-                                      largo: pedido.long || 0,
-                                      peso: pedido.weight || 0,
-                                      precioUnitarioInput: (pedido.unitQuote || 0).toString(),
-                                      precioEnvioInput: (pedido.shippingPrice || 0).toString(),
-                                      alturaInput: (pedido.height || 0).toString(),
-                                      anchuraInput: (pedido.width || 0).toString(),
-                                      largoInput: (pedido.long || 0).toString(),
-                                      pesoInput: (pedido.weight || 0).toString(),
-                                    })}
-                                    size="sm"
-                                    className="flex items-center gap-1 bg-orange-600 hover:bg-orange-700"
-                                  >
-                                    <Calculator className="h-4 w-4" />
-                                    <span className="hidden sm:inline">{t('chinese.ordersPage.orders.quote')}</span>
-                                  </Button>
-                                  {pedido.alternativeStatus !== 'accepted' && (
-                                    <Button
-                                      onClick={() => setModalPropAlternativa({ open: true, pedido })}
-                                      size="sm"
-                                      className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700"
-                                      title={t('chinese.ordersPage.tooltips.proposeAlternative')}
-                                    >
-                                      <Send className="h-4 w-4" />
-                                      <span className="hidden sm:inline">{t('chinese.ordersPage.orders.proposeAlternative')}</span>
-                                    </Button>
-                                  )}
-                                </>
-                              ) : null;
-                            })()}
-                            {pedido.estado !== 'pendiente' && (!pedido.numericState || pedido.numericState < 9) ? (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setModalCotizar({
-                                  open: true,
-                                  pedido,
-                                  precioUnitario: pedido.unitQuote || 0,
-                                  precioEnvio: pedido.shippingPrice || 0,
-                                  altura: pedido.height || 0,
-                                  anchura: pedido.width || 0,
-                                  largo: pedido.long || 0,
-                                  peso: pedido.weight || 0,
-                                  precioUnitarioInput: (pedido.unitQuote || 0).toString(),
-                                  precioEnvioInput: (pedido.shippingPrice || 0).toString(),
-                                  alturaInput: (pedido.height || 0).toString(),
-                                  anchuraInput: (pedido.width || 0).toString(),
-                                  largoInput: (pedido.long || 0).toString(),
-                                  pesoInput: (pedido.weight || 0).toString(),
-                                })}
-                                className="flex items-center gap-1"
-                              >
-                                <Pencil className="h-4 w-4" />
-                                <span className="hidden sm:inline">{t('chinese.ordersPage.orders.editQuote')}</span>
-                              </Button>
-                            ) : null}
-                          </div>
-                        </div>
-                      </div>
+                    {visibleGroups.map((group) => (
+                      <OrderBatchGroup key={group.groupId} group={group} />
                     ))}
                     {pedidosFiltrados.length === 0 && (
                       <div className="text-center py-12">

@@ -393,6 +393,8 @@ export default function Sidebar({ isExpanded, setIsExpanded, isMobileMenuOpen = 
   const [vzlaActiveSupports, setVzlaActiveSupports] = useState<number | null>(null);
   const [vzlaPendingPayments, setVzlaPendingPayments] = useState<number | null>(null);
   const [chinaActiveOrders, setChinaActiveOrders] = useState<number | null>(null);
+  const [imageError, setImageError] = useState(false);
+  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Helper: refetch China active orders
   const refetchChinaActiveOrders = useCallback(async () => {
@@ -875,20 +877,10 @@ export default function Sidebar({ isExpanded, setIsExpanded, isMobileMenuOpen = 
     };
   }, [userRole, clientCtx?.clientId]);
 
-  // Reset image error when user info changes
-  useEffect(() => {
-    setImageError(false);
-    // Forzar recarga limpiando cache de imagen
-    if (userInfo.userImage) {
-      const preloadImg = new window.Image();
-      preloadImg.src = `${userInfo.userImage}?t=${Date.now()}`;
-    }
-  }, [userInfo.userImage]);
+
 
   const pathname = usePathname();
   const activeItem = useActivePage(menuItems, userRole, pathname);
-  const [imageError, setImageError] = useState(false);
-  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // === Initial data loading ===
   useEffect(() => {

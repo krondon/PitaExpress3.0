@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
+import Image from 'next/image';
 import Sidebar from '@/components/layout/Sidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -776,13 +777,13 @@ export default function ConfigurationContent({ role, onUserImageUpdate }: Config
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="flex flex-col items-center gap-3">
-                        <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center">
+                        <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center relative">
                           {formData.fotoPreview ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
+                            <Image
                               src={`${formData.fotoPreview}${formData.fotoPreview.includes('?') ? '&' : '?'}v=${formData.fotoVersion}`}
                               alt="avatar"
-                              className="w-full h-full object-cover"
+                              fill
+                              className="object-cover"
                             />
                           ) : (
                             <User className="w-14 h-14 md:w-16 md:h-16 text-slate-500" />
@@ -916,8 +917,8 @@ export default function ConfigurationContent({ role, onUserImageUpdate }: Config
                           <p className="text-xs text-slate-600 dark:text-slate-400">
                             {t('admin.configuration.preferences.theme.currentFontSize', { fallback: 'Tamaño actual' })}: {
                               fontSize === 'small' ? t('admin.configuration.preferences.theme.fontSizes.small') :
-                              fontSize === 'large' ? t('admin.configuration.preferences.theme.fontSizes.large') :
-                              t('admin.configuration.preferences.theme.fontSizes.medium')
+                                fontSize === 'large' ? t('admin.configuration.preferences.theme.fontSizes.large') :
+                                  t('admin.configuration.preferences.theme.fontSizes.medium')
                             }
                           </p>
                         )}
@@ -969,20 +970,20 @@ function AdminReviewsSection() {
         },
         (payload) => {
           console.log('🔄 Nueva reseña detectada en tiempo real:', payload);
-          
+
           // Mostrar notificación si es una nueva reseña (INSERT)
           if (payload.eventType === 'INSERT') {
             toast({
-              title: t('admin.configuration.reviews.newReviewNotification', { 
-                fallback: 'Nueva reseña recibida' 
+              title: t('admin.configuration.reviews.newReviewNotification', {
+                fallback: 'Nueva reseña recibida'
               }),
-              description: t('admin.configuration.reviews.refreshingList', { 
-                fallback: 'Actualizando lista...' 
+              description: t('admin.configuration.reviews.refreshingList', {
+                fallback: 'Actualizando lista...'
               }),
               duration: 2000,
             });
           }
-          
+
           // Refrescar las reseñas cuando hay cambios
           fetchReviews(false); // false = no mostrar loading completo
         }
@@ -1004,14 +1005,14 @@ function AdminReviewsSection() {
       } else {
         setRefreshing(true);
       }
-      
+
       const response = await fetch('/api/admin/reviews', {
         cache: 'no-store', // Evitar cache
         headers: {
           'Cache-Control': 'no-cache'
         }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         // La API devuelve { success: true, reviews: [...], count: ... }
@@ -1063,7 +1064,7 @@ function AdminReviewsSection() {
             </CardTitle>
             {lastUpdateTime && !refreshing && (
               <span className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                {t('admin.configuration.reviews.lastUpdate', { 
+                {t('admin.configuration.reviews.lastUpdate', {
                   fallback: 'Actualizado',
                   time: lastUpdateTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
                 })}
@@ -1077,10 +1078,10 @@ function AdminReviewsSection() {
             disabled={refreshing || loading}
             className="gap-2"
           >
-            <RefreshCw 
+            <RefreshCw
               className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`}
             />
-            {refreshing 
+            {refreshing
               ? t('admin.configuration.reviews.refreshing', { fallback: 'Actualizando...' })
               : t('admin.configuration.reviews.refresh', { fallback: 'Actualizar' })
             }

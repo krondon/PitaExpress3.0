@@ -797,11 +797,218 @@ export default function ChinaOrdersTabContent() {
 
   // (Antiguas funciones básicas reemplazadas por versiones extendidas arriba)
 
+  // ================== AGRUPACIÓN DE PEDIDOS (BATCH VIEW) ==================
+  interface OrderGroup {
+    groupId: string;
+    clientId: string;
+    clientName: string;
+    orders: Pedido[];
+    minId: number;
+    maxId: number;
+    date: string; // Fecha del pedido más reciente del grupo
+  }
+
+  // Función para agrupar pedidos por cliente y proximidad temporal (simulando "carrito")
+  function groupOrders(orders: Pedido[]): OrderGroup[] {
+    if (orders.length === 0) return [];
+
+    // 1. Ordenar por fecha descendente (lo más nuevo arriba)
+    const sorted = [...orders].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+
+    const groups: OrderGroup[] = [];
+    let currentGroup: Pedido[] = [];
+
+    // Helper para finalizar un grupo y añadirlo
+    const commitGroup = () => {
+      if (currentGroup.length > 0) {
+        const first = currentGroup[0]; // El más reciente (por el sort)
+        const ids = currentGroup.map(o => o.id);
+        groups.push({
+          groupId: `${first.cliente}-${first.id}`, // ID único para key
+          clientId: first.cliente, // Usamos el nombre como ID si no hay ID real expuesto
+          clientName: first.cliente,
+          orders: currentGroup,
+          minId: Math.min(...ids),
+          maxId: Math.max(...ids),
+          date: first.fecha
+        });
+        currentGroup = [];
+      }
+    };
+
+    // 2. Iterar y agrupar
+    // Criterio: Mismo cliente Y diferencia de tiempo < 20 minutos entre pedidos consecutivos
+    const TIME_THRESHOLD_MS = 20 * 60 * 1000; // 20 minutos
+
+    for (const order of sorted) {
+      if (currentGroup.length === 0) {
+        currentGroup.push(order);
+      } else {
+        const lastInGroup = currentGroup[currentGroup.length - 1];
+        const timeDiff = Math.abs(new Date(lastInGroup.fecha).getTime() - new Date(order.fecha).getTime());
+        const sameClient = lastInGroup.cliente === order.cliente;
+
+        if (sameClient && timeDiff < TIME_THRESHOLD_MS) {
+          currentGroup.push(order);
+        } else {
+          commitGroup();
+          currentGroup.push(order);
+        }
+      }
+    }
+    commitGroup(); // Commit del último grupo
+
+    return groups;
+  }
+
+  // Componente de Grupo (Batch Header)
+  function OrderBatchGroup({ group }: { group: OrderGroup }) {
+    const [expanded, setExpanded] = useState(true);
+    const { t } = useTranslation();
+
+    // Formatear fecha relativa (ej: "Hace 5 min")
+    const getTimeAgo = (dateStr: string) => {
+      const diff = Date.now() - new Date(dateStr).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return 'Hace un momento';
+      if (mins < 60) return `Hace ${mins} min`;
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) return `Hace ${hours} h`;
+      return new Date(dateStr).toLocaleDateString();
+    };
+
+    return (
+      <div className="mb-6 border rounded-lg shadow-sm bg-white overflow-hidden">
+        {/* Header del Lote */}
+        <div
+          className="p-4 bg-slate-50 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-slate-100 transition-colors"
+          onClick={() => setExpanded(!expanded)}
+        >
+          <div className="flex items-start gap-4">
+            {/* Icono / Avatar Cliente */}
+            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold shrink-0">
+              {group.clientName.charAt(0).toUpperCase()}
+            </div>
+
+            <div>
+              {/* Título Principal: Rango de IDs */}
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <span className="font-mono text-blue-600">
+                  {group.orders.length > 1
+                    ? `#ORD-${group.minId} - ${group.maxId}`
+                    : `#ORD-${group.minId}`
+                  }
+                </span>
+                {group.orders.length > 1 && (
+                  <Badge variant="secondary" className="text-xs font-normal">
+                    {group.orders.length} pedidos
+                  </Badge>
+                )}
+              </h3>
+
+              {/* Subtítulo: Cliente y Fecha */}
+              <div className="text-sm text-slate-500 flex items-center gap-2 mt-1">
+                <User className="h-3 w-3" />
+                <span className="font-medium">{group.clientName}</span>
+                <span>•</span>
+                <Calendar className="h-3 w-3" />
+                <span>{getTimeAgo(group.date)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Acciones Derecha */}
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <div className={`transform transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}>
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-500">
+                  <path d="M3.13523 6.15803C3.3241 5.95657 3.64052 5.94637 3.84197 6.13523L7.5 9.56464L11.158 6.13523C11.3595 5.94637 11.6759 5.95657 11.8648 6.15803C12.0536 6.35949 12.0434 6.67591 11.842 6.86477L7.84197 10.6148C7.64964 10.7951 7.35036 10.7951 7.15803 10.6148L3.15803 6.86477C2.95657 6.67591 2.94637 6.35949 3.13523 6.15803Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
+                </svg>
+              </div>
+            </Button>
+          </div>
+        </div>
+
+        {/* Lista de Pedidos (Acordeón) */}
+        {expanded && (
+          <div className="divide-y">
+            {group.orders.map((pedido) => (
+              <div key={pedido.id} className="p-4 hover:bg-slate-50/50 transition-colors">
+                {/* Renderizado del pedido individual (reutilizando estructura existente pero simplificada si es necesario) */}
+                {renderPedidoRow(pedido)}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Helper para renderizar la fila de pedido (extraído del map original para limpieza)
+  const renderPedidoRow = (pedido: Pedido) => (
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="font-mono text-sm text-slate-500">#ORD-{pedido.id}</span>
+          <Badge className={getOrderBadge(t, pedido.numericState).className} variant="outline">
+            {getOrderBadge(t, pedido.numericState).label}
+          </Badge>
+          {pedido.deliveryType === 'air' && <Badge variant="secondary" className="bg-sky-100 text-sky-700 hover:bg-sky-100"><Truck className="w-3 h-3 mr-1" /> Aéreo</Badge>}
+          {pedido.deliveryType === 'maritime' && <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-100"><Truck className="w-3 h-3 mr-1" /> Marítimo</Badge>}
+          {pedido.deliveryType === 'doorToDoor' && <Badge variant="secondary" className="bg-purple-100 text-purple-700 hover:bg-purple-100"><Truck className="w-3 h-3 mr-1" /> Puerta a Puerta</Badge>}
+        </div>
+        <h4 className="font-medium text-slate-900 truncate">{pedido.producto}</h4>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-slate-500">
+          <span className="flex items-center gap-1"><Package className="w-3 h-3" /> {pedido.cantidad} u.</span>
+          {pedido.cotizado && pedido.precio && (
+            <span className="flex items-center gap-1 text-green-600 font-medium">
+              <DollarSign className="w-3 h-3" /> {pedido.precio.toFixed(2)} c/u
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 shrink-0">
+        {/* Botones de acción existentes */}
+        {pedido.estado === 'pendiente' && (
+          <Button size="sm" onClick={() => setModalCotizar({ open: true, pedido })}>
+            <Calculator className="w-4 h-4 mr-2" /> {t('chinese.ordersPage.actions.quote')}
+          </Button>
+        )}
+        {pedido.estado === 'cotizado' && (
+          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 px-3 py-1">
+            <CheckCircle className="w-3 h-3 mr-2" /> Cotizado
+          </Badge>
+        )}
+        {pedido.estado === 'procesando' && (
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => handleGenerateOrderLabelPdf(pedido.id)}>
+              <Tag className="w-4 h-4 mr-2" /> Etiqueta
+            </Button>
+            <Button size="sm" onClick={() => setModalEmpaquetarPedido({ open: true, pedidoId: pedido.id })}>
+              <Boxes className="w-4 h-4 mr-2" /> Empaquetar
+            </Button>
+          </div>
+        )}
+
+        {/* Menú de alternativas (siempre visible si aplica) */}
+        <Button size="icon" variant="ghost" onClick={() => setModalPropAlternativa({ open: true, pedido })}>
+          <Pencil className="w-4 h-4 text-slate-400" />
+        </Button>
+      </div>
+    </div>
+  );
+
   const pedidosFiltrados = pedidos.filter(p => {
     const estadoOk = filtroEstado === 'todos' || p.estado === filtroEstado;
     const clienteOk = !filtroCliente || p.cliente.toLowerCase().includes(filtroCliente.toLowerCase());
     return estadoOk && clienteOk;
   });
+
+  // Agrupar pedidos filtrados para visualización
+  console.log('[DEBUG] Pedidos filtrados:', pedidosFiltrados.length);
+  const visibleGroups = groupOrders(pedidosFiltrados);
+  console.log('[DEBUG] Grupos visibles:', visibleGroups.length, visibleGroups);
   // Local helpers to map badge state to translated text
   const getOrderBadgeLabel = (stateNum?: number) => {
     const s = Number(stateNum ?? 0);
@@ -1064,101 +1271,47 @@ export default function ChinaOrdersTabContent() {
               </div>
             </CardHeader>
             <CardContent>
-              {loadingPedidos ? (<div className="py-12 text-center text-sm">{t('common.loading')}</div>) : pedidosFiltrados.length === 0 ? (<div className="py-12 text-center text-sm">{t('admin.orders.china.orders.notFoundTitle')}</div>) : (
-                <div className="space-y-3">
+              {loadingPedidos ? (
+                <div className="py-12 text-center text-sm">{t('common.loading')}</div>
+              ) : visibleGroups.length === 0 ? (
+                <div className="py-12 text-center text-sm">{t('admin.orders.china.orders.notFoundTitle')}</div>
+              ) : (
+                <div className="space-y-6">
                   {(() => {
-                    const total = pedidosFiltrados.length; const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE)); const { start, end } = getPageSlice(total, pedidosPage); return pedidosFiltrados.slice(start, end).map(p => {
-                      const badge = getOrderBadge(t, p.numericState); return (
-                        <div key={p.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-xl bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 border border-slate-200 dark:border-slate-600">
-                          <div className="min-w-0 flex items-center gap-4">
-                            <div className="p-3 bg-blue-100 dark:bg-blue-800/40 rounded-lg"><Package className="h-5 w-5 text-blue-600 dark:text-blue-300" /></div>
-                            <div className="space-y-1">
-                              <h3 className="font-semibold text-slate-900 dark:text-white truncate">#ORD-{p.id}</h3>
-                              <p className="text-sm text-slate-600 dark:text-slate-400 truncate">{p.producto}</p>
-                              <div className="flex flex-wrap gap-4 text-xs text-slate-500 dark:text-slate-400">
-                                <span className="flex items-center gap-1"><User className="h-3 w-3" />{p.cliente}</span>
-                                <span className="flex items-center gap-1"><Tag className="h-3 w-3" />{t('admin.orders.china.orders.qtyLabel')} {p.cantidad}</span>
-                                <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{p.fecha ? new Date(p.fecha).toLocaleDateString('es-ES') : '—'}</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3">
-                            <div className="flex flex-wrap gap-2 sm:gap-3 justify-start sm:justify-end">
-                              {p.precio && (
-                                <div className="text-left sm:text-right">
-                                  <p className="text-sm font-semibold text-green-600 dark:text-green-400">${p.precio.toLocaleString()}</p>
-                                  <p className="text-[10px] text-slate-500">Total {(p.precio * p.cantidad).toLocaleString()}</p>
-                                </div>
-                              )}
-                            </div>
-                            <div className="w-full sm:w-auto grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-none sm:flex">
-                              {p.estado === 'enviado' && (p.numericState ?? 0) < 6 && (
-                                <Button size="sm" className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700" onClick={() => { setModalEmpaquetarPedido({ open: true, pedidoId: p.id }); if (boxes.length === 0) fetchBoxes(); }}>{t('admin.orders.china.orders.pack')}</Button>
-                              )}
-                              {p.estado === 'enviado' && (p.numericState ?? 0) >= 6 && (
-                                <Button variant="outline" size="sm" className="w-full sm:w-auto" disabled={(p.numericState ?? 0) >= 9} onClick={() => { if ((p.numericState ?? 0) < 9) handleUnpackOrder(p.id); }}>{t('admin.orders.china.orders.unpack')}</Button>
-                              )}
-                              <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => { if (p.pdfRoutes) { const bust = p.pdfRoutes.includes('?') ? `&t=${Date.now()}` : `?t=${Date.now()}`; window.open(p.pdfRoutes + bust, '_blank', 'noopener,noreferrer'); } else toast({ title: t('admin.orders.china.orders.pdfMissingToastTitle') }); }}><Eye className="h-4 w-4" /></Button>
-                              {(() => {
-                                // Logic to show badges for alternatives
-                                if (p.alternativeStatus === 'pending') {
-                                  return (
-                                    <Badge className="bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700 mb-2">
-                                      {t('chinese.ordersPage.badges.alternativeSent', { defaultValue: 'Alternativa enviada' })}
-                                    </Badge>
-                                  );
-                                }
-                                if (p.alternativeStatus === 'accepted') {
-                                  return (
-                                    <Badge className="bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700 mb-2">
-                                      {t('chinese.ordersPage.badges.alternativeAccepted', { defaultValue: 'Alternativa aceptada' })}
-                                    </Badge>
-                                  );
-                                }
-                                if (p.alternativeStatus === 'rejected') {
-                                  return (
-                                    <Badge className="bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700 mb-2">
-                                      {t('chinese.ordersPage.badges.alternativeRejected', { defaultValue: 'Alternativa rechazada' })}
-                                    </Badge>
-                                  );
-                                }
-                                return null;
-                              })()}
-                              {(() => {
-                                // console.log('[DEBUG] Pedido:', p.id, 'estado:', p.estado, 'numericState:', p.numericState);
+                    const total = visibleGroups.length;
+                    const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+                    const { start, end } = getPageSlice(total, pedidosPage);
+                    const slicedGroups = visibleGroups.slice(start, end);
+                    const pages = getVisiblePages(totalPages, pedidosPage);
 
-                                // If alternative is pending, hide action buttons
-                                if (p.alternativeStatus === 'pending') return null;
+                    return (
+                      <>
+                        {slicedGroups.map((group) => (
+                          <OrderBatchGroup key={group.groupId} group={group} />
+                        ))}
 
-                                return p.estado === 'pendiente' ? (
-                                  <>
-                                    <Button size="sm" className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700" onClick={() => setModalCotizar({ open: true, pedido: p, precioUnitario: p.precio || 0, precioEnvio: 0, altura: 0, anchura: 0, largo: 0, peso: 0 })}><Calculator className="h-4 w-4" /></Button>
-                                    {p.alternativeStatus !== 'accepted' && (
-                                      <Button size="sm" className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700" onClick={() => setModalPropAlternativa({ open: true, pedido: p })} title="Proponer alternativa"><Send className="h-4 w-4" /></Button>
-                                    )}
-                                  </>
-                                ) : (
-                                  <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => setModalCotizar({ open: true, pedido: p, precioUnitario: p.precio || 0, precioEnvio: 0, altura: 0, anchura: 0, largo: 0, peso: 0 })}><Pencil className="h-4 w-4" /></Button>
-                                );
-                              })()}
-                            </div>
+                        {/* Paginación */}
+                        <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                            {t('admin.orders.pagination.showing', { defaultValue: 'Mostrando' })} {Math.min(total, start + 1)} {t('admin.orders.pagination.to', { defaultValue: 'a' })} {end} {t('admin.orders.pagination.of', { defaultValue: 'de' })} {total} {t('admin.orders.pagination.results', { defaultValue: 'lotes' })}
+                          </p>
+                          <div className="flex items-center gap-1 justify-end flex-wrap">
+                            <Button variant="outline" size="sm" disabled={pedidosPage <= 1} onClick={() => setPedidosPage(p => Math.max(1, p - 1))}>
+                              {t('admin.orders.pagination.prev', { defaultValue: 'Anterior' })}
+                            </Button>
+                            {pages[0] > 1 && (<><Button variant="outline" size="sm" onClick={() => setPedidosPage(1)}>1</Button><span className="px-1 text-slate-400">…</span></>)}
+                            {pages.map(p => (
+                              <Button key={p} variant={p === pedidosPage ? 'default' : 'outline'} size="sm" onClick={() => setPedidosPage(p)}>
+                                {p}
+                              </Button>
+                            ))}
+                            {pages[pages.length - 1] < totalPages && (<><span className="px-1 text-slate-400">…</span><Button variant="outline" size="sm" onClick={() => setPedidosPage(totalPages)}>{totalPages}</Button></>)}
+                            <Button variant="outline" size="sm" disabled={pedidosPage >= totalPages} onClick={() => setPedidosPage(p => Math.min(totalPages, p + 1))}>
+                              {t('admin.orders.pagination.next', { defaultValue: 'Siguiente' })}
+                            </Button>
                           </div>
                         </div>
-                      );
-                    });
-                  })()}
-                  {(() => {
-                    const total = pedidosFiltrados.length; const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE)); const { start, end } = getPageSlice(total, pedidosPage); const pages = getVisiblePages(totalPages, pedidosPage); return (
-                      <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">{t('admin.orders.pagination.showing', { defaultValue: 'Mostrando' })} {Math.min(total, start + 1)} {t('admin.orders.pagination.to', { defaultValue: 'a' })} {end} {t('admin.orders.pagination.of', { defaultValue: 'de' })} {total} {t('admin.orders.pagination.results', { defaultValue: 'resultados' })}</p>
-                        <div className="flex items-center gap-1 justify-end flex-wrap">
-                          <Button variant="outline" size="sm" disabled={pedidosPage <= 1} onClick={() => setPedidosPage(p => Math.max(1, p - 1))}>{t('admin.orders.pagination.prev', { defaultValue: 'Anterior' })}</Button>
-                          {pages[0] > 1 && (<><Button variant="outline" size="sm" onClick={() => setPedidosPage(1)}>1</Button><span className="px-1 text-slate-400">…</span></>)}
-                          {pages.map(p => (<Button key={p} variant={p === pedidosPage ? 'default' : 'outline'} size="sm" onClick={() => setPedidosPage(p)}>{p}</Button>))}
-                          {pages[pages.length - 1] < totalPages && (<><span className="px-1 text-slate-400">…</span><Button variant="outline" size="sm" onClick={() => setPedidosPage(totalPages)}>{totalPages}</Button></>)}
-                          <Button variant="outline" size="sm" disabled={pedidosPage >= totalPages} onClick={() => setPedidosPage(p => Math.min(totalPages, p + 1))}>{t('admin.orders.pagination.next', { defaultValue: 'Siguiente' })}</Button>
-                        </div>
-                      </div>
+                      </>
                     );
                   })()}
                 </div>

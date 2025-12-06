@@ -149,6 +149,7 @@ export async function POST(req: NextRequest) {
       order_origin,
       elapsed_time: null,
       asignedEVzla: null,
+      asignedEChina: body.asignedEChina || null, // Permitir override de asignación (Leader-Follower strategy)
     };
 
     let { data, error } = await supabase
