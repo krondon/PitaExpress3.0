@@ -8,7 +8,8 @@ import {
     XCircle,
     DollarSign,
     Eye,
-    MapPin
+    MapPin,
+    Package
 } from 'lucide-react';
 
 interface ClientOrderCardProps {
@@ -52,6 +53,9 @@ export const ClientOrderCard: React.FC<ClientOrderCardProps> = ({
         <div className={`p-4 md:p-6 rounded-xl border hover:shadow-md transition-all duration-300 group ${mounted && theme === 'dark' ? 'bg-gradient-to-r from-slate-700 to-slate-600 border-slate-600' : 'bg-gradient-to-r from-slate-50 to-slate-100 border-slate-200'}`}>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-6 mb-4">
                 <div className="flex items-center gap-4 md:gap-6">
+                    <div className={`p-3 rounded-lg shrink-0 ${mounted && theme === 'dark' ? 'bg-blue-900/30' : 'bg-blue-100'}`}>
+                        <Package className={`h-5 w-5 ${mounted && theme === 'dark' ? 'text-blue-300' : 'text-blue-600'}`} />
+                    </div>
                     <div className="flex flex-col">
                         <p className={`font-bold text-sm md:text-base ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>#ORD-{order.id}</p>
                         <p className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{order.product}</p>
