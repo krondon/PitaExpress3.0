@@ -62,6 +62,7 @@ import {
   ShoppingBag,
   Trash2,
   Send,
+  Pencil,
   AlertTriangle,
   XCircle,
   CreditCard,
@@ -97,11 +98,16 @@ interface Order {
   shippingPrice?: number | null;
   stateNum?: number; // estado numérico 1..13 desde BD para badges detallados
   documents?: Array<{
-    type: 'image' | 'link';
+    name?: string;
+    label?: string; // Backwards compatibility
     url: string;
-    label: string;
+    type: string;
+    date?: string;
   }>;
-  pdfRoutes?: string | null; // URL del PDF del pedido
+  pdfRoutes?: string | null;
+  alternativeStatus?: 'pending' | 'accepted' | 'rejected' | null;
+  alternativeRejectionReason?: string;
+  batch_id?: string | null;
   // Campos de tracking del contenedor relacionado (si aplica)
   tracking_number?: string | null;
   tracking_company?: string | null;
@@ -178,8 +184,8 @@ const MOCK_ORDERS: Order[] = [
     createdAt: '2024-01-15',
     category: 'Electrónicos',
     documents: [
-      { type: 'image', url: '/images/products/samsung-s24.jpg', label: 'Foto del producto' },
-      { type: 'link', url: 'https://tracking.example.com/TRK-789456123', label: 'Seguimiento en línea' }
+      { type: 'image', url: '/images/products/samsung-s24.jpg', name: 'Foto del producto', date: '2024-01-15' },
+      { type: 'link', url: 'https://tracking.example.com/TRK-789456123', name: 'Seguimiento en línea', date: '2024-01-15' }
     ]
   },
   {
@@ -194,7 +200,7 @@ const MOCK_ORDERS: Order[] = [
     createdAt: '2024-01-20',
     category: 'Computadoras',
     documents: [
-      { type: 'image', url: '/images/products/dell-inspiron.jpg', label: 'Foto del producto' }
+      { type: 'image', url: '/images/products/dell-inspiron.jpg', name: 'Foto del producto', date: '2024-01-20' }
     ]
   },
   {
@@ -488,7 +494,7 @@ export default function MisPedidosPage() {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select('id, productName, description, estimatedBudget, totalQuote, unitQuote, shippingPrice, state, created_at, pdfRoutes, quantity, box_id, imgs')
+        .select('id, productName, description, estimatedBudget, totalQuote, unitQuote, shippingPrice, state, created_at, pdfRoutes, quantity, box_id, imgs, batch_id')
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
       if (error) {
@@ -605,13 +611,14 @@ export default function MisPedidosPage() {
           unitQuote: unit,
           shippingPrice: ship,
           stateNum: typeof row.state === 'number' ? row.state : (row.state ? Number(row.state) : undefined),
-          documents: row.pdfRoutes ? [{ type: 'link' as const, url: row.pdfRoutes, label: 'Resumen PDF' }] : [],
+          documents: row.pdfRoutes ? [{ type: 'link', url: row.pdfRoutes, name: 'Resumen PDF', date: row.created_at }] : [],
           pdfRoutes: row.pdfRoutes || null,
           tracking_number: tn,
           tracking_company: tc,
           arrive_date: ad,
           tracking_link: tl,
           imageUrl: imgUrl,
+          batch_id: row.batch_id || null,
         };
       });
       setOrders(mapped);
@@ -1127,28 +1134,54 @@ export default function MisPedidosPage() {
     // Sort by date desc
     const sorted = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     const groups: ClientOrderGroupData[] = [];
-    const TIME_THRESHOLD_MS = 20 * 60 * 1000; // 20 mins
+    const TIME_THRESHOLD_MS = 3 * 60 * 1000; // 3 mins (Fallback time threshold)
 
     sorted.forEach((order) => {
       let added = false;
-      // Try to find an existing group
-      for (const group of groups) {
-        const referenceOrder = group.orders[0];
-        const timeDiff = Math.abs(new Date(referenceOrder.createdAt).getTime() - new Date(order.createdAt).getTime());
 
-        if (timeDiff <= TIME_THRESHOLD_MS) {
-          group.orders.push(order);
-          group.minId = Math.min(Number(group.minId), Number(order.id));
-          group.maxId = Math.max(Number(group.maxId), Number(order.id));
+      // 1. Try to group by strict batch_id first
+      if (order.batch_id) {
+        const existingBatchGroup = groups.find(g =>
+          g.orders.some(o => o.batch_id === order.batch_id)
+        );
 
-          // Update total amount if payable (quoted or rejected)
+        if (existingBatchGroup) {
+          existingBatchGroup.orders.push(order);
+          existingBatchGroup.minId = Math.min(Number(existingBatchGroup.minId), Number(order.id));
+          existingBatchGroup.maxId = Math.max(Number(existingBatchGroup.maxId), Number(order.id));
           if (order.status === 'quoted' || order.stateNum === -1) {
             const amount = (order.unitQuote ?? 0) + (order.shippingPrice ?? 0);
-            group.totalAmount += amount;
-            group.canPayAll = true;
+            existingBatchGroup.totalAmount += amount;
+            existingBatchGroup.canPayAll = true;
           }
           added = true;
-          break;
+        }
+      }
+
+      // 2. If not added by batch_id (or no batch_id), try time-based grouping (only for orders without batch_id to avoid mixing)
+      if (!added && !order.batch_id) {
+        for (const group of groups) {
+          // Skip groups that are explicitly formed by batch_id
+          const isBatchGroup = group.orders.some(o => !!o.batch_id);
+          if (isBatchGroup) continue;
+
+          const referenceOrder = group.orders[0];
+          const timeDiff = Math.abs(new Date(referenceOrder.createdAt).getTime() - new Date(order.createdAt).getTime());
+
+          if (timeDiff <= TIME_THRESHOLD_MS) {
+            group.orders.push(order);
+            group.minId = Math.min(Number(group.minId), Number(order.id));
+            group.maxId = Math.max(Number(group.maxId), Number(order.id));
+
+            // Update total amount if payable
+            if (order.status === 'quoted' || order.stateNum === -1) {
+              const amount = (order.unitQuote ?? 0) + (order.shippingPrice ?? 0);
+              group.totalAmount += amount;
+              group.canPayAll = true;
+            }
+            added = true;
+            break;
+          }
         }
       }
 
@@ -1157,7 +1190,7 @@ export default function MisPedidosPage() {
         const amount = isPayable ? (order.unitQuote ?? 0) + (order.shippingPrice ?? 0) : 0;
 
         groups.push({
-          groupId: `${order.id}-${order.createdAt}`,
+          groupId: order.batch_id ? `batch-${order.batch_id}` : `${order.id}-${order.createdAt}`,
           date: order.createdAt,
           orders: [order],
           minId: Number(order.id),
@@ -1459,23 +1492,19 @@ export default function MisPedidosPage() {
     }
   };
 
-  // Lógica interna para crear un pedido individual (reutilizable)
-  const createOrderInternal = async (orderData: NewOrderData, overrideAssignee?: string): Promise<{ success: boolean; asignedEChina?: string }> => {
-
-    // Generar nombre del PDF con fecha legible dd-mm-yyyy
-    const fechaObj = new Date();
-    const dd = String(fechaObj.getDate()).padStart(2, '0');
-    const mm = String(fechaObj.getMonth() + 1).padStart(2, '0');
-    const yyyy = fechaObj.getFullYear();
-    const fechaPedidoLegible = `${dd}-${mm}-${yyyy}`;
-
-    let orderIdCreated: string | number | null = null;
-
+  // Función unificada internamente para crear un pedido
+  const createOrderInternal = async (orderData: NewOrderData, overrideAssignee?: string | null, batchId?: string) => {
     try {
-      // 1) Crear pedido con datos básicos
+      if (!clientId) throw new Error('Usuario no autenticado');
+
+      let orderIdCreated: any = null;
+      let createdJson: any = null;
+      const fechaPedidoLegible = new Date().toLocaleDateString();
+
+      // 1) Crear registro en BD
       const prePayload = {
-        client_id: clientId || '',
-        productName: orderData.productName,
+        client_id: clientId,
+        productName: orderData.productName, // Nombre simple
         description: orderData.description,
         quantity: orderData.quantity,
         estimatedBudget: Number(orderData.estimatedBudget),
@@ -1486,7 +1515,8 @@ export default function MisPedidosPage() {
         pdfRoutes: null,
         state: 1,
         order_origin: 'vzla',
-        asignedEChina: overrideAssignee // Estrategia Leader-Follower
+        asignedEChina: overrideAssignee, // Estrategia Leader-Follower
+        batch_id: batchId || null // ID de lote para agrupación
       };
 
       const createRes = await fetch('/api/admin/orders', {
@@ -1505,7 +1535,7 @@ export default function MisPedidosPage() {
         throw new Error(errMsg);
       }
 
-      const createdJson = await createRes.json().catch(() => null);
+      createdJson = await createRes.json().catch(() => null);
       orderIdCreated = createdJson?.data?.id ?? null;
 
       if (!orderIdCreated) throw new Error('No se obtuvo ID del pedido creado');
@@ -1662,6 +1692,20 @@ export default function MisPedidosPage() {
     // Mejor quedarse en 4, el usuario decidirá si agregar otro.
   };
 
+  const handleEditFromQueue = (index: number) => {
+    const itemToEdit = orderQueue[index];
+    // Remove from queue
+    setOrderQueue(prev => prev.filter((_, i) => i !== index));
+    // Load into form
+    setNewOrderData(itemToEdit);
+    // Go to Step 1
+    setCurrentStep(1);
+    toast({
+      title: "Editando producto",
+      description: `Editando ${itemToEdit.productName}. Se ha movido de la caja al formulario.`,
+    });
+  };
+
   const handleAddNewItem = () => {
     setCurrentStep(1);
     setAttemptedStep1(false);
@@ -1676,12 +1720,15 @@ export default function MisPedidosPage() {
     // Procesar secuencialmente para no saturar
     // Estrategia Leader-Follower: El primer pedido define el asignado para los demás
     let leaderAssignee: string | undefined;
+    // Generar un ID único para este lote (UUID v4-like simple)
+    const batchId = crypto.randomUUID();
 
     for (let i = 0; i < orderQueue.length; i++) {
       const order = orderQueue[i];
       // Si es el primero (o si falló el anterior y no tenemos leader), no pasamos override
       // Si ya tenemos leaderAssignee, lo pasamos
-      const result = await createOrderInternal(order, leaderAssignee);
+      // Pasamos el batchId a todos
+      const result = await createOrderInternal(order, leaderAssignee, batchId);
 
       if (result.success) {
         successCount++;
@@ -2321,14 +2368,24 @@ export default function MisPedidosPage() {
                                 <p className={`font-medium truncate ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{item.productName}</p>
                                 <p className="text-sm text-slate-500 truncate">{item.quantity} unidades • {item.deliveryType === 'air' ? 'Aéreo' : 'Marítimo'}</p>
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleRemoveFromQueue(index)}
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleEditFromQueue(index)}
+                                  className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleRemoveFromQueue(index)}
+                                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -2768,7 +2825,7 @@ export default function MisPedidosPage() {
                           <div className={`w-4 h-4 ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>
                             {doc.type === 'image' ? '📷' : '🔗'}
                           </div>
-                          <span className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : ''}`}>{doc.label}</span>
+                          <span className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : ''}`}>{doc.name || doc.label}</span>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -3615,102 +3672,7 @@ export default function MisPedidosPage() {
           )}
         </DialogContent>
       </Dialog>
-      {/* === FAB & DRAWER DE COLA DE PEDIDOS === */}
-      {orderQueue.length > 0 && (
-        <>
-          {/* Floating Action Button */}
-          <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <Button
-              onClick={() => setIsQueueDrawerOpen(true)}
-              className="h-16 w-16 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 shadow-2xl hover:shadow-blue-500/50 hover:scale-110 transition-all duration-300 flex flex-col items-center justify-center relative"
-            >
-              <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-white">
-                {orderQueue.length}
-              </div>
-              <Layers className="w-6 h-6 text-white mb-1" />
-              <span className="text-[10px] font-medium text-white">Cola</span>
-            </Button>
-          </div>
 
-          {/* Drawer / Panel Lateral */}
-          {isQueueDrawerOpen && (
-            <div className="fixed inset-0 z-50 flex justify-end">
-              {/* Backdrop */}
-              <div
-                className="absolute inset-0 bg-black/30 backdrop-blur-sm animate-in fade-in duration-300"
-                onClick={() => setIsQueueDrawerOpen(false)}
-              />
-
-              {/* Panel */}
-              <div className="relative w-full max-w-md bg-white dark:bg-slate-900 h-full shadow-2xl animate-in slide-in-from-right duration-300 flex flex-col">
-                <div className="p-6 border-b dark:border-slate-800 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-xl font-bold">Cola de Envíos</h2>
-                      <p className="text-blue-100 text-sm">{orderQueue.length} pedidos listos para procesar</p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setIsQueueDrawerOpen(false)}
-                      className="hover:bg-white/20 text-white rounded-full"
-                    >
-                      <X className="w-5 h-5" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                  {orderQueue.map((order, idx) => (
-                    <div key={idx} className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 flex items-start gap-3 group hover:shadow-md transition-all">
-                      <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg">
-                        <Package className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-slate-900 dark:text-white truncate">{order.productName}</h4>
-                        <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{order.description}</p>
-                        <div className="flex items-center gap-2 mt-2 text-xs text-slate-400">
-                          <Badge variant="outline" className="text-[10px]">{order.quantity} un.</Badge>
-                          <span>•</span>
-                          <span>{order.deliveryType === 'air' ? 'Aéreo' : 'Marítimo'}</span>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setOrderQueue(prev => prev.filter((_, i) => i !== idx))}
-                        className="text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      >
-                        <Trash className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="p-6 border-t dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
-                  <Button
-                    onClick={handleProcessQueue}
-                    disabled={processingQueue}
-                    className="w-full h-12 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold text-lg shadow-lg hover:shadow-green-500/25 transition-all transform hover:scale-[1.02]"
-                  >
-                    {processingQueue ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Procesando...
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <Send className="w-5 h-5" />
-                        Enviar {orderQueue.length} Pedidos
-                      </div>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </>
-      )}
     </div>
   );
 }

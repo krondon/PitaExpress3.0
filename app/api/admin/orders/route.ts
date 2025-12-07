@@ -12,7 +12,7 @@ export async function GET() {
     const [{ data: orders, error: ordersError }, { data: clients, error: clientsError }] = await Promise.all([
       supabase
         .from('orders')
-        .select('id, state, productName, description, client_id, asignedEVzla, asignedEChina, created_at, estimatedBudget, reputation, pdfRoutes'),
+        .select('id, state, productName, description, client_id, asignedEVzla, asignedEChina, created_at, estimatedBudget, reputation, pdfRoutes, batch_id'),
       supabase
         .from('clients')
         .select('user_id, name'),
@@ -67,6 +67,7 @@ export async function GET() {
         hasAlternative: alternativeStatus === 'pending',
         alternativeStatus: alternativeStatus,
         alternativeRejectionReason: rejectionReason,
+        batch_id: o.batch_id ?? null,
       };
     });
 
@@ -150,6 +151,7 @@ export async function POST(req: NextRequest) {
       elapsed_time: null,
       asignedEVzla: null,
       asignedEChina: body.asignedEChina || null, // Permitir override de asignación (Leader-Follower strategy)
+      batch_id: body.batch_id || null,
     };
 
     let { data, error } = await supabase
