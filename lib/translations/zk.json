@@ -895,7 +895,10 @@
         "newReviewNotification": "收到新评价",
         "refreshingList": "更新列表中...",
         "filterByRating": "按评分筛选",
-        "allRatings": "全部"
+        "allRatings": "全部",
+        "averageRating": "平均评分",
+        "review": "评价",
+        "reviews": "评价"
       },
       "messages": {
         "profileUpdated": "资料已更新",

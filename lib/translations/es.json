@@ -749,7 +749,10 @@
         "newReviewNotification": "Nueva reseña recibida",
         "refreshingList": "Actualizando lista...",
         "filterByRating": "Filtrar por calificación",
-        "allRatings": "Todas"
+        "allRatings": "Todas",
+        "averageRating": "Promedio de Calificación",
+        "review": "reseña",
+        "reviews": "reseñas"
       }
     }
   },

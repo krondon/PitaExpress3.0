@@ -1055,6 +1055,83 @@ function AdminReviewsSection() {
     ? reviews 
     : reviews.filter(review => review.rating === ratingFilter);
 
+  // Calcular promedio de todas las reseñas
+  const averageRating = reviews.length > 0
+    ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+    : 0;
+  
+  // Calcular porcentaje para el gauge (0-100%)
+  const ratingPercentage = (averageRating / 5) * 100;
+  
+  // Determinar color según el promedio
+  const getRatingColor = () => {
+    if (averageRating >= 4.5) return 'text-green-500';
+    if (averageRating >= 3.5) return 'text-yellow-500';
+    if (averageRating >= 2.5) return 'text-orange-500';
+    return 'text-red-500';
+  };
+
+  const getRatingStrokeColor = () => {
+    if (averageRating >= 4.5) return '#10b981'; // green-500
+    if (averageRating >= 3.5) return '#eab308'; // yellow-500
+    if (averageRating >= 2.5) return '#f97316'; // orange-500
+    return '#ef4444'; // red-500
+  };
+
+  const getRatingBgColor = () => {
+    if (averageRating >= 4.5) return 'bg-green-50 dark:bg-green-900/20';
+    if (averageRating >= 3.5) return 'bg-yellow-50 dark:bg-yellow-900/20';
+    if (averageRating >= 2.5) return 'bg-orange-50 dark:bg-orange-900/20';
+    return 'bg-red-50 dark:bg-red-900/20';
+  };
+
+  // Componente de Gauge Circular
+  const RatingGauge = () => {
+    const size = 90; // Reducido de 120 a 90
+    const strokeWidth = 8; // Reducido de 12 a 8
+    const radius = (size - strokeWidth) / 2;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference - (ratingPercentage / 100) * circumference;
+
+    return (
+      <div className={`relative ${getRatingBgColor()} rounded-full p-3`}>
+        <svg width={size} height={size} className="transform -rotate-90">
+          {/* Círculo de fondo */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={mounted && theme === 'dark' ? '#334155' : '#e2e8f0'}
+            strokeWidth={strokeWidth}
+            fill="none"
+          />
+          {/* Círculo de progreso */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={getRatingStrokeColor()}
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            className="transition-all duration-1000 ease-out"
+          />
+        </svg>
+        {/* Contenido del centro */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className={`text-2xl font-bold ${getRatingColor()}`}>
+            {averageRating.toFixed(1)}
+          </div>
+          <div className={`text-[10px] ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+            de 5
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Card className="bg-white/80 backdrop-blur-sm border-slate-200 dark:bg-slate-800/80 dark:border-slate-700">
       <CardHeader>
@@ -1106,12 +1183,14 @@ function AdminReviewsSection() {
           </div>
         ) : (
           <>
-            {/* Filtro por estrellas */}
-            <div className="mb-6">
-              <Label className={`text-sm mb-3 block ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                {t('admin.configuration.reviews.filterByRating', { fallback: 'Filtrar por calificación' })}:
-              </Label>
-              <div className="flex flex-wrap gap-2">
+            {/* Layout: Filtro a la izquierda, Gauge a la derecha */}
+            <div className="mb-6 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
+              {/* Filtro por estrellas - Izquierda */}
+              <div className="flex-1">
+                <Label className={`text-sm mb-3 block ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                  {t('admin.configuration.reviews.filterByRating', { fallback: 'Filtrar por calificación' })}:
+                </Label>
+                <div className="flex flex-wrap gap-2">
                 <Button
                   variant={ratingFilter === null ? 'default' : 'outline'}
                   size="sm"
@@ -1151,6 +1230,28 @@ function AdminReviewsSection() {
                     </Button>
                   );
                 })}
+                </div>
+              </div>
+
+              {/* Gauge de Promedio de Reseñas - Derecha */}
+              <div className="flex justify-end md:justify-start">
+                <div className={`flex flex-col items-center gap-2 p-4 rounded-xl border ${mounted && theme === 'dark' ? 'bg-slate-700/50 border-slate-600' : 'bg-slate-50 border-slate-200'}`}>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Star className={`w-4 h-4 ${getRatingColor()}`} />
+                    <span className={`text-xs font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                      {t('admin.configuration.reviews.averageRating', { fallback: 'Promedio' })}
+                    </span>
+                  </div>
+                  <RatingGauge />
+                  <div className="text-center">
+                    <p className={`text-[10px] ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                      {reviews.length} {reviews.length === 1 
+                        ? t('admin.configuration.reviews.review', { fallback: 'reseña' })
+                        : t('admin.configuration.reviews.reviews', { fallback: 'reseñas' })
+                      }
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 

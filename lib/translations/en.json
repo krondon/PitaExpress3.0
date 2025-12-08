@@ -907,7 +907,10 @@
         "newReviewNotification": "New review received",
         "refreshingList": "Updating list...",
         "filterByRating": "Filter by rating",
-        "allRatings": "All"
+        "allRatings": "All",
+        "averageRating": "Average Rating",
+        "review": "review",
+        "reviews": "reviews"
       },
       "messages": {
         "profileUpdated": "Profile updated",
