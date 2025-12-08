@@ -1503,7 +1503,7 @@ export default function VenezuelaPedidosPage() {
             </div>
           )}
           {modalVerPedidos.open && (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setModalVerPedidos({ open: false })}>
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60]" onClick={() => setModalVerPedidos({ open: false })}>
               <div
                 className={`rounded-2xl p-6 max-w-3xl mx-4 w-full max-h-[90vh] overflow-y-auto border ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
                   }`}

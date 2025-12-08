@@ -694,6 +694,7 @@
     "management": "Management",
     "gestion": "Management",
     "payments": "Payments",
+    "payments-validation": "Payments",
     "support": "Support",
     "settings": "Settings",
     "configuration": "Configuration",
@@ -704,6 +705,13 @@
     "chat": "Chat",
     "messageDeleted": "🚫 This message was deleted",
     "dashboardAdmin": "Admin Dashboard",
+    "userRoles": {
+      "venezuela": "Venezuela Employee",
+      "china": "China Employee",
+      "pagos": "Payments Validator",
+      "admin": "Administrator",
+      "client": "Client"
+    },
     "dashboardClient": "Client Dashboard",
     "dashboardChina": "China Dashboard",
     "dashboardVzla": "Venezuela Dashboard"

@@ -243,35 +243,35 @@ const getMenuItemsByRole = (role?: string, t?: (key: string) => string, pagosPen
 };
 
 // Función para obtener información del usuario según el rol
-const getUserInfoByRole = (role?: string) => {
+const getUserInfoByRole = (role?: string, t?: (key: string) => string) => {
   switch (role) {
     case 'venezuela':
       return {
-        name: 'Empleado Venezuela',
+        name: t && typeof t === 'function' ? t('sidebar.userRoles.venezuela') : 'Empleado Venezuela',
         email: 'venezuela@morna.com',
         flag: '🇻🇪'
       };
     case 'china':
       return {
-        name: 'Empleado China',
+        name: t && typeof t === 'function' ? t('sidebar.userRoles.china') : 'Empleado China',
         email: 'china@morna.com',
         flag: '🇨🇳'
       };
     case 'pagos':
       return {
-        name: 'Validador Pagos',
+        name: t && typeof t === 'function' ? t('sidebar.userRoles.pagos') : 'Validador Pagos',
         email: 'pagos@morna.com',
         flag: '💳'
       };
     case 'admin':
       return {
-        name: 'Administrador',
+        name: t && typeof t === 'function' ? t('sidebar.userRoles.admin') : 'Administrador',
         email: 'admin@morna.com',
         flag: '👑'
       };
     default:
       return {
-        name: 'Cliente',
+        name: t && typeof t === 'function' ? t('sidebar.userRoles.client') : 'Cliente',
         email: 'cliente@morna.com',
         flag: '🇻🇪'
       };
@@ -449,7 +449,7 @@ export default function Sidebar({ isExpanded, setIsExpanded, isMobileMenuOpen = 
   }, [userRole, vzlaCtx?.vzlaId]);
 
   // Get dynamic user info from context if available
-  let userInfo: { name: string; email: string; flag?: string; userImage?: string } = getUserInfoByRole(userRole);
+  let userInfo: { name: string; email: string; flag?: string; userImage?: string } = getUserInfoByRole(userRole, t);
 
   if (userRole === 'client' && clientCtx) {
     if (clientCtx.clientName || clientCtx.clientEmail) {

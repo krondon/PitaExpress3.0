@@ -42,13 +42,13 @@ export default function RootLayout({
         <ThemeProvider>
           <LanguageProvider>
             <FontSizeProvider>
-              <Suspense fallback={null}>
-                <RouteLoader />
-              </Suspense>
-              <Suspense fallback={null}>
-                {children}
-              </Suspense>
-              <Toaster />
+            <Suspense fallback={null}>
+              <RouteLoader />
+            </Suspense>
+            <Suspense fallback={null}>
+              {children}
+            </Suspense>
+            <Toaster />
             </FontSizeProvider>
           </LanguageProvider>
         </ThemeProvider>

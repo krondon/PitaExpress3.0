@@ -147,6 +147,13 @@
     "logout": "Cerrar sesión",
     "chat": "Mensajes",
     "dashboardAdmin": "Panel de Administración",
+    "userRoles": {
+      "venezuela": "Empleado Venezuela",
+      "china": "Empleado China",
+      "pagos": "Validador Pagos",
+      "admin": "Administrador",
+      "client": "Cliente"
+    },
     "dashboardClient": "Panel de Cliente",
     "dashboardChina": "Panel de China",
     "dashboardVzla": "Panel de Venezuela"
@@ -2997,6 +3004,34 @@
         "title": "Nuevo pedido asignado",
         "description": "Pedido {{orderId}} asignado"
       }
+    }
+  },
+  "paymentsDashboard": {
+    "title": "Panel de Pagos",
+    "subtitle": "Supervisión y validación global de pagos",
+    "hero": {
+      "title": "Validación de Pagos",
+      "desc1": "Control centralizado de pagos pendientes y confirmados.",
+      "desc2": "Confirma, audita y monitorea el flujo de verificación."
+    },
+    "stats": {
+      "pending": {
+        "label": "Pendientes",
+        "help": "Esperando validación"
+      },
+      "completed": {
+        "label": "Confirmados",
+        "help": "Pagos validados"
+      },
+      "totalAmount": {
+        "label": "Monto Total",
+        "help": "USD procesados"
+      }
+    },
+    "quickActions": {
+      "title": "Acciones Rápidas",
+      "subtitle": "Flujo operativo del panel de pagos",
+      "validate": "Validar Pagos"
     }
   },
   "chat": {
