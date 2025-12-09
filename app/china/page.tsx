@@ -106,7 +106,8 @@ export default function ChinaDashboard() {
     if (state >= 5 && state <= 8) return 'enviado';
     if (state === 4) return 'procesando';
     if (state === 3) return 'cotizado';
-    if (state === 2) return 'pendiente';
+    if (state === 0) return 'cancelado';
+    if (state === 1 || state === 2) return 'pendiente';
     // Fallback igual que en /china/pedidos
     return 'pendiente';
   }
@@ -114,10 +115,14 @@ export default function ChinaDashboard() {
   const fetchAssignedPedidosPending = useCallback(async () => {
     try {
       if (!chinaId) { setPendingFromPedidos(0); return; }
-      const res = await fetch(`/china/pedidos/api/orders?asignedEChina=${chinaId}`);
-      const data = await res.json();
-      if (!Array.isArray(data)) { setPendingFromPedidos(0); return; }
-      const count = data
+      // Limit 1000 to ensure we get all pending orders for the count
+      const res = await fetch(`/china/pedidos/api/orders?asignedEChina=${chinaId}&limit=1000`);
+      const response = await res.json();
+      // Handle { data: [], total: ... } structure
+      const orders = response.data || [];
+
+      if (!Array.isArray(orders)) { setPendingFromPedidos(0); return; }
+      const count = orders
         .map((order: any) => ({ state: order.state }))
         .map(o => mapStateToEstado(Number(o.state || 0)))
         .filter(estado => estado === 'pendiente')

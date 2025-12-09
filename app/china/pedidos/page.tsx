@@ -221,7 +221,7 @@ export default function PedidosChina() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalOrders, setTotalOrders] = useState(0);
-  const ITEMS_PER_PAGE = 8;
+  const ITEMS_PER_PAGE = 1000; // Mostrar todos (sin paginación real) a petición del usuario
   // Mapear state numérico a texto usado en China
   function mapStateToEstado(state: number): Pedido['estado'] {
     // Rango solicitado para la vista China:
