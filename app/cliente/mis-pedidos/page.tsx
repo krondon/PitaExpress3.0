@@ -1405,16 +1405,13 @@ export default function MisPedidosPage() {
     }
     setIsConfirmingPayment(true);
     try {
-      const rawId = selectedOrderForPayment ? selectedOrderForPayment.id : 'BULK'; // Placeholder for bulk
-
       if (selectedGroupForPayment) {
-        // Bulk Payment
+        // Bulk Payment: Use logic similar to single payment for each order
         const ordersToPay = selectedGroupForPayment.orders.filter(o => selectedOrdersInModal.includes(o.id));
 
-        // This should probably be a single bulk API call in future, but for now we loop
-        // We use Promise.all to do it faster
-        const promises = ordersToPay.map(order =>
-          fetch(`/api/orders/${order.id}/state`, {
+        // Execute sequentially or parallel, but validate response like single payment
+        const promises = ordersToPay.map(async (order) => {
+          const response = await fetch(`/api/orders/${order.id}/state`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -1424,17 +1421,23 @@ export default function MisPedidosPage() {
               changed_by: `client:${clientId}`,
               notes: 'Pago confirmado por el cliente (Lote)'
             })
-          })
-        );
+          });
+
+          const data = await response.json();
+          if (!response.ok || !data.success) {
+            throw new Error(data.error || `Error en pedido #${order.id}`);
+          }
+          return data;
+        });
 
         await Promise.all(promises);
 
-        // We assume success for now or we would need complex error handling for partial failures
-
       } else {
         // Single Payment
-        // Usar la API del servidor para que se active el trigger y se registre en el historial
-        const response = await fetch(`/api/orders/${isNaN(Number(rawId)) ? rawId : Number(rawId)}/state`, {
+        const rawId = selectedOrderForPayment?.id;
+        if (!rawId) throw new Error('No se encontró el ID del pedido');
+
+        const response = await fetch(`/api/orders/${rawId}/state`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -1446,30 +1449,24 @@ export default function MisPedidosPage() {
           })
         });
 
-        if (selectedGroupForPayment) {
-          // For bulk, we just assume success after Promise.all (simplified)
-          // Ideally check individual responses
-        } else {
-          const data = await response.json(); // Only exists for single response above
-          if (!response.ok || !data.success) {
-            console.error('Error actualizando estado del pedido:', data.error);
-            toast({ title: 'Error al confirmar pago', description: data.error || 'Intenta nuevamente.', variant: 'destructive', duration: 5000 });
-            return;
-          }
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || 'Error al confirmar pago');
         }
+      }
 
-        // Refrescar pedidos y cerrar modal
-        await fetchOrders();
-        toast({ title: 'Pago confirmado', description: 'Tu pedido ha sido marcado como pagado y registrado en el historial.', duration: 4000 });
-        setIsPaymentModalOpen(false);
-        setSelectedOrderForPayment(null);
-        setSelectedPaymentMethod(null);
-        setPaymentStep(1);
-      } // End of else (single payment)
-    } // End of try block !! MISSING BRACE ADDED HERE
-    catch (e: any) {
+      // Success steps (Unified)
+      await fetchOrders();
+      toast({ title: 'Pago confirmado', description: 'El pago ha sido registrado exitosamente.', duration: 4000 });
+      setIsPaymentModalOpen(false);
+      setSelectedOrderForPayment(null);
+      setSelectedGroupForPayment(null);
+      setSelectedPaymentMethod(null);
+      setPaymentStep(1);
+
+    } catch (e: any) {
       console.error('Excepción confirmando pago:', e);
-      toast({ title: 'Error inesperado', description: e?.message || 'Ocurrió un problema al confirmar el pago.', variant: 'destructive', duration: 5000 });
+      toast({ title: 'Error', description: e?.message || 'Ocurrió un problema al confirmar el pago.', variant: 'destructive', duration: 5000 });
     } finally {
       setIsConfirmingPayment(false);
     }
