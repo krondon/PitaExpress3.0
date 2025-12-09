@@ -2974,7 +2974,10 @@ export default function PedidosChina() {
                   <label className={`block text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('chinese.ordersPage.modals.quote.totalToPay')}</label>
                   <div className={`px-4 py-3 border rounded-lg ${mounted && theme === 'dark' ? 'bg-gradient-to-r from-green-900/20 to-emerald-900/20 border-green-700' : 'bg-gradient-to-r from-green-50 to-emerald-50 border-slate-200'}`}>
                     {(() => {
-                      const totalCNY = ((modalCotizar.precioUnitario || 0) * (modalCotizar.pedido?.cantidad || 0)) + (modalCotizar.precioEnvio || 0);
+                      const qty = Number(modalCotizar.pedido?.cantidad || 0);
+                      const unitPrice = Number(modalCotizar.precioUnitario || 0);
+                      const shipping = Number(modalCotizar.precioEnvio || 0);
+                      const totalCNY = (unitPrice * qty) + shipping;
                       const totalUSD = cnyRate && cnyRate > 0 ? totalCNY / cnyRate : 0;
                       return (
                         <div className="space-y-1">
