@@ -62,6 +62,7 @@ interface Pedido {
   id: number;
   clientId?: string;
   cliente: string;
+  clientProfileName?: string; // Nombre del perfil del usuario
   producto: string;
   cantidad: number;
   estado: 'pendiente' | 'cotizado' | 'procesando' | 'enviado' | 'cancelado';
@@ -482,6 +483,7 @@ export default function PedidosChina() {
   const [modalEtiqueta, setModalEtiqueta] = useState<{ open: boolean; pedidoId?: number; box?: BoxItem }>({ open: false });
   const [isModalEtiquetaClosing, setIsModalEtiquetaClosing] = useState(false);
   const [generatingLabel, setGeneratingLabel] = useState(false);
+  const [labelDownloaded, setLabelDownloaded] = useState(false); // Rastrear si la etiqueta fue descargada
 
   // Modal Empaquetar Caja (asignar contenedor)
   const modalEmpaquetarCajaRef = useRef<HTMLDivElement>(null);
@@ -814,6 +816,7 @@ export default function PedidosChina() {
     setTimeout(() => {
       setModalEtiqueta({ open: false });
       setIsModalEtiquetaClosing(false);
+      setLabelDownloaded(false); // Resetear el estado cuando se cierra el modal
     }, 300);
   };
 
@@ -1080,23 +1083,67 @@ export default function PedidosChina() {
         toast({ title: t('chinese.ordersPage.toasts.loadOrdersErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgain') });
         return;
       }
-      const mapped: Pedido[] = (data || []).map((order: any) => ({
-        id: order.id,
-        cliente: order.clientName || order.client || '—',
-        producto: order.productName || order.product || '—',
-        cantidad: Number(order.quantity || 0),
-        // Si viene null/undefined asumimos 2, y ocultamos state 1
-        estado: mapStateToEstado(Number(order.state || 2)),
-        cotizado: Number(order.state) === 3 || (!!order.totalQuote && Number(order.totalQuote) > 0),
-        precio: order.totalQuote ? Number(order.totalQuote) / Math.max(1, Number(order.quantity || 1)) : null,
-        fecha: order.created_at || order.creation_date || new Date().toISOString(),
-        especificaciones: order.specifications || '',
-        pdfRoutes: order.pdfRoutes || '',
-        deliveryType: order.deliveryType || '',
-        shippingType: order.shippingType || '',
-        totalQuote: order.totalQuote ?? null,
-        numericState: typeof order.state === 'number' ? order.state : Number(order.state || 0),
-      }));
+      
+      // Obtener client_ids únicos
+      const clientIds = Array.from(new Set((data || []).map((o: any) => o.client_id).filter(Boolean)));
+      
+      // Obtener información de clientes y usuarios
+      const clientProfileMap = new Map<string, string>();
+      
+      if (clientIds.length > 0) {
+        // Obtener clientes
+        const { data: clientsData } = await supabase
+          .from('clients')
+          .select('user_id, name')
+          .in('user_id', clientIds);
+        
+        if (clientsData) {
+          // Para cada cliente, intentar obtener el nombre del perfil desde la API
+          for (const client of clientsData) {
+            let profileName = client.name || '—';
+            
+            // Intentar obtener el nombre del perfil desde user_metadata usando la API
+            try {
+              const response = await fetch(`/api/admin-name?uid=${client.user_id}`);
+              if (response.ok) {
+                const result = await response.json();
+                if (result.success && result.name) {
+                  profileName = result.name;
+                }
+              }
+            } catch (e) {
+              // Si falla, usar el nombre de la tabla clients como fallback
+              console.log('No se pudo obtener nombre del perfil, usando nombre de clients:', e);
+            }
+            
+            clientProfileMap.set(client.user_id, profileName);
+          }
+        }
+      }
+      
+      const mapped: Pedido[] = (data || []).map((order: any) => {
+        const clientProfileName = order.client_id ? (clientProfileMap.get(order.client_id) || order.clientName || order.client || '—') : '—';
+        
+        return {
+          id: order.id,
+          clientId: order.client_id,
+          cliente: order.clientName || order.client || '—',
+          clientProfileName: clientProfileName,
+          producto: order.productName || order.product || '—',
+          cantidad: Number(order.quantity || 0),
+          // Si viene null/undefined asumimos 2, y ocultamos state 1
+          estado: mapStateToEstado(Number(order.state || 2)),
+          cotizado: Number(order.state) === 3 || (!!order.totalQuote && Number(order.totalQuote) > 0),
+          precio: order.totalQuote ? Number(order.totalQuote) / Math.max(1, Number(order.quantity || 1)) : null,
+          fecha: order.created_at || order.creation_date || new Date().toISOString(),
+          especificaciones: order.specifications || '',
+          pdfRoutes: order.pdfRoutes || '',
+          deliveryType: order.deliveryType || '',
+          shippingType: order.shippingType || '',
+          totalQuote: order.totalQuote ?? null,
+          numericState: typeof order.state === 'number' ? order.state : Number(order.state || 0),
+        };
+      });
       setOrdersByBox(mapped);
     } finally {
       setOrdersByBoxLoading(false);
@@ -1453,6 +1500,7 @@ export default function PedidosChina() {
       doc.text(doc.splitTextToSize(desc, labelW - 8), labelW / 2, 26.5, { align: 'center' });
       const blobUrl = doc.output('bloburl');
       window.open(blobUrl, '_blank', 'noopener,noreferrer');
+      setLabelDownloaded(true); // Marcar como descargada
       toast({ title: t('chinese.ordersPage.modals.labelWarning.toastTitleSuccess', { defaultValue: 'Etiqueta lista' }), description: t('chinese.ordersPage.modals.labelWarning.downloaded', { defaultValue: 'Etiqueta generada' }) });
     } catch (e) {
       console.error(e);
@@ -3368,7 +3416,7 @@ export default function PedidosChina() {
                           <div className={`flex flex-wrap items-center gap-x-4 gap-y-1 text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
                             <span className="flex items-center gap-1">
                               <User className="h-3 w-3" />
-                              {pedido.cliente}
+                              {pedido.clientProfileName || pedido.cliente}
                             </span>
                             <span className="flex items-center gap-1">
                               <Tag className="h-3 w-3" />
@@ -3493,48 +3541,126 @@ export default function PedidosChina() {
                 }`}
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className={`text-lg font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.modals.labelWarning.title', { defaultValue: 'Generar Etiqueta' })}</h3>
+                <h3 className={`text-lg font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.modals.labelWarning.title', { defaultValue: 'Antes de empaquetar' })}</h3>
                 <Button variant="ghost" size="sm" onClick={() => { closeModalEtiqueta(); setTimeout(() => { setModalEmpaquetar(prev => ({ ...prev, open: true })); }, 350); }} className={`h-8 w-8 p-0 ${mounted && theme === 'dark' ? 'hover:bg-slate-700' : ''}`}>
                   <span className={`text-2xl ${mounted && theme === 'dark' ? 'text-white' : ''}`}>×</span>
                 </Button>
               </div>
-              <p className={`mb-4 text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
-                {t('chinese.ordersPage.modals.labelWarning.description', { defaultValue: 'Asegúrate de poner la etiqueta al producto antes de empaquetar.' })}
-              </p>
+              
+              {/* Mensaje destacado y muy visible */}
+              <div className={`mb-6 p-5 rounded-xl border-2 ${mounted && theme === 'dark' 
+                ? 'bg-gradient-to-r from-red-900/40 to-orange-900/40 border-red-500/50 shadow-lg shadow-red-500/20' 
+                : 'bg-gradient-to-r from-red-50 to-orange-50 border-red-400 shadow-lg shadow-red-200'
+              } animate-pulse`}>
+                <div className="flex items-start gap-3">
+                  <div className={`flex-shrink-0 p-2 rounded-full ${mounted && theme === 'dark' ? 'bg-red-500/20' : 'bg-red-100'}`}>
+                    <AlertTriangle className={`h-6 w-6 ${mounted && theme === 'dark' ? 'text-red-400' : 'text-red-600'}`} />
+                  </div>
+                  <div className="flex-1">
+                    <p className={`text-base font-bold mb-2 ${mounted && theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>
+                      ⚠️ IMPORTANTE
+                    </p>
+                    <p className={`text-sm font-semibold leading-relaxed ${mounted && theme === 'dark' ? 'text-red-200' : 'text-red-700'}`}>
+                      {t('chinese.ordersPage.modals.labelWarning.description', { defaultValue: 'Asegúrate de poner la etiqueta al producto antes de empaquetar.' })}
+                    </p>
+                    {!labelDownloaded && (
+                      <p className={`text-xs mt-2 font-medium ${mounted && theme === 'dark' ? 'text-red-300/80' : 'text-red-600/80'}`}>
+                        Debes descargar la etiqueta antes de continuar
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              {/* Indicador de descarga exitosa */}
+              {labelDownloaded && (
+                <div className={`mb-4 p-3 rounded-lg border ${mounted && theme === 'dark' 
+                  ? 'bg-green-900/30 border-green-500/50' 
+                  : 'bg-green-50 border-green-300'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className={`h-5 w-5 ${mounted && theme === 'dark' ? 'text-green-400' : 'text-green-600'}`} />
+                    <p className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-green-300' : 'text-green-700'}`}>
+                      ✓ Etiqueta descargada correctamente
+                    </p>
+                  </div>
+                </div>
+              )}
               <div className="flex flex-wrap justify-end gap-3">
-                {/* Botón de generar (abrir en nueva pestaña) sin descarga directa */}
+                {/* Botón de descargar etiqueta - Destacado y prominente */}
                 <Button
                   variant="outline"
                   onClick={async () => {
                     if (!modalEtiqueta.pedidoId) return;
                     setGeneratingLabel(true);
-                    try { await handleGenerateOrderLabelPdf(modalEtiqueta.pedidoId); } finally { setGeneratingLabel(false); }
+                    try { 
+                      await handleGenerateOrderLabelPdf(modalEtiqueta.pedidoId);
+                    } finally { 
+                      setGeneratingLabel(false);
+                    }
                   }}
-                  disabled={generatingLabel}
+                  disabled={generatingLabel || labelDownloaded}
+                  className={`${labelDownloaded 
+                    ? (mounted && theme === 'dark' ? 'bg-green-900/30 border-green-500 text-green-300' : 'bg-green-50 border-green-300 text-green-700')
+                    : (mounted && theme === 'dark' ? 'border-blue-500 text-blue-300 hover:bg-blue-900/30' : 'border-blue-500 text-blue-600 hover:bg-blue-50')
+                  } font-semibold ${!labelDownloaded ? 'shadow-md' : ''}`}
                 >
-                  {generatingLabel ? t('chinese.ordersPage.modals.labelWarning.generating', { defaultValue: 'Generando...' }) : t('chinese.ordersPage.modals.labelWarning.download', { defaultValue: 'Ver etiqueta' })}
+                  {labelDownloaded ? (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      {t('chinese.ordersPage.modals.labelWarning.downloaded', { defaultValue: 'Etiqueta descargada' })}
+                    </>
+                  ) : generatingLabel ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      {t('chinese.ordersPage.modals.labelWarning.generating', { defaultValue: 'Generando...' })}
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="h-4 w-4 mr-2" />
+                      {t('chinese.ordersPage.modals.labelWarning.download', { defaultValue: 'Descargar etiqueta' })}
+                    </>
+                  )}
                 </Button>
+                
                 <Button
                   variant="outline"
                   onClick={() => { closeModalEtiqueta(); setTimeout(() => { setModalEmpaquetar(prev => ({ ...prev, open: true })); }, 350); }}
                   disabled={generatingLabel}
+                  className={mounted && theme === 'dark' ? 'border-slate-600 hover:bg-slate-700' : ''}
                 >
                   {t('chinese.ordersPage.modals.selectBoxForOrder.cancel', { defaultValue: 'Cancelar' })}
                 </Button>
+                
+                {/* Botón Aceptar - Deshabilitado hasta que se descargue la etiqueta */}
                 <Button
-                  className="bg-blue-600 hover:bg-blue-700"
-                  disabled={generatingLabel}
+                  className={`${labelDownloaded 
+                    ? 'bg-green-600 hover:bg-green-700' 
+                    : 'bg-slate-400 hover:bg-slate-500 cursor-not-allowed'
+                  } text-white font-semibold shadow-lg transition-all`}
+                  disabled={generatingLabel || !labelDownloaded}
                   onClick={async () => {
                     if (!modalEtiqueta.pedidoId || !modalEtiqueta.box) return;
                     setGeneratingLabel(true);
                     try {
-                      // Solo asignar sin abrir PDF
                       await handleSelectCajaForPedido(modalEtiqueta.pedidoId, modalEtiqueta.box);
                       closeModalEtiqueta();
-                    } finally { setGeneratingLabel(false); }
+                    } finally { 
+                      setGeneratingLabel(false);
+                    }
                   }}
                 >
-                  {generatingLabel ? t('chinese.ordersPage.modals.labelWarning.generating', { defaultValue: 'Generando...' }) : t('chinese.ordersPage.modals.labelWarning.accept', { defaultValue: 'Generar y asignar' })}
+                  {labelDownloaded ? (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      {t('chinese.ordersPage.modals.labelWarning.accept', { defaultValue: 'Aceptar' })}
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      Descarga la etiqueta primero
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
