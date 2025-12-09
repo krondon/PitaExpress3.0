@@ -84,6 +84,7 @@
   "devDependencies": {
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "baseline-browser-mapping": "^2.9.5",
     "globby": "^14.1.0",
     "recast": "^0.23.11",
     "vercel": "^46.1.0"

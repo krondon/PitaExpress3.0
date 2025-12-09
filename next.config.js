@@ -1,10 +1,14 @@
+const path = require('path');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Fix for "inferred your workspace root" warning
+  outputFileTracingRoot: path.join(__dirname, '../../'),
   // NOTA: Para exportación estática, descomentar la siguiente línea
   // y comentar los redirects y otras funciones dinámicas
   // output: 'export',
-  
-  
+
+
   // Optimizaciones de imágenes
   images: {
     formats: ['image/webp', 'image/avif'],
@@ -21,12 +25,12 @@ const nextConfig = {
       },
     ],
   },
-  
+
   // Optimizaciones de compilación
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
-  
+
   // Optimizaciones de webpack
   webpack: (config, { dev, isServer }) => {
     // Optimizaciones para producción
@@ -48,16 +52,16 @@ const nextConfig = {
         },
       };
     }
-    
+
     // Optimizar imports de iconos
     config.module.rules.push({
       test: /\.svg$/,
       use: ['@svgr/webpack'],
     });
-    
+
     return config;
   },
-  
+
   // Optimizaciones de headers
   async headers() {
     return [
@@ -89,7 +93,7 @@ const nextConfig = {
       },
     ];
   },
-  
+
   // Optimizaciones de redirección
   async redirects() {
     return [
@@ -107,7 +111,7 @@ const nextConfig = {
       },
     ];
   },
-  
+
   // Configuración de PWA (opcional)
   // pwa: {
   //   dest: 'public',
