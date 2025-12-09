@@ -17,8 +17,8 @@ async function fetchExchangeRate(): Promise<number> {
         'Accept': 'application/json',
         'User-Agent': 'MornaProject/1.0'
       },
-      // Timeout de 10 segundos
-      signal: AbortSignal.timeout(10000)
+      // Timeout reducido a 3s para evitar bloqueos largos
+      signal: AbortSignal.timeout(3000)
     });
 
     if (!response.ok) {
@@ -50,8 +50,8 @@ async function fetchExchangeRate(): Promise<number> {
 
     return rate;
 
-  } catch (error) {
-    console.error('Error fetching BCV exchange rate:', error);
+  } catch (error: any) {
+    console.warn('Warning: Primary BCV API failed (using fallback):', error.message);
 
     // Fallback: Intentar con pyDolarVenezuela para obtener BCV
     try {
@@ -61,7 +61,7 @@ async function fetchExchangeRate(): Promise<number> {
           'Accept': 'application/json',
           'User-Agent': 'MornaProject/1.0'
         },
-        signal: AbortSignal.timeout(8000)
+        signal: AbortSignal.timeout(3000)
       });
 
       if (fallbackResponse.ok) {
@@ -91,7 +91,7 @@ async function fetchExchangeRate(): Promise<number> {
           'Accept': 'application/json',
           'User-Agent': 'MornaProject/1.0'
         },
-        signal: AbortSignal.timeout(6000)
+        signal: AbortSignal.timeout(3000)
       });
 
       if (altResponse.ok) {

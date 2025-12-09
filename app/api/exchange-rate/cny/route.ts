@@ -51,7 +51,7 @@ async function fetchUSDToCNYRate(): Promise<number> {
           'Accept': 'application/json',
           'User-Agent': 'MornaProject/1.0'
         },
-        signal: AbortSignal.timeout(8000)
+        signal: AbortSignal.timeout(3000)
       });
 
       if (!response.ok) {
@@ -75,7 +75,7 @@ async function fetchUSDToCNYRate(): Promise<number> {
       return parsedRate;
 
     } catch (error) {
-      console.error(`[CNY] ${api.name} failed:`, error);
+      console.warn(`[CNY] ${api.name} failed, trying next...`);
       lastError = error;
       continue; // Intentar siguiente API
     }

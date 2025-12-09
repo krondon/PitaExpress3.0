@@ -280,6 +280,7 @@ export default function MisPedidosPage() {
   const [isNewOrderModalOpen, setIsNewOrderModalOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  const [showErrorAnimation, setShowErrorAnimation] = useState(false); // Nuevo estado para error
   // Estado inicial reutilizable para el wizard de nuevo pedido
   const INITIAL_NEW_ORDER_DATA: NewOrderData = {
     productName: '',
@@ -1209,10 +1210,10 @@ export default function MisPedidosPage() {
       if (!added) {
         const isPayable = order.status === 'quoted' || order.stateNum === -1;
         // Calcular monto en USD
-        const amount = isPayable 
+        const amount = isPayable
           ? (order.totalQuote !== null && order.totalQuote !== undefined
-              ? order.totalQuote
-              : ((order.unitQuote ?? 0) + (order.shippingPrice ?? 0)) / (cnyRate || 7.25))
+            ? order.totalQuote
+            : ((order.unitQuote ?? 0) + (order.shippingPrice ?? 0)) / (cnyRate || 7.25))
           : 0;
 
         groups.push({
@@ -1693,11 +1694,7 @@ export default function MisPedidosPage() {
     setOrderQueue(prev => [...prev, { ...newOrderData }]);
 
     // Animación y Reset
-    toast({
-      title: "¡Añadido a la caja! 📦",
-      description: `Tienes ${orderQueue.length + 1} pedidos listos para enviar.`,
-      className: "bg-blue-600 text-white border-none"
-    });
+    // Animación y Reset
 
     // Resetear formulario manteniendo cliente
     setNewOrderData({
@@ -1754,40 +1751,44 @@ export default function MisPedidosPage() {
     // Estrategia Leader-Follower: El primer pedido define el asignado para los demás
     let leaderAssignee: string | undefined;
     // Generar un ID único para este lote (UUID v4-like simple)
+
+    // Generar un ID de lote único para este envío
     const batchId = crypto.randomUUID();
+    const results = [];
 
-    for (let i = 0; i < orderQueue.length; i++) {
-      const order = orderQueue[i];
-      // Si es el primero (o si falló el anterior y no tenemos leader), no pasamos override
-      // Si ya tenemos leaderAssignee, lo pasamos
-      // Pasamos el batchId a todos
+    for (const order of orderQueue) {
+      // Pasar leaderAssignee (undefined para el primero, luego el asignado) y batchId
       const result = await createOrderInternal(order, leaderAssignee, batchId);
-
+      results.push(result);
       if (result.success) {
         successCount++;
-        // Si es el primer éxito y no teníamos líder, lo establecemos
+        // Estrategia Leader-Follower: Si es el primero y se asignó a alguien, usarlo para los siguientes
         if (!leaderAssignee && result.asignedEChina) {
           leaderAssignee = result.asignedEChina;
-
         }
       }
     }
 
     setProcessingQueue(false);
-    setIsQueueDrawerOpen(false);
-    setOrderQueue([]); // Limpiar cola (idealmente solo los exitosos, pero por simplicidad limpiamos todo y avisamos)
+    setIsQueueDrawerOpen(false); // Cerrar el drawer de la cola
+    setOrderQueue([]); // Limpiar la cola después de procesar
 
-    if (successCount > 0) {
-      // Mostrar animación de éxito global
-      setShowSuccessAnimation(true); // Reutilizamos la animación del modal o lanzamos confetti
+    if (successCount === orderQueue.length) {
+      // Éxito total
       fetchOrders();
-      toast({
-        title: "¡Envíos completados! 🎉",
-        description: `Se han creado ${successCount} pedidos exitosamente.`,
-        className: "bg-green-600 text-white border-none"
-      });
+      // Mostrar animación de éxito
+      setShowSuccessAnimation(true);
+
+      // Cerrar automáticamente después de 2.5 segundos
+      setTimeout(() => {
+        setShowSuccessAnimation(false);
+        setIsNewOrderModalOpen(false);
+        resetNewOrderWizard();
+      }, 2500);
     } else {
-      toast({ title: "Error", description: "Hubo problemas procesando los pedidos.", variant: "destructive" });
+      // Hubo algún error (parcial o total)
+      setShowErrorAnimation(true);
+      // No cerramos automáticamente para que el usuario vea el error
     }
   };
 
@@ -1968,7 +1969,12 @@ export default function MisPedidosPage() {
 
           {/* Botón Nuevo Pedido */}
           <div className="flex justify-end">
-            <Dialog open={isNewOrderModalOpen} onOpenChange={(open) => { setIsNewOrderModalOpen(open); if (open) resetNewOrderWizard(); }}>
+            <Dialog open={isNewOrderModalOpen} onOpenChange={(open) => {
+              // Si se está procesando (processingQueue es true) y se intenta cerrar (open es false), no permitirlo
+              if (processingQueue && !open) return;
+              setIsNewOrderModalOpen(open);
+              if (open) resetNewOrderWizard();
+            }}>
               <DialogTrigger asChild>
                 <Button className="bg-gradient-to-r from-blue-500 to-orange-500 hover:from-blue-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
                   <Plus className="w-4 h-4 mr-2" />
@@ -1988,521 +1994,549 @@ export default function MisPedidosPage() {
                   </DialogDescription>
                 </DialogHeader>
 
-                {/* Enhanced Progress Bar */}
-                <div className={`space-y-4 mb-8 transition-all duration-300 ${isTransitioning ? 'opacity-75' : 'opacity-100'
-                  }`}>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('client.recentOrders.newOrder.step', { current: currentStep, total: 3 })}</span>
-                    <span className={`font-bold ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>{t('client.recentOrders.newOrder.percentComplete', { percent: Math.round((currentStep / 3) * 100) })}</span>
+                {showSuccessAnimation ? (
+                  /* Success View (Integrated) - Fixed height to prevent modal resize */
+                  <div className="flex flex-col items-center justify-center py-12 space-y-6 animate-fade-in-up min-h-[550px] w-full">
+                    <div className="bg-green-500 rounded-full w-24 h-24 flex items-center justify-center shadow-lg mb-4">
+                      <Check className="w-12 h-12 text-white" />
+                    </div>
+                    <div className="text-center space-y-2">
+                      <h3 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                        {t('client.recentOrders.newOrder.success.title')}
+                      </h3>
+                      <p className="text-slate-600 text-lg max-w-sm mx-auto">
+                        {t('client.recentOrders.newOrder.success.message')}
+                      </p>
+                    </div>
                   </div>
-                  <div className="relative">
-                    <div className={`w-full rounded-full h-3 overflow-hidden ${mounted && theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`}>
-                      <div
-                        className="h-full bg-gradient-to-r from-blue-500 to-orange-500 rounded-full transition-all duration-500 ease-out relative"
-                        style={{ width: `${(currentStep / 3) * 100}%` }}
+                ) : showErrorAnimation ? (
+                  /* Error View (Integrated) - Fixed height */
+                  <div className="flex flex-col items-center justify-center py-12 space-y-6 animate-fade-in-up min-h-[550px] w-full">
+                    <div className="bg-red-500 rounded-full w-24 h-24 flex items-center justify-center shadow-lg mb-4">
+                      <X className="w-12 h-12 text-white" />
+                    </div>
+                    <div className="text-center space-y-2">
+                      <h3 className="text-3xl font-bold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
+                        ¡Hubo un error!
+                      </h3>
+                      <p className="text-slate-600 text-lg max-w-sm mx-auto">
+                        Hubo un problema al procesar tu solicitud. Por favor intenta nuevamente.
+                      </p>
+                      <Button
+                        onClick={() => {
+                          setShowErrorAnimation(false);
+                          // No cerramos el modal para permitir reintentar sin perder los datos de la caja si es posible recuperarlos,
+                          // pero como limpiamos la cola en handleProcess, aquí solo cerramos la vista de error.
+                          // Si quisiéramos mantener la cola en error, deberíamos ajustar handleProcess.
+                          // Asumimos comportamiento de "Aceptar error".
+                        }}
+                        className="bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white shadow-lg mt-6"
                       >
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
-                      </div>
-                    </div>
-                    {/* Step Indicators */}
-                    <div className="flex justify-between mt-2">
-                      {[1, 2, 3, 4].map((step) => (
-                        <div key={step} className="flex flex-col items-center">
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${step <= currentStep
-                            ? 'bg-gradient-to-r from-blue-500 to-orange-500 text-white shadow-lg scale-110'
-                            : (mounted && theme === 'dark' ? 'bg-slate-700 text-slate-400' : 'bg-slate-300 text-slate-600')
-                            }`}>
-                            {step < currentStep ? '✓' : step}
-                          </div>
-                          <span className={`text-xs mt-1 transition-colors duration-300 ${step <= currentStep ? (mounted && theme === 'dark' ? 'text-blue-400 font-medium' : 'text-blue-600 font-medium') : (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500')
-                            }`}>
-                            {step === 1 ? t('client.recentOrders.newOrder.productTab') : step === 2 ? t('client.recentOrders.newOrder.shippingTab') : step === 3 ? t('client.recentOrders.newOrder.summaryTab') : 'Caja'}
-                          </span>
-                        </div>
-                      ))}
+                        Cerrar
+                      </Button>
                     </div>
                   </div>
-                </div>
-
-                {/* Step Content with Smooth Transitions */}
-                <div className={`space-y-6 transition-all duration-300 ${isTransitioning
-                  ? stepDirection === 'next'
-                    ? 'opacity-0 transform translate-x-4'
-                    : 'opacity-0 transform -translate-x-4'
-                  : 'opacity-100 transform translate-x-0'
-                  }`}>
-                  {/* Enhanced Success Animation */}
-                  {showSuccessAnimation && (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in-up">
-                      <div className="bg-gradient-to-br from-white to-slate-50 rounded-2xl p-12 text-center space-y-6 shadow-2xl border border-slate-200/50 max-w-md mx-4 transform animate-fade-in-up">
-                        <div className="flex flex-col items-center space-y-4">
-                          <div className="bg-green-500 rounded-full w-20 h-20 flex items-center justify-center shadow-lg">
-                            <Check className="w-12 h-12 text-white" />
-                          </div>
-                          <h3 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-                            {t('client.recentOrders.newOrder.success.title')}
-                          </h3>
-                          <p className="text-slate-600 text-lg">{t('client.recentOrders.newOrder.success.message')}</p>
-                          <Button
-                            onClick={() => setShowSuccessAnimation(false)}
-                            className="bg-gradient-to-r from-blue-500 to-orange-500 hover:from-blue-600 hover:to-orange-600 text-white transition-all duration-300 transform hover:scale-105 shadow-lg mt-4"
-                          >
-                            {t('client.recentOrders.newOrder.success.button')}
-                          </Button>
-                        </div>
+                ) : (
+                  /* Standard Wizard Content */
+                  <>
+                    {/* Enhanced Progress Bar */}
+                    <div className={`space-y-4 mb-8 transition-all duration-300 ${isTransitioning ? 'opacity-75' : 'opacity-100'}`}>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('client.recentOrders.newOrder.step', { current: currentStep, total: 3 })}</span>
+                        <span className={`font-bold ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>{t('client.recentOrders.newOrder.percentComplete', { percent: Math.round((currentStep / 3) * 100) })}</span>
                       </div>
-                    </div>
-                  )}
-
-                  {/* Enhanced Step Header */}
-                  <div className={`text-center space-y-4 mb-8 transition-all duration-300 ${isTransitioning ? 'opacity-50 scale-95' : 'opacity-100 scale-100'
-                    }`}>
-                    <div className="relative">
-                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-orange-500 rounded-lg blur-lg opacity-10 animate-pulse"></div>
-                      <div className={`relative backdrop-blur-sm rounded-lg p-6 border ${mounted && theme === 'dark' ? 'bg-slate-700/80 border-slate-600' : 'bg-white/80 border-slate-200/50'}`}>
-                        <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-orange-500 bg-clip-text text-transparent mb-2">
-                          {getStepTitle(currentStep)}
-                        </h3>
-                        <p className={mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}>{getStepDescription(currentStep)}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Step 1: Información del Producto */}
-                  {currentStep === 1 && (
-                    <div className="space-y-8">
-                      <div className="space-y-3">
-                        <Label htmlFor="productName" className={`text-sm font-semibold flex items-center ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                          <Package className={`w-4 h-4 mr-2 ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
-                          {t('client.recentOrders.newOrder.productName')}<span className="text-red-500 ml-1">*</span>
-                        </Label>
-                        <div className="relative group">
-                          <Input
-                            id="productName"
-                            value={newOrderData.productName}
-                            onChange={(e) => setNewOrderData({ ...newOrderData, productName: e.target.value.slice(0, NAME_MAX) })}
-                            placeholder={t('client.recentOrders.newOrder.productNamePlaceholder')}
-                            maxLength={NAME_MAX}
-                            className={`transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm group-hover:border-blue-300 ${mounted && theme === 'dark' ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white/80 border-slate-200'} ${attemptedStep1 && !newOrderData.productName.trim() ? 'border-red-500 ring-1 ring-red-400 focus:border-red-500 focus:ring-red-500' : ''}`}
-                          />
-                          <p className={`text-xs mt-1 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{newOrderData.productName.length}/{NAME_MAX}</p>
-                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-orange-500/5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        <Label htmlFor="description" className={`text-sm font-semibold flex items-center ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                          <FileText className={`w-4 h-4 mr-2 ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
-                          {t('client.recentOrders.newOrder.productDescription')}<span className="text-red-500 ml-1">*</span>
-                        </Label>
-                        <div className="relative group">
-                          <Textarea
-                            id="description"
-                            value={newOrderData.description}
-                            onChange={(e) => setNewOrderData({ ...newOrderData, description: e.target.value.slice(0, DESCRIPTION_MAX) })}
-                            placeholder={t('client.recentOrders.newOrder.productDescriptionPlaceholder')}
-                            rows={4}
-                            maxLength={DESCRIPTION_MAX}
-                            className={`transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm group-hover:border-blue-300 ${mounted && theme === 'dark' ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white/80 border-slate-200'} ${attemptedStep1 && !newOrderData.description.trim() ? 'border-red-500 ring-1 ring-red-400 focus:border-red-500 focus:ring-red-500' : ''}`}
-                          />
-                          <p className={`text-xs mt-1 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{newOrderData.description.length}/{DESCRIPTION_MAX}</p>
-                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-orange-500/5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        <Label htmlFor="quantity" className={`text-sm font-semibold flex items-center ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                          <Hash className={`w-4 h-4 mr-2 ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
-                          {t('client.recentOrders.newOrder.quantity')}<span className="text-red-500 ml-1">*</span>
-                        </Label>
-                        <div className="relative group">
-                          <Input
-                            id="quantity"
-                            type="number"
-                            min={QTY_MIN}
-                            max={QTY_MAX}
-                            value={newOrderData.quantity === 0 ? '' : newOrderData.quantity}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              if (val === '') {
-                                setNewOrderData({ ...newOrderData, quantity: 0 });
-                              } else if (/^[0-9]+$/.test(val)) {
-                                const next = Math.min(QTY_MAX, Math.max(QTY_MIN, parseInt(val)));
-                                setNewOrderData({ ...newOrderData, quantity: next });
-                              }
-                            }}
-                            className={`transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm group-hover:border-blue-300 ${mounted && theme === 'dark' ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white/80 border-slate-200'} ${attemptedStep1 && (!isValidQuantity(newOrderData.quantity) || newOrderData.quantity <= 0) ? 'border-red-500 ring-1 ring-red-400 focus:border-red-500 focus:ring-red-500' : ''}`}
-                          />
-                          {(!isValidQuantity(newOrderData.quantity) || newOrderData.quantity <= 0) && (
-                            <p className="text-xs text-red-500 mt-1">{t('client.recentOrders.newOrder.invalidQuantity')} ({QTY_MIN}–{QTY_MAX})</p>
-                          )}
-                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-orange-500/5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        <Label htmlFor="specifications" className={`text-sm font-semibold flex items-center ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                          <Settings className={`w-4 h-4 mr-2 ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
-                          {t('client.recentOrders.newOrder.specifications')}
-                        </Label>
-                        <div className="relative group">
-                          <Textarea
-                            id="specifications"
-                            value={newOrderData.specifications}
-                            onChange={(e) => setNewOrderData({ ...newOrderData, specifications: e.target.value })}
-                            placeholder={t('client.recentOrders.newOrder.specificationsPlaceholder')}
-                            rows={3}
-                            className={`transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm group-hover:border-blue-300 ${mounted && theme === 'dark' ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white/80 border-slate-200'}`}
-                          />
-                          {/* Validación eliminada porque ya no hay tipo de solicitud */}
-                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-orange-500/5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-                        </div>
-                      </div>
-
-                      {/* URL del producto (siempre visible) */}
-                      <div className="space-y-2">
-                        <Label htmlFor="productUrl" className="flex items-center gap-1">{t('client.recentOrders.newOrder.productUrl')}<span className="text-red-500">*</span></Label>
-                        <Input
-                          id="productUrl"
-                          type="url"
-                          value={newOrderData.productUrl || ''}
-                          onChange={(e) => setNewOrderData({ ...newOrderData, productUrl: e.target.value })}
-                          placeholder={t('client.recentOrders.newOrder.productUrlPlaceholder')}
-                          className={`transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm ${mounted && theme === 'dark' ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white/80 border-slate-200'} ${attemptedStep1 && (!newOrderData.productUrl || !isValidUrl(newOrderData.productUrl)) ? 'border-red-500 ring-1 ring-red-400 focus:border-red-500 focus:ring-red-500' : ''}`}
-                        />
-                        {newOrderData.productUrl && !isValidUrl(newOrderData.productUrl) && (
-                          <p className="text-xs text-red-500 mt-1">{t('client.recentOrders.newOrder.invalidUrl')}</p>
-                        )}
-                        {attemptedStep1 && !newOrderData.productUrl && (
-                          <p className="text-xs text-red-500 mt-1">{t('client.recentOrders.newOrder.requiredField') || 'Campo requerido'}</p>
-                        )}
-                      </div>
-
-                      {/* Foto del producto (siempre visible) */}
-                      <div className="space-y-3">
-                        <Label className={`text-sm font-semibold flex items-center ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                          <ImageIcon className={`w-4 h-4 mr-2 ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
-                          {t('client.recentOrders.newOrder.productImage')}<span className="text-red-500 ml-1">*</span>
-                        </Label>
-                        {newOrderData.productImage ? (
-                          <div className="relative">
-                            <div className={`border-2 rounded-xl overflow-hidden ${mounted && theme === 'dark' ? 'border-slate-600 bg-slate-700' : 'border-slate-200 bg-white'}`}>
-                              <img
-                                src={URL.createObjectURL(newOrderData.productImage)}
-                                alt={t('client.recentOrders.newOrder.productImage')}
-                                className="w-full h-48 object-cover"
-                              />
-                              <div className="p-3 flex gap-2">
-                                <Button variant="outline" size="sm" onClick={() => document.getElementById('imageUpload')?.click()} className={mounted && theme === 'dark' ? 'dark:border-slate-600 dark:hover:bg-slate-700' : ''}>
-                                  <Upload className="w-4 h-4 mr-1" />{t('client.recentOrders.newOrder.change')}
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setNewOrderData({ ...newOrderData, productImage: undefined })}
-                                  className={`text-red-600 ${mounted && theme === 'dark' ? 'dark:border-slate-600 dark:hover:bg-slate-700' : ''}`}
-                                >
-                                  <X className="w-4 h-4 mr-1" />{t('client.recentOrders.newOrder.delete')}
-                                </Button>
-                              </div>
-                            </div>
-                            <input id="imageUpload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                          </div>
-                        ) : (
+                      <div className="relative">
+                        <div className={`w-full rounded-full h-3 overflow-hidden ${mounted && theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`}>
                           <div
-                            className={`border-2 border-dashed rounded-xl p-8 text-center ${mounted && theme === 'dark' ? (isDragOver ? 'border-blue-500 bg-blue-900/20' : 'border-slate-600 bg-slate-700') : (isDragOver ? 'border-blue-500 bg-blue-50' : 'border-slate-300 bg-white')}`}
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={handleDrop}
+                            className="h-full bg-gradient-to-r from-blue-500 to-orange-500 rounded-full transition-all duration-500 ease-out relative"
+                            style={{ width: `${(currentStep / 3) * 100}%` }}
                           >
-                            <p className={`text-sm mb-4 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>{t('client.recentOrders.newOrder.dragDrop')}</p>
-                            <Button variant="outline" onClick={() => document.getElementById('imageUpload')?.click()} className={mounted && theme === 'dark' ? 'dark:border-slate-600 dark:hover:bg-slate-700' : ''}>
-                              <Upload className="w-4 h-4 mr-2" />{t('client.recentOrders.newOrder.selectImage')}
-                            </Button>
-                            <input id="imageUpload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Step 2: Detalles del Envío */}
-                  {currentStep === 2 && (
-                    <div className="space-y-6">
-                      <div className="space-y-4">
-                        <Label className={mounted && theme === 'dark' ? 'text-slate-300' : ''}>{t('client.recentOrders.newOrder.deliveryType')}</Label>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div
-                            className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${mounted && theme === 'dark' ? (
-                              newOrderData.deliveryType === 'air'
-                                ? 'border-blue-500 bg-blue-900/20'
-                                : 'border-slate-600 hover:border-slate-500 bg-slate-700'
-                            ) : (
-                              newOrderData.deliveryType === 'air'
-                                ? 'border-blue-500 bg-blue-50'
-                                : 'border-slate-200 hover:border-slate-300'
-                            )
-                              }`}
-                            onClick={() => setNewOrderData({ ...newOrderData, deliveryType: 'air' })}
-                            onMouseEnter={() => setHoveredDeliveryOption('air')}
-                            onMouseLeave={() => setHoveredDeliveryOption(null)}
-                          >
-                            <div className="text-center space-y-2">
-                              <div className="w-8 h-8 mx-auto">
-                                <Player
-                                  key={hoveredDeliveryOption === 'air' ? 'airplane-active' : 'airplane-inactive'}
-                                  src={airPlaneLottie}
-                                  className="w-full h-full"
-                                  loop={false}
-                                  autoplay={hoveredDeliveryOption === 'air'}
-                                />
-                              </div>
-                              <p className={`font-medium ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{t('client.recentOrders.newOrder.air')}</p>
-                              <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>{t('client.recentOrders.newOrder.airDesc')}</p>
-                            </div>
-                          </div>
-                          <div
-                            className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${mounted && theme === 'dark' ? (
-                              newOrderData.deliveryType === 'maritime'
-                                ? 'border-blue-500 bg-blue-900/20'
-                                : 'border-slate-600 hover:border-slate-500 bg-slate-700'
-                            ) : (
-                              newOrderData.deliveryType === 'maritime'
-                                ? 'border-blue-500 bg-blue-50'
-                                : 'border-slate-200 hover:border-slate-300'
-                            )
-                              }`}
-                            onClick={() => setNewOrderData({ ...newOrderData, deliveryType: 'maritime' })}
-                            onMouseEnter={() => setHoveredDeliveryOption('maritime')}
-                            onMouseLeave={() => setHoveredDeliveryOption(null)}
-                          >
-                            <div className="text-center space-y-2">
-                              <div className="w-8 h-8 mx-auto">
-                                <Player
-                                  key={hoveredDeliveryOption === 'maritime' ? 'ship-active' : 'ship-inactive'}
-                                  src={cargoShipLottie}
-                                  className="w-full h-full"
-                                  loop={false}
-                                  autoplay={hoveredDeliveryOption === 'maritime'}
-                                />
-                              </div>
-                              <p className={`font-medium ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{t('client.recentOrders.newOrder.maritime')}</p>
-                              <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>{t('client.recentOrders.newOrder.maritimeDesc')}</p>
-                            </div>
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
                           </div>
                         </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="deliveryVenezuela" className={mounted && theme === 'dark' ? 'text-slate-300' : ''}>{t('client.recentOrders.newOrder.deliveryVenezuela')}</Label>
-                        <Select value={newOrderData.deliveryVenezuela} onValueChange={(value) => setNewOrderData({ ...newOrderData, deliveryVenezuela: value })}>
-                          <SelectTrigger className={mounted && theme === 'dark' ? 'bg-slate-700 border-slate-600 text-white' : ''}>
-                            <SelectValue placeholder={t('client.recentOrders.newOrder.deliveryVenezuelaPlaceholder')} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pickup">{t('client.recentOrders.newOrder.pickup')}</SelectItem>
-                            <SelectItem value="delivery">{t('client.recentOrders.newOrder.delivery')}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Step 3: Resumen y Confirmación */}
-                  {currentStep === 3 && (
-                    <div className="space-y-6">
-                      <div className={`rounded-lg p-6 space-y-4 ${mounted && theme === 'dark' ? 'bg-slate-700' : 'bg-slate-50'}`}>
-                        <h4 className={`font-semibold text-lg ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{t('client.recentOrders.newOrder.summaryTitle')}</h4>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <p className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.newOrder.productName')}</p>
-                            <p className={`font-medium ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{newOrderData.productName}</p>
-                          </div>
-                          <div className="space-y-2">
-                            <p className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.newOrder.quantity')}</p>
-                            <p className={`font-medium ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{newOrderData.quantity}</p>
-                          </div>
-                          <div className="space-y-2">
-                            <p className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.newOrder.deliveryType')}</p>
-                            <p className={`font-medium ${mounted && theme === 'dark' ? 'text-white' : ''}`}>
-                              {/* doorToDoor deprecated: removed */}
-                              {newOrderData.deliveryType === 'air' && t('client.recentOrders.newOrder.air')}
-                              {newOrderData.deliveryType === 'maritime' && t('client.recentOrders.newOrder.maritime')}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <p className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.newOrder.productDescription')}</p>
-                          <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : ''}`}>{newOrderData.description}</p>
-                        </div>
-
-                        {newOrderData.specifications && (
-                          <div className="space-y-2">
-                            <p className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.newOrder.specifications')}</p>
-                            <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : ''}`}>{newOrderData.specifications}</p>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className={`border rounded-lg p-4 ${mounted && theme === 'dark' ? 'bg-blue-900/20 border-blue-700' : 'bg-blue-50 border-blue-200'}`}>
-                        <div className="flex items-start space-x-3">
-                          <CheckCircle className={`w-5 h-5 mt-0.5 ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
-                          <div>
-                            <p className={`font-medium ${mounted && theme === 'dark' ? 'text-blue-300' : 'text-blue-900'}`}>{t('client.recentOrders.newOrder.almostReady')}</p>
-                            <p className={`text-sm ${mounted && theme === 'dark' ? 'text-blue-200' : 'text-blue-700'}`}>
-                              {t('client.recentOrders.newOrder.reviewMessage')}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-
-                {/* Step 4: Caja / Resumen de Solicitud */}
-                {currentStep === 4 && (
-                  <div className="space-y-6">
-                    <div className={`rounded-lg p-6 ${mounted && theme === 'dark' ? 'bg-slate-700' : 'bg-slate-50'}`}>
-                      <div className="flex items-center justify-between mb-4">
-                        <h4 className={`font-semibold text-lg ${mounted && theme === 'dark' ? 'text-white' : ''}`}>Artículos en tu Caja ({orderQueue.length})</h4>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleAddNewItem}
-                          className="text-blue-500 border-blue-500 hover:bg-blue-50"
-                        >
-                          <Plus className="w-4 h-4 mr-1" />
-                          Agregar Otro Producto
-                        </Button>
-                      </div>
-
-                      {orderQueue.length === 0 ? (
-                        <div className="text-center py-8 text-slate-500">
-                          <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                          Tu caja está vacía. Añade productos para enviar una solicitud.
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          {orderQueue.map((item, index) => (
-                            <div key={index} className={`flex items-center gap-4 p-3 rounded-lg border ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-600' : 'bg-white border-slate-200'}`}>
-                              <div className="w-16 h-16 rounded-md overflow-hidden bg-slate-100 flex-shrink-0">
-                                {item.productImage ? (
-                                  <img src={URL.createObjectURL(item.productImage)} alt="" className="w-full h-full object-cover" />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-slate-400">
-                                    <ImageIcon className="w-6 h-6" />
-                                  </div>
-                                )}
+                        {/* Step Indicators */}
+                        <div className="flex justify-between mt-2">
+                          {[1, 2, 3, 4].map((step) => (
+                            <div key={step} className="flex flex-col items-center">
+                              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${step <= currentStep
+                                ? 'bg-gradient-to-r from-blue-500 to-orange-500 text-white shadow-lg scale-110'
+                                : (mounted && theme === 'dark' ? 'bg-slate-700 text-slate-400' : 'bg-slate-300 text-slate-600')
+                                }`}>
+                                {step < currentStep ? '✓' : step}
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <p className={`font-medium truncate ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{item.productName}</p>
-                                <p className="text-sm text-slate-500 truncate">{item.quantity} unidades • {item.deliveryType === 'air' ? 'Aéreo' : 'Marítimo'}</p>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleEditFromQueue(index)}
-                                  className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
-                                >
-                                  <Pencil className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleRemoveFromQueue(index)}
-                                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
+                              <span className={`text-xs mt-1 transition-colors duration-300 ${step <= currentStep ? (mounted && theme === 'dark' ? 'text-blue-400 font-medium' : 'text-blue-600 font-medium') : (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500')
+                                }`}>
+                                {step === 1 ? t('client.recentOrders.newOrder.productTab') : step === 2 ? t('client.recentOrders.newOrder.shippingTab') : step === 3 ? t('client.recentOrders.newOrder.summaryTab') : 'Caja'}
+                              </span>
                             </div>
                           ))}
                         </div>
+                      </div>
+                    </div>
+
+                    {/* Step Content with Smooth Transitions */}
+                    <div className={`space-y-6 transition-all duration-300 ${isTransitioning
+                      ? stepDirection === 'next'
+                        ? 'opacity-0 transform translate-x-4'
+                        : 'opacity-0 transform -translate-x-4'
+                      : 'opacity-100 transform translate-x-0'
+                      }`}>
+
+                      {/* Enhanced Step Header */}
+                      <div className={`text-center space-y-4 mb-8 transition-all duration-300 ${isTransitioning ? 'opacity-50 scale-95' : 'opacity-100 scale-100'
+                        }`}>
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-orange-500 rounded-lg blur-lg opacity-10 animate-pulse"></div>
+                          <div className={`relative backdrop-blur-sm rounded-lg p-6 border ${mounted && theme === 'dark' ? 'bg-slate-700/80 border-slate-600' : 'bg-white/80 border-slate-200/50'}`}>
+                            <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-orange-500 bg-clip-text text-transparent mb-2">
+                              {getStepTitle(currentStep)}
+                            </h3>
+                            <p className={mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}>{getStepDescription(currentStep)}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Step 1: Información del Producto */}
+                      {currentStep === 1 && (
+                        <div className="space-y-8">
+                          <div className="space-y-3">
+                            <Label htmlFor="productName" className={`text-sm font-semibold flex items-center ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                              <Package className={`w-4 h-4 mr-2 ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
+                              {t('client.recentOrders.newOrder.productName')}<span className="text-red-500 ml-1">*</span>
+                            </Label>
+                            <div className="relative group">
+                              <Input
+                                id="productName"
+                                value={newOrderData.productName}
+                                onChange={(e) => setNewOrderData({ ...newOrderData, productName: e.target.value.slice(0, NAME_MAX) })}
+                                placeholder={t('client.recentOrders.newOrder.productNamePlaceholder')}
+                                maxLength={NAME_MAX}
+                                className={`transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm group-hover:border-blue-300 ${mounted && theme === 'dark' ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white/80 border-slate-200'} ${attemptedStep1 && !newOrderData.productName.trim() ? 'border-red-500 ring-1 ring-red-400 focus:border-red-500 focus:ring-red-500' : ''}`}
+                              />
+                              <p className={`text-xs mt-1 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{newOrderData.productName.length}/{NAME_MAX}</p>
+                              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-orange-500/5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <Label htmlFor="description" className={`text-sm font-semibold flex items-center ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                              <FileText className={`w-4 h-4 mr-2 ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
+                              {t('client.recentOrders.newOrder.productDescription')}<span className="text-red-500 ml-1">*</span>
+                            </Label>
+                            <div className="relative group">
+                              <Textarea
+                                id="description"
+                                value={newOrderData.description}
+                                onChange={(e) => setNewOrderData({ ...newOrderData, description: e.target.value.slice(0, DESCRIPTION_MAX) })}
+                                placeholder={t('client.recentOrders.newOrder.productDescriptionPlaceholder')}
+                                rows={4}
+                                maxLength={DESCRIPTION_MAX}
+                                className={`transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm group-hover:border-blue-300 ${mounted && theme === 'dark' ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white/80 border-slate-200'} ${attemptedStep1 && !newOrderData.description.trim() ? 'border-red-500 ring-1 ring-red-400 focus:border-red-500 focus:ring-red-500' : ''}`}
+                              />
+                              <p className={`text-xs mt-1 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{newOrderData.description.length}/{DESCRIPTION_MAX}</p>
+                              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-orange-500/5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <Label htmlFor="quantity" className={`text-sm font-semibold flex items-center ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                              <Hash className={`w-4 h-4 mr-2 ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
+                              {t('client.recentOrders.newOrder.quantity')}<span className="text-red-500 ml-1">*</span>
+                            </Label>
+                            <div className="relative group">
+                              <Input
+                                id="quantity"
+                                type="number"
+                                min={QTY_MIN}
+                                max={QTY_MAX}
+                                value={newOrderData.quantity === 0 ? '' : newOrderData.quantity}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (val === '') {
+                                    setNewOrderData({ ...newOrderData, quantity: 0 });
+                                  } else if (/^[0-9]+$/.test(val)) {
+                                    const next = Math.min(QTY_MAX, Math.max(QTY_MIN, parseInt(val)));
+                                    setNewOrderData({ ...newOrderData, quantity: next });
+                                  }
+                                }}
+                                className={`transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm group-hover:border-blue-300 ${mounted && theme === 'dark' ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white/80 border-slate-200'} ${attemptedStep1 && (!isValidQuantity(newOrderData.quantity) || newOrderData.quantity <= 0) ? 'border-red-500 ring-1 ring-red-400 focus:border-red-500 focus:ring-red-500' : ''}`}
+                              />
+                              {(!isValidQuantity(newOrderData.quantity) || newOrderData.quantity <= 0) && (
+                                <p className="text-xs text-red-500 mt-1">{t('client.recentOrders.newOrder.invalidQuantity')} ({QTY_MIN}–{QTY_MAX})</p>
+                              )}
+                              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-orange-500/5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <Label htmlFor="specifications" className={`text-sm font-semibold flex items-center ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                              <Settings className={`w-4 h-4 mr-2 ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
+                              {t('client.recentOrders.newOrder.specifications')}
+                            </Label>
+                            <div className="relative group">
+                              <Textarea
+                                id="specifications"
+                                value={newOrderData.specifications}
+                                onChange={(e) => setNewOrderData({ ...newOrderData, specifications: e.target.value })}
+                                placeholder={t('client.recentOrders.newOrder.specificationsPlaceholder')}
+                                rows={3}
+                                className={`transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm group-hover:border-blue-300 ${mounted && theme === 'dark' ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white/80 border-slate-200'}`}
+                              />
+                              {/* Validación eliminada porque ya no hay tipo de solicitud */}
+                              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-orange-500/5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                            </div>
+                          </div>
+
+                          {/* URL del producto (siempre visible) */}
+                          <div className="space-y-2">
+                            <Label htmlFor="productUrl" className="flex items-center gap-1">{t('client.recentOrders.newOrder.productUrl')}<span className="text-red-500">*</span></Label>
+                            <Input
+                              id="productUrl"
+                              type="url"
+                              value={newOrderData.productUrl || ''}
+                              onChange={(e) => setNewOrderData({ ...newOrderData, productUrl: e.target.value })}
+                              placeholder={t('client.recentOrders.newOrder.productUrlPlaceholder')}
+                              className={`transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm ${mounted && theme === 'dark' ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white/80 border-slate-200'} ${attemptedStep1 && (!newOrderData.productUrl || !isValidUrl(newOrderData.productUrl)) ? 'border-red-500 ring-1 ring-red-400 focus:border-red-500 focus:ring-red-500' : ''}`}
+                            />
+                            {newOrderData.productUrl && !isValidUrl(newOrderData.productUrl) && (
+                              <p className="text-xs text-red-500 mt-1">{t('client.recentOrders.newOrder.invalidUrl')}</p>
+                            )}
+                            {attemptedStep1 && !newOrderData.productUrl && (
+                              <p className="text-xs text-red-500 mt-1">{t('client.recentOrders.newOrder.requiredField') || 'Campo requerido'}</p>
+                            )}
+                          </div>
+
+                          {/* Foto del producto (siempre visible) */}
+                          <div className="space-y-3">
+                            <Label className={`text-sm font-semibold flex items-center ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                              <ImageIcon className={`w-4 h-4 mr-2 ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
+                              {t('client.recentOrders.newOrder.productImage')}<span className="text-red-500 ml-1">*</span>
+                            </Label>
+                            {newOrderData.productImage ? (
+                              <div className="relative">
+                                <div className={`border-2 rounded-xl overflow-hidden ${mounted && theme === 'dark' ? 'border-slate-600 bg-slate-700' : 'border-slate-200 bg-white'}`}>
+                                  <img
+                                    src={URL.createObjectURL(newOrderData.productImage)}
+                                    alt={t('client.recentOrders.newOrder.productImage')}
+                                    className="w-full h-48 object-cover"
+                                  />
+                                  <div className="p-3 flex gap-2">
+                                    <Button variant="outline" size="sm" onClick={() => document.getElementById('imageUpload')?.click()} className={mounted && theme === 'dark' ? 'dark:border-slate-600 dark:hover:bg-slate-700' : ''}>
+                                      <Upload className="w-4 h-4 mr-1" />{t('client.recentOrders.newOrder.change')}
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setNewOrderData({ ...newOrderData, productImage: undefined })}
+                                      className={`text-red-600 ${mounted && theme === 'dark' ? 'dark:border-slate-600 dark:hover:bg-slate-700' : ''}`}
+                                    >
+                                      <X className="w-4 h-4 mr-1" />{t('client.recentOrders.newOrder.delete')}
+                                    </Button>
+                                  </div>
+                                </div>
+                                <input id="imageUpload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                              </div>
+                            ) : (
+                              <div
+                                className={`border-2 border-dashed rounded-xl p-8 text-center ${mounted && theme === 'dark' ? (isDragOver ? 'border-blue-500 bg-blue-900/20' : 'border-slate-600 bg-slate-700') : (isDragOver ? 'border-blue-500 bg-blue-50' : 'border-slate-300 bg-white')}`}
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                              >
+                                <p className={`text-sm mb-4 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>{t('client.recentOrders.newOrder.dragDrop')}</p>
+                                <Button variant="outline" onClick={() => document.getElementById('imageUpload')?.click()} className={mounted && theme === 'dark' ? 'dark:border-slate-600 dark:hover:bg-slate-700' : ''}>
+                                  <Upload className="w-4 h-4 mr-2" />{t('client.recentOrders.newOrder.selectImage')}
+                                </Button>
+                                <input id="imageUpload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Step 2: Detalles del Envío */}
+                      {currentStep === 2 && (
+                        <div className="space-y-6">
+                          <div className="space-y-4">
+                            <Label className={mounted && theme === 'dark' ? 'text-slate-300' : ''}>{t('client.recentOrders.newOrder.deliveryType')}</Label>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div
+                                className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${mounted && theme === 'dark' ? (
+                                  newOrderData.deliveryType === 'air'
+                                    ? 'border-blue-500 bg-blue-900/20'
+                                    : 'border-slate-600 hover:border-slate-500 bg-slate-700'
+                                ) : (
+                                  newOrderData.deliveryType === 'air'
+                                    ? 'border-blue-500 bg-blue-50'
+                                    : 'border-slate-200 hover:border-slate-300'
+                                )
+                                  }`}
+                                onClick={() => setNewOrderData({ ...newOrderData, deliveryType: 'air' })}
+                                onMouseEnter={() => setHoveredDeliveryOption('air')}
+                                onMouseLeave={() => setHoveredDeliveryOption(null)}
+                              >
+                                <div className="text-center space-y-2">
+                                  <div className="w-8 h-8 mx-auto">
+                                    <Player
+                                      key={hoveredDeliveryOption === 'air' ? 'airplane-active' : 'airplane-inactive'}
+                                      src={airPlaneLottie}
+                                      className="w-full h-full"
+                                      loop={false}
+                                      autoplay={hoveredDeliveryOption === 'air'}
+                                    />
+                                  </div>
+                                  <p className={`font-medium ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{t('client.recentOrders.newOrder.air')}</p>
+                                  <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>{t('client.recentOrders.newOrder.airDesc')}</p>
+                                </div>
+                              </div>
+                              <div
+                                className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${mounted && theme === 'dark' ? (
+                                  newOrderData.deliveryType === 'maritime'
+                                    ? 'border-blue-500 bg-blue-900/20'
+                                    : 'border-slate-600 hover:border-slate-500 bg-slate-700'
+                                ) : (
+                                  newOrderData.deliveryType === 'maritime'
+                                    ? 'border-blue-500 bg-blue-50'
+                                    : 'border-slate-200 hover:border-slate-300'
+                                )
+                                  }`}
+                                onClick={() => setNewOrderData({ ...newOrderData, deliveryType: 'maritime' })}
+                                onMouseEnter={() => setHoveredDeliveryOption('maritime')}
+                                onMouseLeave={() => setHoveredDeliveryOption(null)}
+                              >
+                                <div className="text-center space-y-2">
+                                  <div className="w-8 h-8 mx-auto">
+                                    <Player
+                                      key={hoveredDeliveryOption === 'maritime' ? 'ship-active' : 'ship-inactive'}
+                                      src={cargoShipLottie}
+                                      className="w-full h-full"
+                                      loop={false}
+                                      autoplay={hoveredDeliveryOption === 'maritime'}
+                                    />
+                                  </div>
+                                  <p className={`font-medium ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{t('client.recentOrders.newOrder.maritime')}</p>
+                                  <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>{t('client.recentOrders.newOrder.maritimeDesc')}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor="deliveryVenezuela" className={mounted && theme === 'dark' ? 'text-slate-300' : ''}>{t('client.recentOrders.newOrder.deliveryVenezuela')}</Label>
+                            <Select value={newOrderData.deliveryVenezuela} onValueChange={(value) => setNewOrderData({ ...newOrderData, deliveryVenezuela: value })}>
+                              <SelectTrigger className={mounted && theme === 'dark' ? 'bg-slate-700 border-slate-600 text-white' : ''}>
+                                <SelectValue placeholder={t('client.recentOrders.newOrder.deliveryVenezuelaPlaceholder')} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pickup">{t('client.recentOrders.newOrder.pickup')}</SelectItem>
+                                <SelectItem value="delivery">{t('client.recentOrders.newOrder.delivery')}</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Step 3: Resumen y Confirmación */}
+                      {currentStep === 3 && (
+                        <div className="space-y-6">
+                          <div className={`rounded-lg p-6 space-y-4 ${mounted && theme === 'dark' ? 'bg-slate-700' : 'bg-slate-50'}`}>
+                            <h4 className={`font-semibold text-lg ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{t('client.recentOrders.newOrder.summaryTitle')}</h4>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <p className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.newOrder.productName')}</p>
+                                <p className={`font-medium ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{newOrderData.productName}</p>
+                              </div>
+                              <div className="space-y-2">
+                                <p className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.newOrder.quantity')}</p>
+                                <p className={`font-medium ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{newOrderData.quantity}</p>
+                              </div>
+                              <div className="space-y-2">
+                                <p className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.newOrder.deliveryType')}</p>
+                                <p className={`font-medium ${mounted && theme === 'dark' ? 'text-white' : ''}`}>
+                                  {/* doorToDoor deprecated: removed */}
+                                  {newOrderData.deliveryType === 'air' && t('client.recentOrders.newOrder.air')}
+                                  {newOrderData.deliveryType === 'maritime' && t('client.recentOrders.newOrder.maritime')}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <p className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.newOrder.productDescription')}</p>
+                              <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : ''}`}>{newOrderData.description}</p>
+                            </div>
+
+                            {newOrderData.specifications && (
+                              <div className="space-y-2">
+                                <p className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.newOrder.specifications')}</p>
+                                <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : ''}`}>{newOrderData.specifications}</p>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className={`border rounded-lg p-4 ${mounted && theme === 'dark' ? 'bg-blue-900/20 border-blue-700' : 'bg-blue-50 border-blue-200'}`}>
+                            <div className="flex items-start space-x-3">
+                              <CheckCircle className={`w-5 h-5 mt-0.5 ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
+                              <div>
+                                <p className={`font-medium ${mounted && theme === 'dark' ? 'text-blue-300' : 'text-blue-900'}`}>{t('client.recentOrders.newOrder.almostReady')}</p>
+                                <p className={`text-sm ${mounted && theme === 'dark' ? 'text-blue-200' : 'text-blue-700'}`}>
+                                  {t('client.recentOrders.newOrder.reviewMessage')}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       )}
                     </div>
-                  </div>
-                )}
 
-                {/* Enhanced Navigation Buttons */}
-                <div className={`flex justify-between pt-8 border-t ${mounted && theme === 'dark' ? 'border-slate-700' : 'border-slate-200/50'}`}>
-                  <Button
-                    variant="outline"
-                    onClick={handlePrevStep}
-                    disabled={currentStep === 1 || isTransitioning}
-                    className={`transition-all duration-300 hover:shadow-md transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${mounted && theme === 'dark' ? 'hover:bg-slate-700 border-slate-600' : 'hover:bg-slate-50'}`}
-                  >
-                    {isTransitioning ? (
-                      <div className="flex items-center">
-                        <div className="w-4 h-4 border-2 border-slate-600 border-t-transparent rounded-full animate-spin mr-2"></div>
-                        {t('client.recentOrders.newOrder.transitioning')}
-                      </div>
-                    ) : (
-                      <>
-                        <ArrowLeft className="w-4 h-4 mr-2" />
-                        {t('client.recentOrders.newOrder.previous')}
-                      </>
-                    )}
-                  </Button>
 
-                  {/* Botones del Modal */}
-                  <div className="flex justify-center gap-3">
-                    {currentStep === 3 && (
-                      <Button
-                        onClick={handleAddToQueue}
-                        variant="outline"
-                        className="bg-blue-600 text-white hover:bg-blue-700 border-transparent shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-                      >
-                        <ShoppingBag className="w-4 h-4 mr-2" />
-                        Añadir a la Caja
-                      </Button>
-                    )}
-
-                    {currentStep < 3 ? (
-                      <Button
-                        onClick={handleNextStep}
-                        disabled={!canProceedToNext() || isTransitioning}
-                        className="bg-gradient-to-r from-blue-500 to-orange-500 hover:from-blue-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isTransitioning ? (
-                          <div className="flex items-center">
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                            {t('client.recentOrders.newOrder.transitioning')}
+                    {/* Step 4: Caja / Resumen de Solicitud */}
+                    {currentStep === 4 && (
+                      <div className="space-y-6">
+                        <div className={`rounded-lg p-6 ${mounted && theme === 'dark' ? 'bg-slate-700' : 'bg-slate-50'}`}>
+                          <div className="flex items-center justify-between mb-4">
+                            <h4 className={`font-semibold text-lg ${mounted && theme === 'dark' ? 'text-white' : ''}`}>Artículos en tu Caja ({orderQueue.length})</h4>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleAddNewItem}
+                              className="text-blue-500 border-blue-500 hover:bg-blue-50"
+                            >
+                              <Plus className="w-4 h-4 mr-1" />
+                              Agregar Otro Producto
+                            </Button>
                           </div>
-                        ) : (
-                          <>
-                            {t('client.recentOrders.newOrder.next')}
-                            <ArrowRight className="w-4 h-4 ml-2" />
-                          </>
-                        )}
-                      </Button>
-                    ) : currentStep === 4 ? (
-                      <div className="flex gap-2">
-                        {/* Botón enviar lote */}
+
+                          {orderQueue.length === 0 ? (
+                            <div className="text-center py-8 text-slate-500">
+                              <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                              Tu caja está vacía. Añade productos para enviar una solicitud.
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              {orderQueue.map((item, index) => (
+                                <div key={index} className={`flex items-center gap-4 p-3 rounded-lg border ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-600' : 'bg-white border-slate-200'}`}>
+                                  <div className="w-16 h-16 rounded-md overflow-hidden bg-slate-100 flex-shrink-0">
+                                    {item.productImage ? (
+                                      <img src={URL.createObjectURL(item.productImage)} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center text-slate-400">
+                                        <ImageIcon className="w-6 h-6" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className={`font-medium truncate ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{item.productName}</p>
+                                    <p className="text-sm text-slate-500 truncate">{item.quantity} unidades • {item.deliveryType === 'air' ? 'Aéreo' : 'Marítimo'}</p>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleEditFromQueue(index)}
+                                      disabled={processingQueue}
+                                      className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      <Pencil className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => handleRemoveFromQueue(index)}
+                                      disabled={processingQueue}
+                                      className="text-red-500 hover:text-red-700 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Enhanced Navigation Buttons - Hide if Success OR Error Animation is showing */}
+                    {!showSuccessAnimation && !showErrorAnimation && (
+                      <div className={`flex justify-between pt-8 border-t ${mounted && theme === 'dark' ? 'border-slate-700' : 'border-slate-200/50'}`}>
                         <Button
-                          onClick={handleProcessQueue}
-                          disabled={processingQueue || orderQueue.length === 0}
-                          className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50"
+                          variant="outline"
+                          onClick={handlePrevStep}
+                          disabled={currentStep === 1 || isTransitioning}
+                          className={`transition-all duration-300 hover:shadow-md transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${mounted && theme === 'dark' ? 'hover:bg-slate-700 border-slate-600' : 'hover:bg-slate-50'}`}
                         >
-                          {processingQueue ? (
+                          {isTransitioning ? (
                             <div className="flex items-center">
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                              Procesando...
+                              <div className="w-4 h-4 border-2 border-slate-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                              {t('client.recentOrders.newOrder.transitioning')}
                             </div>
                           ) : (
                             <>
-                              <Send className="w-4 h-4 mr-2" />
-                              Enviar Solicitud ({orderQueue.length})
+                              <ArrowLeft className="w-4 h-4 mr-2" />
+                              {t('client.recentOrders.newOrder.previous')}
                             </>
                           )}
                         </Button>
+
+                        {/* Botones del Modal */}
+                        <div className="flex justify-center gap-3">
+                          {currentStep === 3 && (
+                            <Button
+                              onClick={handleAddToQueue}
+                              variant="outline"
+                              className="bg-blue-600 text-white hover:bg-blue-700 border-transparent shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                            >
+                              <ShoppingBag className="w-4 h-4 mr-2" />
+                              Añadir a la Caja
+                            </Button>
+                          )}
+
+                          {currentStep < 3 ? (
+                            <Button
+                              onClick={handleNextStep}
+                              disabled={!canProceedToNext() || isTransitioning}
+                              className="bg-gradient-to-r from-blue-500 to-orange-500 hover:from-blue-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {isTransitioning ? (
+                                <div className="flex items-center">
+                                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                                  {t('client.recentOrders.newOrder.transitioning')}
+                                </div>
+                              ) : (
+                                <>
+                                  {t('client.recentOrders.newOrder.next')}
+                                  <ArrowRight className="w-4 h-4 ml-2" />
+                                </>
+                              )}
+                            </Button>
+                          ) : currentStep === 4 ? (
+                            <div className="flex gap-2">
+                              {/* Botón enviar lote */}
+                              <Button
+                                onClick={handleProcessQueue}
+                                disabled={processingQueue || orderQueue.length === 0}
+                                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50"
+                              >
+                                {processingQueue ? (
+                                  <div className="flex items-center">
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                                    Procesando...
+                                  </div>
+                                ) : (
+                                  <>
+                                    <Send className="w-4 h-4 mr-2" />
+                                    Enviar Solicitud ({orderQueue.length})
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          ) : null}
+                        </div>
                       </div>
-                    ) : null}
-                  </div>
-                </div>
+                    )}
+                  </>
+                )}
               </DialogContent>
             </Dialog>
           </div>
@@ -2755,8 +2789,8 @@ export default function MisPedidosPage() {
                         />
                       ) : selectedOrder.status === 'quoted' ? (
                         <PriceDisplay
-                          amount={selectedOrder.totalQuote !== null && selectedOrder.totalQuote !== undefined 
-                            ? selectedOrder.totalQuote 
+                          amount={selectedOrder.totalQuote !== null && selectedOrder.totalQuote !== undefined
+                            ? selectedOrder.totalQuote
                             : ((selectedOrder.unitQuote ?? 0) + (selectedOrder.shippingPrice ?? 0)) / (cnyRate || 7.25)
                           }
                           currency="USD"
@@ -2768,8 +2802,8 @@ export default function MisPedidosPage() {
                         />
                       ) : (
                         <PriceDisplay
-                          amount={selectedOrder.totalQuote !== null && selectedOrder.totalQuote !== undefined 
-                            ? selectedOrder.totalQuote 
+                          amount={selectedOrder.totalQuote !== null && selectedOrder.totalQuote !== undefined
+                            ? selectedOrder.totalQuote
                             : ((selectedOrder.unitQuote ?? 0) + (selectedOrder.shippingPrice ?? 0)) / (cnyRate || 7.25)
                           }
                           currency="USD"
@@ -2909,135 +2943,137 @@ export default function MisPedidosPage() {
         </Dialog>
 
         {/* Modal de Seguimiento (copiado del tracking) */}
-        {selectedTrackingOrder && (
-          <div
-            className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-300 ease-out ${isTrackingModalOpen
-              ? 'bg-black/50 backdrop-blur-sm opacity-100'
-              : 'bg-black/0 backdrop-blur-none opacity-0'
-              }`}
-            onClick={closeTrackingModal}
-          >
+        {
+          selectedTrackingOrder && (
             <div
-              className={`rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto transition-all duration-300 ease-out transform ${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} ${isTrackingModalOpen
-                ? 'scale-100 opacity-100 translate-y-0'
-                : 'scale-95 opacity-0 translate-y-8'
+              className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-300 ease-out ${isTrackingModalOpen
+                ? 'bg-black/50 backdrop-blur-sm opacity-100'
+                : 'bg-black/0 backdrop-blur-none opacity-0'
                 }`}
-              onClick={(e) => e.stopPropagation()}
+              onClick={closeTrackingModal}
             >
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h2 className={`text-2xl font-bold ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{selectedTrackingOrder.product}</h2>
-                    <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>{selectedTrackingOrder.id}</p>
+              <div
+                className={`rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto transition-all duration-300 ease-out transform ${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} ${isTrackingModalOpen
+                  ? 'scale-100 opacity-100 translate-y-0'
+                  : 'scale-95 opacity-0 translate-y-8'
+                  }`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h2 className={`text-2xl font-bold ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{selectedTrackingOrder.product}</h2>
+                      <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>{selectedTrackingOrder.id}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={closeTrackingModal}
+                      className={mounted && theme === 'dark' ? 'border-slate-600 hover:bg-slate-700' : ''}
+                    >
+                      ✕
+                    </Button>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={closeTrackingModal}
-                    className={mounted && theme === 'dark' ? 'border-slate-600 hover:bg-slate-700' : ''}
-                  >
-                    ✕
-                  </Button>
-                </div>
 
-                {/* Información del tracking del contenedor */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <div className="space-y-2">
-                    <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.trackingModal.trackingNumber')}</p>
-                    <p className={`font-mono font-medium ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{tracking_number[String(selectedTrackingOrder.id)] || '—'}</p>
+                  {/* Información del tracking del contenedor */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div className="space-y-2">
+                      <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.trackingModal.trackingNumber')}</p>
+                      <p className={`font-mono font-medium ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{tracking_number[String(selectedTrackingOrder.id)] || '—'}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.trackingModal.carrier')}</p>
+                      <p className={`font-medium ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{tracking_company[String(selectedTrackingOrder.id)] || '—'
+                      }</p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.trackingModal.estimatedDelivery')}</p>
+                      <p className={`font-medium ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{arrive_date[String(selectedTrackingOrder.id)] || '—'}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.trackingModal.currentStatus')}</p>
+                      <Badge className={getTrackingStatusColor(selectedTrackingOrder.status)}>
+                        {t(`client.recentOrders.trackingModal.states.${selectedTrackingOrder.status}`)}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.trackingModal.carrier')}</p>
-                    <p className={`font-medium ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{tracking_company[String(selectedTrackingOrder.id)] || '—'
-                    }</p>
-                  </div>
-                  <div className="space-y-2">
-                    <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.trackingModal.estimatedDelivery')}</p>
-                    <p className={`font-medium ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{arrive_date[String(selectedTrackingOrder.id)] || '—'}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.trackingModal.currentStatus')}</p>
-                    <Badge className={getTrackingStatusColor(selectedTrackingOrder.status)}>
-                      {t(`client.recentOrders.trackingModal.states.${selectedTrackingOrder.status}`)}
-                    </Badge>
-                  </div>
-                </div>
 
-                {/* Timeline */}
-                <div className="space-y-4">
-                  <h3 className={`text-lg font-semibold ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{t('client.recentOrders.trackingModal.historyTitle')}</h3>
+                  {/* Timeline */}
                   <div className="space-y-4">
-                    {selectedTrackingOrder.timeline.map((step, index) => (
-                      <div key={step.id} className="flex items-start space-x-4">
-                        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${step.completed
-                          ? 'bg-green-500 text-white'
-                          : (mounted && theme === 'dark' ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-600')
-                          }`}>
-                          {step.completed ? (
-                            <CheckCircle className="w-4 h-4" />
-                          ) : (
-                            <span className="text-xs font-bold">{index + 1}</span>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <p className={`font-medium ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{t(`client.recentOrders.trackingModal.states.${step.status}`)}</p>
-                          <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>{t(`client.recentOrders.trackingModal.states.${step.status}`)}</p>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <MapPin className={`w-3 h-3 ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`} />
-                            <span className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{step.location}</span>
-                            <span className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>•</span>
-                            <span className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{step.timestamp}</span>
+                    <h3 className={`text-lg font-semibold ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{t('client.recentOrders.trackingModal.historyTitle')}</h3>
+                    <div className="space-y-4">
+                      {selectedTrackingOrder.timeline.map((step, index) => (
+                        <div key={step.id} className="flex items-start space-x-4">
+                          <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${step.completed
+                            ? 'bg-green-500 text-white'
+                            : (mounted && theme === 'dark' ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-600')
+                            }`}>
+                            {step.completed ? (
+                              <CheckCircle className="w-4 h-4" />
+                            ) : (
+                              <span className="text-xs font-bold">{index + 1}</span>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className={`font-medium ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{t(`client.recentOrders.trackingModal.states.${step.status}`)}</p>
+                            <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>{t(`client.recentOrders.trackingModal.states.${step.status}`)}</p>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <MapPin className={`w-3 h-3 ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`} />
+                              <span className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{step.location}</span>
+                              <span className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>•</span>
+                              <span className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{step.timestamp}</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
 
-                {/* Tracking Link (al final del modal) */}
-                {(() => {
-                  const link = tracking_link[String(selectedTrackingOrder.id)];
-                  if (!link) return null;
-                  let valid = true;
-                  try { new URL(link); } catch { valid = false; }
-                  return (
-                    <div className={`mt-8 pt-4 ${mounted && theme === 'dark' ? 'border-t border-slate-700' : 'border-t'}`}>
-                      <div className="flex items-start gap-4 flex-col sm:flex-row sm:items-center">
-                        <div className="flex-1">
-                          <h3 className={`text-lg font-semibold mb-1 ${mounted && theme === 'dark' ? 'text-white' : ''}`}>Link de Tracking</h3>
-                          {valid ? (
-                            <a
-                              href={link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className={`break-all text-sm ${mounted && theme === 'dark' ? 'text-blue-400 hover:text-blue-300 hover:underline' : 'text-blue-600 hover:underline'}`}
+                  {/* Tracking Link (al final del modal) */}
+                  {(() => {
+                    const link = tracking_link[String(selectedTrackingOrder.id)];
+                    if (!link) return null;
+                    let valid = true;
+                    try { new URL(link); } catch { valid = false; }
+                    return (
+                      <div className={`mt-8 pt-4 ${mounted && theme === 'dark' ? 'border-t border-slate-700' : 'border-t'}`}>
+                        <div className="flex items-start gap-4 flex-col sm:flex-row sm:items-center">
+                          <div className="flex-1">
+                            <h3 className={`text-lg font-semibold mb-1 ${mounted && theme === 'dark' ? 'text-white' : ''}`}>Link de Tracking</h3>
+                            {valid ? (
+                              <a
+                                href={link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`break-all text-sm ${mounted && theme === 'dark' ? 'text-blue-400 hover:text-blue-300 hover:underline' : 'text-blue-600 hover:underline'}`}
+                              >
+                                {link}
+                              </a>
+                            ) : (
+                              <p className={`break-all text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{link}</p>
+                            )}
+                          </div>
+                          {valid && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setIsTrackingQRModalOpen(true)}
+                              className={`flex items-center gap-2 ${mounted && theme === 'dark' ? 'border-slate-600 text-blue-400 hover:bg-slate-700' : 'border-blue-300 text-blue-600 hover:bg-blue-50'}`}
                             >
-                              {link}
-                            </a>
-                          ) : (
-                            <p className={`break-all text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{link}</p>
+                              <QrCode className="w-4 h-4" />
+                              QR
+                            </Button>
                           )}
                         </div>
-                        {valid && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setIsTrackingQRModalOpen(true)}
-                            className={`flex items-center gap-2 ${mounted && theme === 'dark' ? 'border-slate-600 text-blue-400 hover:bg-slate-700' : 'border-blue-300 text-blue-600 hover:bg-blue-50'}`}
-                          >
-                            <QrCode className="w-4 h-4" />
-                            QR
-                          </Button>
-                        )}
                       </div>
-                    </div>
-                  );
-                })()}
+                    );
+                  })()}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )
+        }
 
         {/* Modal de Pago */}
         <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
@@ -3300,58 +3336,60 @@ export default function MisPedidosPage() {
             )}
           </DialogContent>
         </Dialog>
-      </main>
+      </main >
       {/* Modal QR Tracking Link (reinsertado) */}
-      {isTrackingQRModalOpen && selectedTrackingOrder && (
-        <div
-          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in-up"
-          onClick={() => setIsTrackingQRModalOpen(false)}
-        >
+      {
+        isTrackingQRModalOpen && selectedTrackingOrder && (
           <div
-            className="bg-white rounded-2xl p-6 md:p-8 shadow-2xl border border-slate-200 w-[90%] max-w-sm relative animate-fade-in-up"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in-up"
+            onClick={() => setIsTrackingQRModalOpen(false)}
           >
-            <button
-              className="absolute top-2 right-2 text-slate-500 hover:text-slate-700 text-sm"
-              onClick={() => setIsTrackingQRModalOpen(false)}
-              aria-label="Cerrar"
+            <div
+              className="bg-white rounded-2xl p-6 md:p-8 shadow-2xl border border-slate-200 w-[90%] max-w-sm relative animate-fade-in-up"
+              onClick={(e) => e.stopPropagation()}
             >
-              ✕
-            </button>
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <QrCode className="w-5 h-5 text-blue-600" /> Código QR Tracking
-            </h3>
-            {(() => {
-              const link = tracking_link[String(selectedTrackingOrder.id)];
-              if (!link) return <p className="text-sm text-slate-500">No disponible.</p>;
-              try { new URL(link); } catch { return <p className="text-sm text-slate-500 break-all">{link}</p>; }
-              const QR = require('react-qr-code').default;
-              return (
-                <div className="flex flex-col items-center gap-4">
-                  <div className="p-4 bg-white border rounded-xl shadow-md">
-                    <QR value={link} size={260} />
+              <button
+                className="absolute top-2 right-2 text-slate-500 hover:text-slate-700 text-sm"
+                onClick={() => setIsTrackingQRModalOpen(false)}
+                aria-label="Cerrar"
+              >
+                ✕
+              </button>
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <QrCode className="w-5 h-5 text-blue-600" /> Código QR Tracking
+              </h3>
+              {(() => {
+                const link = tracking_link[String(selectedTrackingOrder.id)];
+                if (!link) return <p className="text-sm text-slate-500">No disponible.</p>;
+                try { new URL(link); } catch { return <p className="text-sm text-slate-500 break-all">{link}</p>; }
+                const QR = require('react-qr-code').default;
+                return (
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="p-4 bg-white border rounded-xl shadow-md">
+                      <QR value={link} size={260} />
+                    </div>
+                    <a
+                      href={link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline break-all text-xs text-center"
+                    >
+                      {link}
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => { navigator.clipboard?.writeText(link).catch(() => { }); }}
+                      className="text-xs px-3 py-1 rounded-md border border-slate-300 hover:bg-slate-50 text-slate-600"
+                    >
+                      Copiar enlace
+                    </button>
                   </div>
-                  <a
-                    href={link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline break-all text-xs text-center"
-                  >
-                    {link}
-                  </a>
-                  <button
-                    type="button"
-                    onClick={() => { navigator.clipboard?.writeText(link).catch(() => { }); }}
-                    className="text-xs px-3 py-1 rounded-md border border-slate-300 hover:bg-slate-50 text-slate-600"
-                  >
-                    Copiar enlace
-                  </button>
-                </div>
-              );
-            })()}
+                );
+              })()}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       <style jsx>{`
         @keyframes slideInFromRight {
@@ -3723,6 +3761,6 @@ export default function MisPedidosPage() {
         </DialogContent>
       </Dialog>
 
-    </div>
+    </div >
   );
 }
