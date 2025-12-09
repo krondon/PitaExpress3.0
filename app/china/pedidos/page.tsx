@@ -1700,14 +1700,14 @@ export default function PedidosChina() {
                     onClick={() => setModalCotizar({
                       open: true,
                       pedido: p,
-                      precioUnitario: p.unitQuote || null, // Changed from 0 to null
-                      precioEnvio: p.shippingPrice || null, // Changed from 0 to null
+                      precioUnitario: p.unitQuote || undefined, // Changed from null to undefined
+                      precioEnvio: p.shippingPrice || undefined, // Changed from null to undefined
                       altura: p.height || 0,
                       anchura: p.width || 0,
                       largo: p.long || 0,
                       peso: p.weight || 0,
                       precioUnitarioInput: p.unitQuote && p.unitQuote > 0 ? p.unitQuote.toString() : '',
-                      precioEnvioInput: p.shippingPrice !== null && p.shippingPrice !== undefined ? p.shippingPrice.toString() : '', // Changed from '0' to ''
+                      precioEnvioInput: p.shippingPrice && p.shippingPrice > 0 ? p.shippingPrice.toString() : '',
                       alturaInput: p.height ? p.height.toString() : '',
                       anchuraInput: p.width ? p.width.toString() : '',
                       largoInput: p.long ? p.long.toString() : '',
