@@ -1700,18 +1700,18 @@ export default function PedidosChina() {
                     onClick={() => setModalCotizar({
                       open: true,
                       pedido: p,
-                      precioUnitario: p.unitQuote || 0,
-                      precioEnvio: p.shippingPrice || 0,
+                      precioUnitario: p.unitQuote || null, // Changed from 0 to null
+                      precioEnvio: p.shippingPrice || null, // Changed from 0 to null
                       altura: p.height || 0,
                       anchura: p.width || 0,
                       largo: p.long || 0,
                       peso: p.weight || 0,
-                      precioUnitarioInput: (p.unitQuote || 0).toString(),
-                      precioEnvioInput: (p.shippingPrice || 0).toString(),
-                      alturaInput: (p.height || 0).toString(),
-                      anchuraInput: (p.width || 0).toString(),
-                      largoInput: (p.long || 0).toString(),
-                      pesoInput: (p.weight || 0).toString(),
+                      precioUnitarioInput: p.unitQuote && p.unitQuote > 0 ? p.unitQuote.toString() : '',
+                      precioEnvioInput: p.shippingPrice !== null && p.shippingPrice !== undefined ? p.shippingPrice.toString() : '', // Changed from '0' to ''
+                      alturaInput: p.height ? p.height.toString() : '',
+                      anchuraInput: p.width ? p.width.toString() : '',
+                      largoInput: p.long ? p.long.toString() : '',
+                      pesoInput: p.weight ? p.weight.toString() : '',
                     })}
                     size="sm"
                     className="flex items-center gap-1 bg-orange-600 hover:bg-orange-700"
@@ -1733,32 +1733,7 @@ export default function PedidosChina() {
                 </>
               ) : null;
             })()}
-            {p.estado !== 'pendiente' && (!p.numericState || p.numericState < 9) ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setModalCotizar({
-                  open: true,
-                  pedido: p,
-                  precioUnitario: p.unitQuote || 0,
-                  precioEnvio: p.shippingPrice || 0,
-                  altura: p.height || 0,
-                  anchura: p.width || 0,
-                  largo: p.long || 0,
-                  peso: p.weight || 0,
-                  precioUnitarioInput: (p.unitQuote || 0).toString(),
-                  precioEnvioInput: (p.shippingPrice || 0).toString(),
-                  alturaInput: (p.height || 0).toString(),
-                  anchuraInput: (p.width || 0).toString(),
-                  largoInput: (p.long || 0).toString(),
-                  pesoInput: (p.weight || 0).toString(),
-                })}
-                className="flex items-center gap-1"
-              >
-                <Pencil className="h-4 w-4" />
-                <span className="hidden sm:inline">{t('chinese.ordersPage.orders.editQuote', { defaultValue: 'Editar' })}</span>
-              </Button>
-            ) : null}
+            {/* Botón de editar eliminado a petición del usuario */}
           </div>
         </div>
       </div>
@@ -2821,7 +2796,7 @@ export default function PedidosChina() {
                       inputMode="decimal"
                       required
                       value={modalCotizar.precioUnitarioInput ?? ''}
-                      className={`w-full pl-8 pr-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${modalCotizar.precioUnitario && modalCotizar.precioUnitario > 0 ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
+                      className={`w-full pl-8 pr-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${!modalCotizar.precioUnitarioInput || (modalCotizar.precioUnitario && modalCotizar.precioUnitario > 0) ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
                       placeholder={t('chinese.ordersPage.modals.quote.unitPricePlaceholder')}
                       onChange={e => {
                         // Aceptar coma o punto como separador decimal y permitir punto final temporal
@@ -2835,7 +2810,7 @@ export default function PedidosChina() {
                         setModalCotizar(prev => ({ ...prev, precioUnitario: numero, precioUnitarioInput: cleaned }));
                       }}
                     />
-                    <p className={`mt-1 text-xs ${modalCotizar.precioUnitario && modalCotizar.precioUnitario > 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.precioUnitario && modalCotizar.precioUnitario > 0 ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterPrice', { defaultValue: 'Ingresa un precio mayor a 0' })}</p>
+                    <p className={`mt-1 text-xs ${!modalCotizar.precioUnitarioInput || (modalCotizar.precioUnitario && modalCotizar.precioUnitario > 0) ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{!modalCotizar.precioUnitarioInput || (modalCotizar.precioUnitario && modalCotizar.precioUnitario > 0) ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterPrice', { defaultValue: 'Ingresa un precio mayor a 0' })}</p>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -2848,7 +2823,7 @@ export default function PedidosChina() {
                       inputMode="decimal"
                       required
                       value={modalCotizar.precioEnvioInput ?? ''}
-                      className={`w-full pl-8 pr-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${modalCotizar.precioEnvio !== undefined && modalCotizar.precioEnvio >= 0 ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
+                      className={`w-full pl-8 pr-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${!modalCotizar.precioEnvioInput || (modalCotizar.precioEnvio !== undefined && modalCotizar.precioEnvio >= 0) ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
                       placeholder={t('chinese.ordersPage.modals.quote.shippingPricePlaceholder')}
                       onChange={e => {
                         // Aceptar coma o punto como separador decimal y permitir punto final temporal
@@ -2861,7 +2836,7 @@ export default function PedidosChina() {
                         setModalCotizar(prev => ({ ...prev, precioEnvio: numero, precioEnvioInput: cleaned }));
                       }}
                     />
-                    <p className={`mt-1 text-xs ${modalCotizar.precioEnvio !== undefined && modalCotizar.precioEnvio >= 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.precioEnvio !== undefined && modalCotizar.precioEnvio >= 0 ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterValidPrice', { defaultValue: 'Ingresa un precio válido' })}</p>
+                    <p className={`mt-1 text-xs ${!modalCotizar.precioEnvioInput || (modalCotizar.precioEnvio !== undefined && modalCotizar.precioEnvio >= 0) ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{!modalCotizar.precioEnvioInput || (modalCotizar.precioEnvio !== undefined && modalCotizar.precioEnvio >= 0) ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterValidPrice', { defaultValue: 'Ingresa un precio válido' })}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
@@ -2874,7 +2849,7 @@ export default function PedidosChina() {
                         inputMode="decimal"
                         required
                         value={modalCotizar.alturaInput ?? ''}
-                        className={`w-full pr-12 pl-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${modalCotizar.altura && modalCotizar.altura > 0 ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
+                        className={`w-full pr-12 pl-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${!modalCotizar.alturaInput || (modalCotizar.altura && modalCotizar.altura > 0) ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
                         placeholder={t('chinese.ordersPage.modals.quote.heightPlaceholder')}
                         onChange={e => {
                           // Aceptar coma o punto como separador decimal y permitir punto final temporal
@@ -2888,7 +2863,7 @@ export default function PedidosChina() {
                         }}
                       />
                       <span className={`absolute right-3 top-3 text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>cm</span>
-                      <p className={`mt-1 text-xs ${modalCotizar.altura && modalCotizar.altura > 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.altura && modalCotizar.altura > 0 ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterHeight', { defaultValue: 'Ingresa una altura mayor a 0' })}</p>
+                      <p className={`mt-1 text-xs ${!modalCotizar.alturaInput || (modalCotizar.altura && modalCotizar.altura > 0) ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{!modalCotizar.alturaInput || (modalCotizar.altura && modalCotizar.altura > 0) ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterHeight', { defaultValue: 'Ingresa una altura mayor a 0' })}</p>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -2900,7 +2875,7 @@ export default function PedidosChina() {
                         inputMode="decimal"
                         required
                         value={modalCotizar.anchuraInput ?? ''}
-                        className={`w-full pr-12 pl-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${modalCotizar.anchura && modalCotizar.anchura > 0 ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
+                        className={`w-full pr-12 pl-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${!modalCotizar.anchuraInput || (modalCotizar.anchura && modalCotizar.anchura > 0) ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
                         placeholder={t('chinese.ordersPage.modals.quote.widthPlaceholder')}
                         onChange={e => {
                           // Aceptar coma o punto como separador decimal y permitir punto final temporal
@@ -2914,7 +2889,7 @@ export default function PedidosChina() {
                         }}
                       />
                       <span className={`absolute right-3 top-3 text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>cm</span>
-                      <p className={`mt-1 text-xs ${modalCotizar.anchura && modalCotizar.anchura > 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.anchura && modalCotizar.anchura > 0 ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterWidth', { defaultValue: 'Ingresa una anchura mayor a 0' })}</p>
+                      <p className={`mt-1 text-xs ${!modalCotizar.anchuraInput || (modalCotizar.anchura && modalCotizar.anchura > 0) ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{!modalCotizar.anchuraInput || (modalCotizar.anchura && modalCotizar.anchura > 0) ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterWidth', { defaultValue: 'Ingresa una anchura mayor a 0' })}</p>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -2926,7 +2901,7 @@ export default function PedidosChina() {
                         inputMode="decimal"
                         required
                         value={modalCotizar.largoInput ?? ''}
-                        className={`w-full pr-12 pl-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${modalCotizar.largo && modalCotizar.largo > 0 ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
+                        className={`w-full pr-12 pl-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${!modalCotizar.largoInput || (modalCotizar.largo && modalCotizar.largo > 0) ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
                         placeholder={t('chinese.ordersPage.modals.quote.lengthPlaceholder')}
                         onChange={e => {
                           // Aceptar coma o punto como separador decimal y permitir punto final temporal
@@ -2940,7 +2915,7 @@ export default function PedidosChina() {
                         }}
                       />
                       <span className={`absolute right-3 top-3 text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>cm</span>
-                      <p className={`mt-1 text-xs ${modalCotizar.largo && modalCotizar.largo > 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.largo && modalCotizar.largo > 0 ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterLength', { defaultValue: 'Ingresa un largo mayor a 0' })}</p>
+                      <p className={`mt-1 text-xs ${!modalCotizar.largoInput || (modalCotizar.largo && modalCotizar.largo > 0) ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{!modalCotizar.largoInput || (modalCotizar.largo && modalCotizar.largo > 0) ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterLength', { defaultValue: 'Ingresa un largo mayor a 0' })}</p>
                     </div>
                   </div>
                 </div>
@@ -2953,7 +2928,7 @@ export default function PedidosChina() {
                       inputMode="decimal"
                       required
                       value={modalCotizar.pesoInput ?? ''}
-                      className={`w-full pr-12 pl-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${modalCotizar.peso && modalCotizar.peso > 0 ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
+                      className={`w-full pr-12 pl-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${!modalCotizar.pesoInput || (modalCotizar.peso && modalCotizar.peso > 0) ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
                       placeholder={t('chinese.ordersPage.modals.quote.weightPlaceholder')}
                       onChange={e => {
                         // Aceptar coma o punto como separador decimal y permitir punto final temporal
@@ -2967,7 +2942,7 @@ export default function PedidosChina() {
                       }}
                     />
                     <span className={`absolute right-3 top-3 text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>kg</span>
-                    <p className={`mt-1 text-xs ${modalCotizar.peso && modalCotizar.peso > 0 ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{modalCotizar.peso && modalCotizar.peso > 0 ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterWeight', { defaultValue: 'Ingresa un peso mayor a 0' })}</p>
+                    <p className={`mt-1 text-xs ${!modalCotizar.pesoInput || (modalCotizar.peso && modalCotizar.peso > 0) ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{!modalCotizar.pesoInput || (modalCotizar.peso && modalCotizar.peso > 0) ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterWeight', { defaultValue: 'Ingresa un peso mayor a 0' })}</p>
                   </div>
                 </div>
                 <div className="space-y-2">
