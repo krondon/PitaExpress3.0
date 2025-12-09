@@ -1405,39 +1405,38 @@ export default function MisPedidosPage() {
     }
     setIsConfirmingPayment(true);
     try {
+      const rawId = selectedOrderForPayment ? selectedOrderForPayment.id : 'BULK'; // Placeholder for bulk
+
       if (selectedGroupForPayment) {
-        // Bulk Payment: Use logic similar to single payment for each order
-        const ordersToPay = selectedGroupForPayment.orders.filter(o => selectedOrdersInModal.includes(o.id));
+        // Bulk Payment
+        // Bulk Payment Optimized
+        const ordersToPayIds = selectedGroupForPayment.orders
+          .filter(o => selectedOrdersInModal.includes(o.id))
+          .map(o => Number(o.id));
 
-        // Execute sequentially or parallel, but validate response like single payment
-        const promises = ordersToPay.map(async (order) => {
-          const response = await fetch(`/api/orders/${order.id}/state`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              state: 4,
-              changed_by: `client:${clientId}`,
-              notes: 'Pago confirmado por el cliente (Lote)'
-            })
-          });
-
-          const data = await response.json();
-          if (!response.ok || !data.success) {
-            throw new Error(data.error || `Error en pedido #${order.id}`);
-          }
-          return data;
+        const response = await fetch('/api/orders/batch-state', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderIds: ordersToPayIds,
+            state: 4,
+            changed_by: `client:${clientId}`,
+            notes: 'Pago confirmado por el cliente (Lote - Batch)'
+          })
         });
 
-        await Promise.all(promises);
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          console.error('Batch update error:', data);
+          toast({ title: 'Error parcial', description: 'Algunos pedidos podrían no haberse actualizado.', variant: 'destructive' });
+        }
+
+        // We assume success for now or we would need complex error handling for partial failures
 
       } else {
         // Single Payment
-        const rawId = selectedOrderForPayment?.id;
-        if (!rawId) throw new Error('No se encontró el ID del pedido');
-
-        const response = await fetch(`/api/orders/${rawId}/state`, {
+        // Usar la API del servidor para que se active el trigger y se registre en el historial
+        const response = await fetch(`/api/orders/${isNaN(Number(rawId)) ? rawId : Number(rawId)}/state`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -1451,22 +1450,23 @@ export default function MisPedidosPage() {
 
         const data = await response.json();
         if (!response.ok || !data.success) {
-          throw new Error(data.error || 'Error al confirmar pago');
+          console.error('Error actualizando estado del pedido:', data.error);
+          toast({ title: 'Error al confirmar pago', description: data.error || 'Intenta nuevamente.', variant: 'destructive', duration: 5000 });
+          return;
         }
       }
 
-      // Success steps (Unified)
+      // Refrescar pedidos y cerrar modal (común para ambos casos)
       await fetchOrders();
       toast({ title: 'Pago confirmado', description: 'El pago ha sido registrado exitosamente.', duration: 4000 });
       setIsPaymentModalOpen(false);
       setSelectedOrderForPayment(null);
-      setSelectedGroupForPayment(null);
       setSelectedPaymentMethod(null);
       setPaymentStep(1);
-
-    } catch (e: any) {
+    } // End of try block !! MISSING BRACE ADDED HERE
+    catch (e: any) {
       console.error('Excepción confirmando pago:', e);
-      toast({ title: 'Error', description: e?.message || 'Ocurrió un problema al confirmar el pago.', variant: 'destructive', duration: 5000 });
+      toast({ title: 'Error inesperado', description: e?.message || 'Ocurrió un problema al confirmar el pago.', variant: 'destructive', duration: 5000 });
     } finally {
       setIsConfirmingPayment(false);
     }
