@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { 
   Package, 
-  Truck, 
+  Truck,
   CheckCircle, 
   Clock, 
   DollarSign, 
@@ -76,18 +76,6 @@ const QUICK_ACTIONS = (t: TFunction) => ([
     hoverBg: 'hover:bg-blue-50',
     hoverBorder: 'hover:border-blue-300',
     href: '/cliente/mis-pedidos'
-  },
-  {
-    id: 'track_order',
-    title: t('client.quickActions.trackOrder'),
-    description: t('client.quickActions.trackOrderDesc'),
-    icon: Truck,
-    color: 'bg-orange-500',
-    bgColor: 'bg-orange-100',
-    textColor: 'text-orange-600',
-    hoverBg: 'hover:bg-orange-50',
-    hoverBorder: 'hover:border-orange-300',
-    href: '/cliente/tracking'
   }
 ]);
 

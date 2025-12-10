@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { 
   Package, 
-  Truck, 
+  Truck,
   CheckCircle, 
   Clock, 
   DollarSign, 
@@ -38,14 +38,6 @@ const QUICK_ACTIONS = [
     icon: ShoppingCart,
     color: 'bg-blue-500',
     href: '/mis-pedidos'
-  },
-  {
-    id: 'track_order',
-    title: 'Seguir Pedido',
-    description: 'Consulta el estado de tus envíos',
-    icon: Truck,
-    color: 'bg-green-500',
-    href: '/tracking'
   },
   {
     id: 'support',
@@ -202,7 +194,7 @@ export default function DashboardPage() {
               <CardTitle className={`text-lg ${mounted && theme === 'dark' ? 'text-white' : ''}`}>Acciones Rápidas</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {QUICK_ACTIONS.map((action) => {
                   const Icon = action.icon;
                   return (
