@@ -40,10 +40,10 @@ export async function GET(
 
     const supabase = getSupabaseServiceRoleClient();
 
-    // Verificar que el pedido existe
+    // Verificar que el pedido existe y obtener campos necesarios
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .select('id, state, created_at')
+      .select('id, state, created_at, shippingType, deliveryType')
       .eq('id', orderId)
       .single();
 
@@ -75,17 +75,43 @@ export async function GET(
       console.error('Error getting history:', historyError);
     }
 
-    // Formatear respuesta
-    const formattedTimeline = timeline.map((step: any) => ({
-      id: step.step_id,
-      status: step.step_key,
-      description: step.step_name,
-      location: step.location || '—',
-      timestamp: step.step_timestamp ? formatTimestamp(step.step_timestamp) : '—',
-      completed: step.completed || false
-    }));
+    // Determinar ubicaciones según tipo de envío
+    const shippingType = order?.shippingType || null;
+    const clientLocation = order?.deliveryType || '—'; // deliveryType contiene la ciudad de destino en Venezuela
+    
+    const getLocationForStep = (stepKey: string): string => {
+      if (stepKey === 'created') {
+        return clientLocation;
+      } else if (stepKey === 'processing') {
+        return 'Nanjing, China';
+      } else if (stepKey === 'shipped') {
+        if (shippingType === 'air') {
+          return 'Enping, China';
+        } else if (shippingType === 'maritime') {
+          return 'Yiwu, China';
+        }
+        return '—';
+      } else if (stepKey === 'customs') {
+        return 'Venezuela';
+      }
+      return '—';
+    };
 
-
+    // Formatear respuesta y actualizar ubicaciones según tipo de envío
+    const formattedTimeline = timeline.map((step: any) => {
+      // Siempre usar la función para determinar ubicación según el tipo de envío
+      // Esto asegura que las ubicaciones sean consistentes (ej: "Venezuela" para customs)
+      const stepLocation = getLocationForStep(step.step_key);
+      
+      return {
+        id: step.step_id,
+        status: step.step_key,
+        description: step.step_name,
+        location: stepLocation,
+        timestamp: step.step_timestamp ? formatTimestamp(step.step_timestamp) : '—',
+        completed: step.completed || false
+      };
+    });
 
     return NextResponse.json({
       success: true,
@@ -137,11 +163,33 @@ function generateBasicTimeline(order: any) {
 
   const currentIndex = statusIndexMap[currentStatus] || 0;
 
+  // Determinar ubicaciones según tipo de envío
+  const shippingType = order?.shippingType || null;
+  const clientLocation = order?.deliveryType || '—'; // deliveryType contiene la ciudad de destino en Venezuela
+  
+  const getLocationForStep = (stepKey: string, index: number): string => {
+    if (stepKey === 'created') {
+      return clientLocation;
+    } else if (stepKey === 'processing') {
+      return 'Nanjing, China';
+    } else if (stepKey === 'shipped') {
+      if (shippingType === 'air') {
+        return 'Enping, China';
+      } else if (shippingType === 'maritime') {
+        return 'Yiwu, China';
+      }
+      return '—';
+    } else if (stepKey === 'customs') {
+      return 'Venezuela';
+    }
+    return '—';
+  };
+
   const timeline = steps.map((step, index) => ({
     id: step.id,
     status: step.key,
     description: step.name,
-    location: index <= currentIndex ? (index === 3 ? 'En ruta' : '—') : '—',
+    location: index <= currentIndex ? getLocationForStep(step.key, index) : '—',
     timestamp: index === 0 ? formatTimestamp(order.created_at) : '—',
     completed: index <= currentIndex
   }));

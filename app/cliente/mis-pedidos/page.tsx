@@ -115,6 +115,8 @@ interface Order {
   arrive_date?: string | null;
   tracking_link?: string | null; // NUEVO: link de tracking del contenedor
   imageUrl?: string | null; // URL de la imagen del producto
+  shippingType?: string | null; // Tipo de envío: 'air' | 'maritime'
+  deliveryVenezuela?: string | null; // Ciudad de destino en Venezuela
 }
 
 const normalizeOrderId = (id: string | number) => String(id).trim();
@@ -498,7 +500,7 @@ export default function MisPedidosPage() {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select('id, productName, description, estimatedBudget, totalQuote, unitQuote, shippingPrice, state, created_at, pdfRoutes, quantity, box_id, imgs, batch_id')
+        .select('id, productName, description, estimatedBudget, totalQuote, unitQuote, shippingPrice, state, created_at, pdfRoutes, quantity, box_id, imgs, batch_id, shippingType, deliveryType')
         .eq('client_id', clientId)
         .order('created_at', { ascending: false });
       if (error) {
@@ -628,6 +630,8 @@ export default function MisPedidosPage() {
           tracking_link: tl,
           imageUrl: imgUrl,
           batch_id: row.batch_id || null,
+          shippingType: row.shippingType || null,
+          deliveryVenezuela: row.deliveryType || null, // deliveryType contiene la ciudad de destino en Venezuela
         };
       });
       setOrders(mapped);
@@ -749,7 +753,7 @@ export default function MisPedidosPage() {
   // const [timelineLoading, setTimelineLoading] = useState<{ [orderId: string]: boolean }>({});
 
   // Función para obtener timeline real desde la API
-  const fetchOrderTimeline = async (orderId: string): Promise<TrackingOrder['timeline']> => {
+  const fetchOrderTimeline = async (orderId: string, order?: Order): Promise<TrackingOrder['timeline']> => {
 
 
     // DESACTIVAR CACHÉ TEMPORALMENTE PARA DEBUG
@@ -761,7 +765,7 @@ export default function MisPedidosPage() {
     // DESACTIVAR LOADING CHECK TEMPORALMENTE
     // if (timelineLoading[orderId]) {
 
-    //   return generateFallbackTimeline(); // evitar múltiples requests
+    //   return generateFallbackTimeline(order); // evitar múltiples requests
     // }
 
     // setTimelineLoading(prev => ({ ...prev, [orderId]: true })); // CACHÉ DESACTIVADO
@@ -787,19 +791,19 @@ export default function MisPedidosPage() {
       } else {
         console.error('❌ Error fetching timeline:', data.error);
 
-        return generateFallbackTimeline();
+        return generateFallbackTimeline(order);
       }
     } catch (error) {
       console.error('🚨 Network error fetching timeline:', error);
 
-      return generateFallbackTimeline();
+      return generateFallbackTimeline(order);
     } finally {
       // setTimelineLoading(prev => ({ ...prev, [orderId]: false })); // CACHÉ DESACTIVADO
     }
   };
 
   // Función fallback para generar timeline básico
-  const generateFallbackTimeline = (): TrackingOrder['timeline'] => {
+  const generateFallbackTimeline = (order?: Order): TrackingOrder['timeline'] => {
     const steps = [
       { id: '1', key: 'created', name: 'Pedido creado' },
       { id: '2', key: 'processing', name: 'En procesamiento' },
@@ -809,12 +813,50 @@ export default function MisPedidosPage() {
       { id: '6', key: 'delivered', name: 'Entregado' },
     ];
 
+    // Determinar ubicaciones según tipo de envío
+    const shippingType = order?.shippingType || null;
+    const clientLocation = order?.deliveryVenezuela || '—';
+    
+    const getLocationForStep = (stepKey: string, index: number): string => {
+      if (stepKey === 'created') {
+        return clientLocation;
+      } else if (stepKey === 'processing') {
+        return 'Nanjing, China';
+      } else if (stepKey === 'shipped') {
+        if (shippingType === 'air') {
+          return 'Enping, China';
+        } else if (shippingType === 'maritime') {
+          return 'Yiwu, China';
+        }
+        return '—';
+      } else if (stepKey === 'customs') {
+        return 'Venezuela';
+      }
+      return '—';
+    };
+
+    // Función para formatear timestamp
+    const formatTimestamp = (timestamp: string): string => {
+      try {
+        const date = new Date(timestamp);
+        return date.toLocaleDateString('es-ES', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      } catch {
+        return '—';
+      }
+    };
+
     return steps.map((step, index) => ({
       id: step.id,
       status: step.key,
       description: step.name,
-      location: '—',
-      timestamp: '—',
+      location: getLocationForStep(step.key, index),
+      timestamp: index === 0 && order?.createdAt ? formatTimestamp(order.createdAt) : '—',
       completed: index === 0, // solo el primer paso marcado como completado
     }));
   };
@@ -836,7 +878,7 @@ export default function MisPedidosPage() {
 
     // Obtener timeline real desde la API
 
-    const timeline = await fetchOrderTimeline(order.id);
+    const timeline = await fetchOrderTimeline(order.id, order);
 
 
     const trackingOrder = {
@@ -868,7 +910,7 @@ export default function MisPedidosPage() {
       currentLocation: '—',
       lastUpdate: '—',
       carrier: '—',
-      timeline: generateFallbackTimeline(),
+      timeline: generateFallbackTimeline(order),
     };
 
     setSelectedTrackingOrder(basicTrackingOrder);
@@ -2986,7 +3028,11 @@ export default function MisPedidosPage() {
                           </div>
                           <div className="flex-1">
                             <p className={`font-medium ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{t(`client.recentOrders.trackingModal.states.${step.status}`)}</p>
-                            <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>{t(`client.recentOrders.trackingModal.states.${step.status}`)}</p>
+                            <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                              {t(`client.recentOrders.trackingModal.descriptions.${step.status}`, {
+                                fallback: t(`client.recentOrders.trackingModal.states.${step.status}`)
+                              })}
+                            </p>
                             <div className="flex items-center space-x-2 mt-1">
                               <MapPin className={`w-3 h-3 ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`} />
                               <span className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{step.location}</span>

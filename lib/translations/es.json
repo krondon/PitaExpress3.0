@@ -560,6 +560,15 @@
           "in-transit": "En tránsito",
           "customs": "En aduana",
           "delivered": "Entregado"
+        },
+        "descriptions": {
+          "created": "Tu pedido ha sido creado y confirmado",
+          "processing": "El producto está siendo preparado para envío",
+          "shipped": "El paquete ha sido enviado desde el almacén",
+          "in-transit": "El paquete está en camino a su destino",
+          "in_transit": "El paquete está en camino a su destino",
+          "customs": "El paquete está siendo procesado en aduana",
+          "delivered": "El paquete ha sido entregado exitosamente"
         }
       }
     },
@@ -1099,6 +1108,15 @@
         "in_transit": "En tránsito",
         "customs": "En aduana",
         "delivered": "Entregado"
+      },
+      "descriptions": {
+        "created": "Tu pedido ha sido creado y confirmado",
+        "processing": "El producto está siendo preparado para envío",
+        "shipped": "El paquete ha sido enviado desde el almacén",
+        "in-transit": "El paquete está en camino a su destino",
+        "in_transit": "El paquete está en camino a su destino",
+        "customs": "El paquete está siendo procesado en aduana",
+        "delivered": "El paquete ha sido entregado exitosamente"
       }
     },
     "reviews": {
