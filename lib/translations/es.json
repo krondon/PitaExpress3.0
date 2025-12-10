@@ -571,7 +571,8 @@
         "security": "Seguridad",
         "notifications": "Notificaciones",
         "preferences": "Preferencias",
-        "reviews": "Reseñas"
+        "reviews": "Reseñas",
+        "support": "Soporte"
       },
       "profile": {
         "title": "Información Personal",
@@ -735,6 +736,24 @@
           "24h": "24 horas",
           "12h": "12 horas (AM/PM)"
         }
+      },
+      "support": {
+        "title": "Soporte Técnico",
+        "description": "¿Necesitas ayuda? Contáctanos y te responderemos lo antes posible.",
+        "email": {
+          "title": "Correo Electrónico",
+          "address": "info@pitacompra.com",
+          "copiedMessage": "Correo copiado al portapapeles",
+          "send": "Enviar Email"
+        },
+        "phone": {
+          "title": "Teléfono / WhatsApp",
+          "number": "+58 424-4545294",
+          "copiedMessage": "Número copiado al portapapeles",
+          "openWhatsApp": "Abrir WhatsApp"
+        },
+        "copy": "Copiar",
+        "copied": "Copiado"
       },
       "reviews": {
         "title": "Reseñas de Pedidos",
@@ -1148,7 +1167,8 @@
         "security": "Seguridad",
         "notifications": "Notificaciones",
         "preferences": "Preferencias",
-        "reviews": "Reseñas"
+        "reviews": "Reseñas",
+        "support": "Soporte"
       },
       "profile": {
         "title": "Información Personal",
@@ -1316,6 +1336,24 @@
           "24h": "24 horas",
           "12h": "12 horas (AM/PM)"
         }
+      },
+      "support": {
+        "title": "Soporte Técnico",
+        "description": "¿Necesitas ayuda? Contáctanos y te responderemos lo antes posible.",
+        "email": {
+          "title": "Correo Electrónico",
+          "address": "info@pitacompra.com",
+          "copiedMessage": "Correo copiado al portapapeles",
+          "send": "Enviar Email"
+        },
+        "phone": {
+          "title": "Teléfono / WhatsApp",
+          "number": "+58 424-4545294",
+          "copiedMessage": "Número copiado al portapapeles",
+          "openWhatsApp": "Abrir WhatsApp"
+        },
+        "copy": "Copiar",
+        "copied": "Copiado"
       },
       "messages": {
         "profileUpdated": "Perfil actualizado",

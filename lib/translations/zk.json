@@ -713,7 +713,8 @@
         "security": "安全",
         "notifications": "通知",
         "preferences": "偏好",
-        "reviews": "评价"
+        "reviews": "评价",
+        "support": "支持"
       },
       "profile": {
         "title": "个人信息",
@@ -881,6 +882,24 @@
           "24h": "24 小时",
           "12h": "12 小时 (AM/PM)"
         }
+      },
+      "support": {
+        "title": "技术支持",
+        "description": "需要帮助？联系我们，我们会尽快回复您。",
+        "email": {
+          "title": "电子邮件",
+          "address": "info@pitacompra.com",
+          "copiedMessage": "电子邮件已复制到剪贴板",
+          "send": "发送邮件"
+        },
+        "phone": {
+          "title": "电话 / WhatsApp",
+          "number": "+58 424-4545294",
+          "copiedMessage": "号码已复制到剪贴板",
+          "openWhatsApp": "打开 WhatsApp"
+        },
+        "copy": "复制",
+        "copied": "已复制"
       },
       "reviews": {
         "title": "订单评价",

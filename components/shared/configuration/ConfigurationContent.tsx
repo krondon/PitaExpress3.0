@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import Image from 'next/image';
 import Sidebar from '@/components/layout/Sidebar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +17,12 @@ import {
   Globe,
   Palette,
   Camera,
+  HelpCircle,
+  Mail,
+  Phone,
+  Copy,
+  Check,
+  MessageCircle,
   Eye,
   EyeOff,
   Upload,
@@ -578,7 +584,7 @@ export default function ConfigurationContent({ role, onUserImageUpdate }: Config
         {/* Contenido principal */}
         <div className="p-4 md:p-5 lg:p-6 space-y-6 md:space-y-8">
           <Tabs defaultValue="perfil" className="space-y-6">
-            <TabsList className={role === 'admin' ? 'grid w-full grid-cols-3 md:grid-cols-3 lg:w-auto lg:grid-cols-3 gap-1' : 'grid w-full grid-cols-2 md:grid-cols-2 lg:w-auto lg:grid-cols-2 gap-1'}>
+            <TabsList className={role === 'admin' ? 'grid w-full grid-cols-4 md:grid-cols-4 lg:w-auto lg:grid-cols-4 gap-1' : 'grid w-full grid-cols-3 md:grid-cols-3 lg:w-auto lg:grid-cols-3 gap-1'}>
               <TabsTrigger value="perfil" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm">
                 <User className="w-3 h-3 md:w-4 md:h-4" />
                 <span>{t('admin.configuration.tabs.profile')}</span>
@@ -586,6 +592,10 @@ export default function ConfigurationContent({ role, onUserImageUpdate }: Config
               <TabsTrigger value="preferencias" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm">
                 <Globe className="w-3 h-3 md:w-4 md:h-4" />
                 <span>{t('admin.configuration.tabs.preferences')}</span>
+              </TabsTrigger>
+              <TabsTrigger value="soporte" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm">
+                <HelpCircle className="w-3 h-3 md:w-4 md:h-4" />
+                <span>{t('admin.configuration.tabs.support')}</span>
               </TabsTrigger>
               {role === 'admin' && (
                 <TabsTrigger value="reviews" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm">
@@ -925,6 +935,60 @@ export default function ConfigurationContent({ role, onUserImageUpdate }: Config
               </div>
             </TabsContent>
 
+            {/* Tab Soporte */}
+            <TabsContent value="soporte" className="space-y-6">
+              <div className="flex justify-center">
+                <div className="w-full max-w-2xl space-y-6">
+                  <Card className="bg-white/80 backdrop-blur-sm border-slate-200 dark:bg-slate-800/80 dark:border-slate-700">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <HelpCircle className="w-5 h-5" />
+                        {t('admin.configuration.support.title', { fallback: 'Soporte Técnico' })}
+                      </CardTitle>
+                      <CardDescription>
+                        {t('admin.configuration.support.description', { fallback: '¿Necesitas ayuda? Contáctanos y te responderemos lo antes posible.' })}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {/* Correo Electrónico */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                          <Label className="text-base font-semibold">{t('admin.configuration.support.email.title', { fallback: 'Correo Electrónico' })}</Label>
+                        </div>
+                        <div className="flex items-center gap-2 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                          <span className="flex-1 font-mono text-sm">info@pitacompra.com</span>
+                          <SupportActionButtons 
+                            type="email" 
+                            value="info@pitacompra.com"
+                            t={t}
+                          />
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      {/* Teléfono / WhatsApp */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <MessageCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                          <Label className="text-base font-semibold">{t('admin.configuration.support.phone.title', { fallback: 'Teléfono / WhatsApp' })}</Label>
+                        </div>
+                        <div className="flex items-center gap-2 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                          <span className="flex-1 font-mono text-sm">+58 424-4545294</span>
+                          <SupportActionButtons 
+                            type="whatsapp" 
+                            value="+58 424-4545294"
+                            t={t}
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </TabsContent>
+
             {/* Tab Reseñas (solo para admin) */}
             {role === 'admin' && (
               <TabsContent value="reviews" className="space-y-6">
@@ -934,6 +998,93 @@ export default function ConfigurationContent({ role, onUserImageUpdate }: Config
           </Tabs>
         </div>
       </main>
+    </div>
+  );
+}
+
+// Componente para los botones de acción de soporte
+function SupportActionButtons({ type, value, t }: { type: 'email' | 'whatsapp'; value: string; t: any }) {
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      toast({
+        title: t('admin.configuration.support.copied', { fallback: 'Copiado' }),
+        description: type === 'email' 
+          ? t('admin.configuration.support.email.copiedMessage', { fallback: 'Correo copiado al portapapeles' })
+          : t('admin.configuration.support.phone.copiedMessage', { fallback: 'Número copiado al portapapeles' }),
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+    }
+  };
+
+  const handleOpen = () => {
+    if (type === 'email') {
+      window.location.href = `mailto:${value}`;
+    } else if (type === 'whatsapp') {
+      // Formato WhatsApp: limpiamos el número (sin +, espacios ni guiones)
+      // El formato wa.me funciona tanto para WhatsApp Web como para la app móvil
+      // En PC abre WhatsApp Web, en móvil abre la app
+      let phoneNumber = value.replace(/\s+/g, '').replace(/-/g, '').replace(/\(/g, '').replace(/\)/g, '');
+      
+      // Remover el + si existe
+      if (phoneNumber.startsWith('+')) {
+        phoneNumber = phoneNumber.substring(1);
+      }
+      
+      // Asegurar que el número tenga el código de país completo
+      // Formato: código país + número (ejemplo: 584244545294)
+      // Usamos api.whatsapp.com como alternativa más compatible
+      const whatsappUrl = `https://api.whatsapp.com/send?phone=${phoneNumber}`;
+      
+      // Abrir en nueva pestaña
+      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  return (
+    <div className="flex gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleCopy}
+        className="flex items-center gap-1"
+      >
+        {copied ? (
+          <>
+            <Check className="w-4 h-4" />
+            {t('admin.configuration.support.copied', { fallback: 'Copiado' })}
+          </>
+        ) : (
+          <>
+            <Copy className="w-4 h-4" />
+            {t('admin.configuration.support.copy', { fallback: 'Copiar' })}
+          </>
+        )}
+      </Button>
+      <Button
+        variant="default"
+        size="sm"
+        onClick={handleOpen}
+        className={`flex items-center gap-1 ${type === 'email' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}
+      >
+        {type === 'email' ? (
+          <>
+            <Mail className="w-4 h-4" />
+            {t('admin.configuration.support.email.send', { fallback: 'Enviar Email' })}
+          </>
+        ) : (
+          <>
+            <MessageCircle className="w-4 h-4" />
+            {t('admin.configuration.support.phone.openWhatsApp', { fallback: 'Abrir WhatsApp' })}
+          </>
+        )}
+      </Button>
     </div>
   );
 }

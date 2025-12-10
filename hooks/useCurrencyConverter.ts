@@ -237,16 +237,26 @@ export function useCurrencyConverter(): UseCurrencyConverterReturn {
 
   // Efecto para cargar la tasa al montar el componente
   useEffect(() => {
-    // Ejecutar inmediatamente al montar
-    fetchCurrentRate();
+    let isMounted = true;
+    let intervalId: NodeJS.Timeout | null = null;
 
-    // Actualizar cada 5 minutos
-    const interval = setInterval(() => {
+    // Ejecutar inmediatamente al montar
+    if (isMounted) {
       fetchCurrentRate();
+    }
+
+    // Actualizar cada 5 minutos (solo si el componente sigue montado)
+    intervalId = setInterval(() => {
+      if (isMounted) {
+        fetchCurrentRate();
+      }
     }, 5 * 60 * 1000);
 
     return () => {
-      clearInterval(interval);
+      isMounted = false;
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
       try {
         if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
             safeAbort('component-unmount');
@@ -256,7 +266,7 @@ export function useCurrencyConverter(): UseCurrencyConverterReturn {
         console.warn('Error aborting controller:', error);
       }
     };
-  }, [fetchCurrentRate]);
+  }, []); // Sin dependencias para evitar re-ejecuciones infinitas
 
   return {
     convert,

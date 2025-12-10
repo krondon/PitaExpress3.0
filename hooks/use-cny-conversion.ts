@@ -53,10 +53,16 @@ export const useCNYConversion = (): CNYConversionHook => {
     }
   }, []);
 
-  // Cargar tasa inicial
+  // Cargar tasa inicial (solo una vez al montar)
   useEffect(() => {
-    fetchCNYRate();
-  }, [fetchCNYRate]);
+    let mounted = true;
+    fetchCNYRate().finally(() => {
+      mounted = false;
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []); // Sin dependencias para evitar re-ejecuciones
 
   // Función para convertir USD a CNY
   const convertToCNY = useCallback((usdAmount: number): number => {

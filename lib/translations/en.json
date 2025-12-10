@@ -725,7 +725,8 @@
         "security": "Security",
         "notifications": "Notifications",
         "preferences": "Preferences",
-        "reviews": "Reviews"
+        "reviews": "Reviews",
+        "support": "Support"
       },
       "profile": {
         "title": "Personal Information",
@@ -893,6 +894,24 @@
           "24h": "24 hours",
           "12h": "12 hours (AM/PM)"
         }
+      },
+      "support": {
+        "title": "Technical Support",
+        "description": "Need help? Contact us and we'll respond as soon as possible.",
+        "email": {
+          "title": "Email",
+          "address": "info@pitacompra.com",
+          "copiedMessage": "Email copied to clipboard",
+          "send": "Send Email"
+        },
+        "phone": {
+          "title": "Phone / WhatsApp",
+          "number": "+58 424-4545294",
+          "copiedMessage": "Number copied to clipboard",
+          "openWhatsApp": "Open WhatsApp"
+        },
+        "copy": "Copy",
+        "copied": "Copied"
       },
       "reviews": {
         "title": "Order Reviews",
