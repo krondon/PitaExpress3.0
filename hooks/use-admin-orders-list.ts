@@ -11,6 +11,7 @@ export interface AdminOrderListItem {
   asignedEVzla: string | null;
   asignedEChina: string | null;
   created_at: string;
+  updated_at: string | null;
   estimatedBudget: number | null;
   reputation: number | null;
   pdfRoutes: string | null;
@@ -34,7 +35,8 @@ export function useAdminOrdersList() {
       const [{ data: orders, error: ordersError }, { data: clients, error: clientsError }] = await Promise.all([
         supabase
           .from('orders')
-          .select('id, state, productName, description, client_id, asignedEVzla, asignedEChina, created_at, estimatedBudget, reputation, pdfRoutes')
+          .select('id, state, productName, description, client_id, asignedEVzla, asignedEChina, created_at, updated_at, estimatedBudget, reputation, pdfRoutes')
+          .eq('archived_by_admin', false) // Filter out archived
           // LIFO: Mayor ID primero
           .order('id', { ascending: false }),
         supabase
@@ -84,6 +86,7 @@ export function useAdminOrdersList() {
           asignedEVzla: o.asignedEVzla ?? null,
           asignedEChina: o.asignedEChina ?? null,
           created_at: o.created_at,
+          updated_at: o.updated_at ?? null,
           estimatedBudget: o.estimatedBudget ?? null,
           reputation: o.reputation ?? null,
           pdfRoutes: o.pdfRoutes ?? null,

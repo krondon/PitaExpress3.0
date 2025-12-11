@@ -345,6 +345,33 @@ export default function MisPedidosPage() {
   // Referencia al modal para scroll
   const modalRef = useRef<HTMLDivElement>(null);
 
+  // State for Archive History Modal
+  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
+
+  const handleArchiveHistory = async () => {
+    setIsArchiving(true);
+    try {
+      const res = await fetch('/api/orders/archive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: 'client', userId: clientId })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      // Notificar resultado
+      alert(`Se han ocultado ${data.count} pedidos entregados/cancelados.`);
+      setIsArchiveModalOpen(false);
+      fetchOrders(); // Recargar la lista
+    } catch (e: any) {
+      console.error('Archive error:', e);
+      alert('Error al borrar historial: ' + e.message);
+    } finally {
+      setIsArchiving(false);
+    }
+  };
+
   // Estados para el modal de pago
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [paymentStep, setPaymentStep] = useState(1);
@@ -352,6 +379,7 @@ export default function MisPedidosPage() {
   const [selectedOrderForPayment, setSelectedOrderForPayment] = useState<Order | null>(null);
   const [selectedGroupForPayment, setSelectedGroupForPayment] = useState<ClientOrderGroupData | null>(null);
   const [selectedOrdersInModal, setSelectedOrdersInModal] = useState<string[]>([]); // New state for checkboxes
+
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
 
   // Estados para alternativas de productos
@@ -502,6 +530,7 @@ export default function MisPedidosPage() {
         .from('orders')
         .select('id, productName, description, estimatedBudget, totalQuote, unitQuote, shippingPrice, state, created_at, pdfRoutes, quantity, box_id, imgs, batch_id, shippingType, deliveryType')
         .eq('client_id', clientId)
+        .eq('archived_by_client', false) // Filter out archived orders
         .order('id', { ascending: false });
       if (error) {
         console.error('Error cargando pedidos:', error);
@@ -752,6 +781,9 @@ export default function MisPedidosPage() {
         return sum + (totalCNY / (cnyRate || 7.25));
       }, 0)
   };
+
+  // Calculate archivable orders count
+  const archivableOrdersCount = orders.filter(o => o.status === 'delivered' || o.status === 'cancelled').length;
 
   // Helpers específicos para el modal de tracking (colores simples)
   const getTrackingStatusColor = (status: string) => {
@@ -2703,6 +2735,16 @@ export default function MisPedidosPage() {
                       <SelectItem value="cancelled">{t('client.recentOrders.statuses.cancelled')}</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Button
+                    variant="outline"
+                    className="h-10 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => setIsArchiveModalOpen(true)}
+                    disabled={archivableOrdersCount === 0}
+                    title={archivableOrdersCount === 0 ? "No hay pedidos para borrar (Entregados o Cancelados)" : "Borrar historial"}
+                  >
+                    <Trash2 className="w-4 h-4 md:mr-2" />
+                    <span className="hidden md:inline">Borrar Historial</span>
+                  </Button>
                 </div>
               </div>
             </CardHeader>
@@ -3814,6 +3856,36 @@ export default function MisPedidosPage() {
         </DialogContent>
       </Dialog>
 
+
+
+      {/* Archive History Confirmation Modal */}
+      < Dialog open={isArchiveModalOpen} onOpenChange={setIsArchiveModalOpen} >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>¿Borrar historial de pedidos?</DialogTitle>
+            <DialogDescription className="space-y-3">
+              <p>¿Estás seguro de que deseas borrar el historial de pedidos completados/cancelados?</p>
+              <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-md text-sm text-red-800 dark:text-red-200 flex gap-2">
+                <AlertTriangle className="w-5 h-5 shrink-0" />
+                <span>Esta acción no se puede deshacer.</span>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button variant="outline" onClick={() => setIsArchiveModalOpen(false)} disabled={isArchiving}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleArchiveHistory}
+              disabled={isArchiving}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isArchiving ? 'Borrando...' : 'Sí, borrar historial'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog >
     </div >
   );
 }

@@ -451,6 +451,58 @@ export default function PedidosPage() {
   const [isProposeModalOpen, setIsProposeModalOpen] = useState(false);
   const [selectedOrderForAlternative, setSelectedOrderForAlternative] = useState<Order | null>(null);
 
+  // State for Archive History Modal
+  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
+
+  const handleArchiveHistory = async () => {
+    setIsArchiving(true);
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const res = await fetch('/api/orders/archive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: 'admin', userId: user?.id })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      // Notificar resultado
+      alert(`Se han eliminado ${data.count} pedidos.`);
+      setIsArchiveModalOpen(false);
+      refetchOrders(); // Recargar la lista
+    } catch (e: any) {
+      console.error('Archive error:', e);
+      alert('Error al borrar historial: ' + e.message);
+    } finally {
+      setIsArchiving(false);
+    }
+  };
+
+  // Calculate archivable count for Admin (Cancelled OR (Delivered > 30 days))
+  const archivableOrdersCount = useMemo(() => {
+    const now = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    return (adminOrders || []).filter(o => {
+      // Logic for AdminOrderListItem (hook return type)
+      // Check filtering is redundant effectively as the hook filters it, but keep it for clarity
+      // if (o.archived_by_admin) return false; -> Hook already filters this out.
+
+      if (o.state === 0) return true; // Cancelled (o.state matches StateNum in hook)
+      if (o.state === 13) {
+        // Check date
+        if (!o.created_at) return false; // fallback
+        const orderDate = new Date(o.updated_at || o.created_at);
+        return orderDate < thirtyDaysAgo;
+      }
+      return false;
+    }).length;
+  }, [adminOrders]);
+
   useEffect(() => { setMounted(true); }, []);
 
   // Map DB orders to UI shape whenever adminOrders changes
@@ -1944,6 +1996,16 @@ export default function PedidosPage() {
                     {t('admin.orders.modal.buttons.viewDocuments')}
                   </Button>
                   <Button
+                    variant="outline"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 dark:border-red-900/30 dark:hover:bg-red-900/20 w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => setIsArchiveModalOpen(true)}
+                    disabled={archivableOrdersCount === 0}
+                    title={archivableOrdersCount === 0 ? "No hay pedidos archivables (Solo Cancelados o Entregados hace >30 días)" : "Borrar Historial"}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Borrar Historial
+                  </Button>
+                  <Button
                     className={mounted && theme === 'dark' ? 'w-full bg-emerald-600 text-white hover:bg-emerald-700' : 'w-full bg-emerald-600 text-white hover:bg-emerald-700'}
                     onClick={() => handleOpenTrackingModal(selectedOrder)}
                   >
@@ -2164,6 +2226,39 @@ export default function PedidosPage() {
           // useAdminOrdersList handles realtime updates automatically
         }}
       />
+
+      {/* Archive History Confirmation Modal */}
+      <Dialog open={isArchiveModalOpen} onOpenChange={setIsArchiveModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>¿Borrar historial de pedidos?</DialogTitle>
+            <DialogDescription className="space-y-3">
+              <p>Esta acción archivará pedidos antiguos para limpiar la vista. Reglas aplicadas:</p>
+              <ul className="list-disc list-inside text-sm space-y-1 ml-2">
+                <li><strong>Cancelados:</strong> Se archivan inmediatamente.</li>
+                <li><strong>Entregados:</strong> Solo si tienen más de <strong>30 días</strong> de antigüedad.</li>
+              </ul>
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-md text-sm text-yellow-800 dark:text-yellow-200 flex gap-2">
+                <AlertCircle className="w-5 h-5 shrink-0" />
+                <span>Los pedidos no se eliminan de la base de datos, solo se ocultan.</span>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button variant="outline" onClick={() => setIsArchiveModalOpen(false)} disabled={isArchiving}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleArchiveHistory}
+              disabled={isArchiving}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isArchiving ? 'Procesando...' : 'Confirmar borrado'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
