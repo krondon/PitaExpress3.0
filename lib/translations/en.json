@@ -1594,6 +1594,7 @@
       "tabs": {
         "shipping": "Shipping",
         "financial": "Financial",
+        "monitoring": "Monitoring",
         "notifications": "Notifications"
       },
       "shipping": {

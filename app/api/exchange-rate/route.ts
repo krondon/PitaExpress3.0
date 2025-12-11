@@ -8,9 +8,12 @@ import {
   type LatestRateResult,
   type ExchangeRateRecord
 } from '@/lib/supabase/exchange-rates';
+import { saveApiHealthLog } from '@/lib/supabase/api-health-logs';
 
 // Función para obtener la tasa de cambio oficial del BCV
 async function fetchExchangeRate(): Promise<number> {
+  const startTime = Date.now();
+  
   try {
     // Intentar obtener la tasa oficial del BCV desde DollarVzla API
     const response = await fetch('https://api.dollarvzla.com/v1/exchange-rates', {
@@ -24,8 +27,16 @@ async function fetchExchangeRate(): Promise<number> {
       cache: 'no-store' // Evitar caché
     });
 
+    const responseTime = Date.now() - startTime;
+
     if (!response.ok) {
-      // No lanzar error inmediatamente, intentar fallbacks primero
+      // Registrar fallo
+      await saveApiHealthLog(
+        'dollarvzla.com',
+        'failed',
+        responseTime,
+        `API Error: ${response.status} ${response.statusText}`
+      );
       throw new Error(`API Error: ${response.status} ${response.statusText}`);
     }
 
@@ -33,6 +44,12 @@ async function fetchExchangeRate(): Promise<number> {
 
     // Validar estructura de respuesta
     if (!data || !data.exchangeRates || !Array.isArray(data.exchangeRates)) {
+      await saveApiHealthLog(
+        'dollarvzla.com',
+        'failed',
+        responseTime,
+        'Invalid API response structure'
+      );
       throw new Error('Invalid API response structure');
     }
 
@@ -42,6 +59,12 @@ async function fetchExchangeRate(): Promise<number> {
     );
 
     if (!bcvRate || !bcvRate.value) {
+      await saveApiHealthLog(
+        'dollarvzla.com',
+        'failed',
+        responseTime,
+        'BCV rate not found in API response'
+      );
       throw new Error('BCV rate not found in API response');
     }
 
@@ -49,15 +72,32 @@ async function fetchExchangeRate(): Promise<number> {
 
     // Validar que la tasa sea razonable usando la función utilitaria
     if (!isValidExchangeRate(rate)) {
+      await saveApiHealthLog(
+        'dollarvzla.com',
+        'failed',
+        responseTime,
+        `Invalid BCV exchange rate value: ${rate}`
+      );
       throw new Error(`Invalid BCV exchange rate value: ${rate}`);
     }
+
+    // Registrar éxito
+    await saveApiHealthLog(
+      'dollarvzla.com',
+      'success',
+      responseTime,
+      undefined,
+      rate
+    );
 
     return rate;
 
   } catch (error: any) {
+    const responseTime = Date.now() - startTime;
     console.warn('Warning: Primary BCV API failed (using fallback):', error.message);
 
     // Fallback: Intentar con pyDolarVenezuela para obtener BCV
+    const fallbackStartTime = Date.now();
     try {
       const fallbackResponse = await fetch('https://pydolarvenezuela-api.vercel.app/api/v1/dollar/page?page=bcv', {
         method: 'GET',
@@ -67,6 +107,8 @@ async function fetchExchangeRate(): Promise<number> {
         },
         signal: AbortSignal.timeout(3000)
       });
+
+      const fallbackResponseTime = Date.now() - fallbackStartTime;
 
       if (fallbackResponse.ok) {
         const fallbackData = await fallbackResponse.json();
@@ -78,16 +120,39 @@ async function fetchExchangeRate(): Promise<number> {
           if (bcvMonitor && bcvMonitor.price) {
             const fallbackRate = parseFloat(bcvMonitor.price);
             if (isValidExchangeRate(fallbackRate)) {
+              await saveApiHealthLog(
+                'pydolarvenezuela',
+                'success',
+                fallbackResponseTime,
+                undefined,
+                fallbackRate
+              );
               return fallbackRate;
             }
           }
         }
       }
-    } catch (fallbackError) {
+      
+      // Si llegamos aquí, la API respondió pero no encontramos la tasa
+      await saveApiHealthLog(
+        'pydolarvenezuela',
+        'failed',
+        fallbackResponseTime,
+        'BCV monitor not found in response'
+      );
+    } catch (fallbackError: any) {
+      const fallbackResponseTime = Date.now() - fallbackStartTime;
+      await saveApiHealthLog(
+        'pydolarvenezuela',
+        'failed',
+        fallbackResponseTime,
+        fallbackError.message || 'Unknown error'
+      );
       console.error('Fallback BCV API also failed:', fallbackError);
     }
 
     // Segundo fallback: Usar una API alternativa para BCV
+    const altStartTime = Date.now();
     try {
       const altResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD', {
         method: 'GET',
@@ -98,16 +163,39 @@ async function fetchExchangeRate(): Promise<number> {
         signal: AbortSignal.timeout(3000)
       });
 
+      const altResponseTime = Date.now() - altStartTime;
+
       if (altResponse.ok) {
         const altData = await altResponse.json();
         if (altData && altData.rates && altData.rates.VES) {
           const vesRate = parseFloat(altData.rates.VES);
           if (isValidExchangeRate(vesRate)) {
+            await saveApiHealthLog(
+              'exchangerate-api',
+              'success',
+              altResponseTime,
+              undefined,
+              vesRate
+            );
             return vesRate;
           }
         }
       }
-    } catch (altError) {
+      
+      await saveApiHealthLog(
+        'exchangerate-api',
+        'failed',
+        altResponseTime,
+        'VES rate not found in response'
+      );
+    } catch (altError: any) {
+      const altResponseTime = Date.now() - altStartTime;
+      await saveApiHealthLog(
+        'exchangerate-api',
+        'failed',
+        altResponseTime,
+        altError.message || 'Unknown error'
+      );
       console.error('Alternative API also failed:', altError);
     }
 
@@ -118,17 +206,50 @@ async function fetchExchangeRate(): Promise<number> {
 // GET: Obtener tasa de cambio actual
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const forceRefresh = searchParams.get('force') === 'true';
+    
     // 1. Intentar obtener de APIs externas primero
     let apiRate: number | null = null;
     let apiSource = 'BCV Oficial';
     let apiError: any = null;
 
-    try {
-      apiRate = await fetchExchangeRate();
+    // Si forceRefresh está activado, siempre intentar obtener de API
+    // Si no, intentar obtener de BD primero (para evitar llamadas innecesarias)
+    if (forceRefresh) {
+      try {
+        console.log('[GET /api/exchange-rate] Force refresh activado, llamando a fetchExchangeRate()...');
+        apiRate = await fetchExchangeRate();
+      } catch (error) {
+        apiError = error;
+        console.error('[ExchangeRate] All APIs failed:', error);
+      }
+    } else {
+      // Intentar obtener de API solo si no hay tasa reciente en BD
+      const lastValidRate = await getLatestValidExchangeRate();
+      const shouldFetchFromAPI = !lastValidRate || lastValidRate.age_minutes > 30;
+      
+      if (shouldFetchFromAPI) {
+        try {
+          console.log('[GET /api/exchange-rate] No hay tasa reciente, llamando a fetchExchangeRate()...');
+          apiRate = await fetchExchangeRate();
+        } catch (error) {
+          apiError = error;
+          console.error('[ExchangeRate] All APIs failed:', error);
+        }
+      } else {
+        console.log('[GET /api/exchange-rate] Usando tasa de BD (edad:', lastValidRate.age_minutes, 'minutos)');
+      }
+    }
 
-    } catch (error) {
-      apiError = error;
-      console.error('[ExchangeRate] All APIs failed:', error);
+    // Si forceRefresh y no obtuvimos tasa, intentar de nuevo sin forceRefresh
+    if (forceRefresh && !apiRate) {
+      try {
+        apiRate = await fetchExchangeRate();
+      } catch (error) {
+        apiError = error;
+        console.error('[ExchangeRate] All APIs failed:', error);
+      }
     }
 
     // 2. Si obtuvimos tasa de API, guardarla y retornarla
@@ -166,11 +287,11 @@ export async function GET(request: NextRequest) {
       // Guardar registro de que usamos fallback (solo si no es muy antiguo)
       if (lastValidRate.age_minutes < 1440) { // Solo si tiene menos de 24 horas
         try {
-          await saveExchangeRate(lastValidRate.rate, lastValidRate.source, true, {
-            fallback_reason: 'APIs failed',
-            original_error: apiError?.message,
-            age_minutes: lastValidRate.age_minutes
-          });
+      await saveExchangeRate(lastValidRate.rate, lastValidRate.source, true, {
+        fallback_reason: 'APIs failed',
+        original_error: apiError?.message,
+        age_minutes: lastValidRate.age_minutes
+      });
         } catch (saveError) {
           console.warn('[ExchangeRate] Could not save fallback record:', saveError);
           // Continuar aunque falle el guardado
@@ -214,10 +335,10 @@ export async function GET(request: NextRequest) {
 
     // Intentar guardar la tasa por defecto, pero no fallar si no se puede
     try {
-      await saveExchangeRate(defaultRate, 'Hardcoded Default', true, {
-        fallback_reason: 'No rates available in APIs or database',
-        api_error: apiError?.message
-      });
+    await saveExchangeRate(defaultRate, 'Hardcoded Default', true, {
+      fallback_reason: 'No rates available in APIs or database',
+      api_error: apiError?.message
+    });
     } catch (saveError) {
       console.warn('[ExchangeRate] Could not save default rate:', saveError);
       // Continuar aunque falle el guardado
@@ -271,7 +392,9 @@ export async function POST(request: NextRequest) {
 
     // Si no hay tasa manual, obtener de API y guardar
     try {
+      console.log('[POST /api/exchange-rate] Llamando a fetchExchangeRate()...');
       const apiRate = await fetchExchangeRate();
+      console.log('[POST /api/exchange-rate] Tasa obtenida:', apiRate);
 
       // Guardar tasa de API en BD
       await saveExchangeRate(apiRate, 'BCV Oficial (Manual Refresh)', false, {

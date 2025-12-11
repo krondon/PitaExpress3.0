@@ -1583,6 +1583,7 @@
       "tabs": {
         "shipping": "运输",
         "financial": "财务",
+        "monitoring": "监控",
         "notifications": "通知"
       },
       "shipping": {

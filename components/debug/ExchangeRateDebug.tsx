@@ -130,8 +130,8 @@ export function ExchangeRateDebug() {
 
           {/* Controles */}
           <div className="flex gap-2 flex-wrap">
-            <Button 
-              onClick={refreshRate} 
+            <Button
+              onClick={() => refreshRate(true)}
               disabled={loading}
               size="sm"
               className="flex items-center gap-2"

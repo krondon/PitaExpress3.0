@@ -157,9 +157,91 @@ export function useExchangeRate(options: UseExchangeRateOptions = {}) {
     }
   }, []);
 
-  // Función manual para refrescar
-  const refreshRate = useCallback(() => {
-    fetchRate(true);
+  // Función manual para refrescar (fuerza actualización desde API)
+  const refreshRate = useCallback(async (showToast = true) => {
+    // Cancelar request anterior si existe
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    abortControllerRef.current = new AbortController();
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Agregar ?force=true para forzar actualización desde API
+      const response = await fetch('/api/exchange-rate?force=true', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        signal: abortControllerRef.current.signal
+      });
+
+      const data: ExchangeRateResponse = await response.json();
+
+      if (data.success && data.rate) {
+        setRate(data.rate);
+        setLastUpdated(new Date(data.timestamp || new Date().toISOString()));
+        setSource(data.source || 'API');
+        setFromDatabase(data.from_database || false);
+        setAgeMinutes(data.age_minutes || null);
+        setWarning(data.warning || null);
+        
+        // Callback para actualizar el componente padre
+        if (onRateUpdateRef.current) {
+          onRateUpdateRef.current(data.rate);
+        }
+
+        if (showToast && toastRef.current) {
+          const title = data.from_database ? t('admin.management.financial.rateRecovered') : t('admin.management.financial.rateUpdated');
+          const description = data.from_database 
+            ? (data.age_minutes 
+                ? t('admin.management.financial.rateRecoveredDescription', { rate: data.rate.toFixed(2), currency: 'Bs/USD', age: `, ${data.age_minutes} min` })
+                : t('admin.management.financial.rateRecoveredDescriptionNoAge', { rate: data.rate.toFixed(2), currency: 'Bs/USD' }))
+            : t('admin.management.financial.rateUpdatedDescription', { rate: data.rate.toFixed(2), currency: 'Bs/USD' });
+          
+          toastRef.current({
+            title,
+            description,
+            variant: data.warning ? "destructive" : "default",
+            duration: data.warning ? 5000 : 3000,
+          });
+
+          // Mostrar warning adicional si existe
+          if (data.warning && showToast) {
+            setTimeout(() => {
+              toastRef.current?.({
+                title: t('admin.management.financial.warning'),
+                description: data.warning,
+                variant: "destructive",
+                duration: 6000,
+              });
+            }, 1000);
+          }
+        }
+      } else {
+        throw new Error(data.error || 'Error al obtener tasa de cambio');
+      }
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        return; // Request cancelado, no mostrar error
+      }
+
+      const errorMessage = error.message || 'Error de conexión';
+      setError(errorMessage);
+      
+      if (showToast && toastRef.current) {
+        toastRef.current({
+          title: t('admin.management.financial.rateUpdateError'),
+          description: errorMessage,
+          variant: "destructive",
+          duration: 5000,
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   // Effect para manejar auto-actualización

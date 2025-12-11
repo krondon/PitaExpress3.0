@@ -24,7 +24,8 @@ import {
   Moon,
   Loader2,
   Wifi,
-  WifiOff
+  WifiOff,
+  Activity
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,6 +44,7 @@ import { useExchangeRateBinance } from '@/hooks/useExchangeRateBinance';
 import { useRealtimeBusinessConfig } from '@/hooks/use-realtime-business-config';
 import ExchangeRateManager from '@/components/admin/ExchangeRateManager';
 import { useTimeTranslations } from '@/hooks/useTimeTranslations';
+import ApiHealthMonitor from '@/components/admin/ApiHealthMonitor';
 
 interface BusinessConfig {
   // Parámetros de envío
@@ -1047,7 +1049,7 @@ export default function ConfiguracionPage() {
           </Alert>
 
           <Tabs defaultValue="shipping" className="space-y-6 md:space-y-8">
-            <TabsList className={`grid w-full grid-cols-1 md:grid-cols-2 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm place-items-center`}>
+            <TabsList className={`grid w-full grid-cols-1 md:grid-cols-3 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm place-items-center`}>
               <TabsTrigger value="shipping" className="flex items-center space-x-2 text-xs md:text-sm">
                 <Package className="w-4 h-4" />
                 <span>{t('admin.management.tabs.shipping')}</span>
@@ -1055,6 +1057,10 @@ export default function ConfiguracionPage() {
               <TabsTrigger value="financial" className="flex items-center space-x-2 text-xs md:text-sm">
                 <DollarSign className="w-4 h-4" />
                 <span>{t('admin.management.tabs.financial')}</span>
+              </TabsTrigger>
+              <TabsTrigger value="monitoring" className="flex items-center space-x-2 text-xs md:text-sm">
+                <Activity className="w-4 h-4" />
+                <span>{t('admin.management.tabs.monitoring', { fallback: 'Monitoreo' })}</span>
               </TabsTrigger>
             </TabsList>
 
@@ -1167,7 +1173,7 @@ export default function ConfiguracionPage() {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          onClick={refreshRate}
+                          onClick={() => refreshRate(true)}
                           disabled={isLoading || exchangeRateLoading}
                           className={`absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-slate-700`}
                           title="Actualizar tasa desde BCV"
@@ -1355,7 +1361,7 @@ export default function ConfiguracionPage() {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          onClick={refreshRateBinance}
+                          onClick={() => refreshRateBinance()}
                           disabled={isLoading || exchangeRateLoadingBinance}
                           className={`absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-slate-700`}
                           title="Actualizar tasa desde Binance P2P"
@@ -1502,7 +1508,7 @@ export default function ConfiguracionPage() {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          onClick={refreshRateBinanceSell}
+                          onClick={() => refreshRateBinanceSell()}
                           disabled={isLoading || exchangeRateLoadingBinanceSell}
                           className={`absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-slate-700`}
                           title="Actualizar tasa de venta desde Binance P2P"
@@ -1660,6 +1666,11 @@ export default function ConfiguracionPage() {
                   </AlertDescription>
                 </Alert>
               </div>
+            </TabsContent>
+
+            {/* TAB: Monitoreo de APIs */}
+            <TabsContent value="monitoring" className="space-y-6 md:space-y-8">
+              <ApiHealthMonitor />
             </TabsContent>
 
             {/* Opción Seguridad eliminada */}

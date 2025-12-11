@@ -6,6 +6,7 @@ import {
   isValidBinanceRate,
   cleanupOldBinanceRates
 } from '@/lib/supabase/exchange-rates-binance';
+import { saveApiHealthLog } from '@/lib/supabase/api-health-logs';
 
 interface ApiConfig {
   name: string;
@@ -106,6 +107,7 @@ async function fetchBinanceRate(tradeType: 'BUY' | 'SELL' = 'BUY'): Promise<numb
 
   // Intentar cada API en orden
   for (const api of apis) {
+    const startTime = Date.now();
     try {
 
 
@@ -127,9 +129,17 @@ async function fetchBinanceRate(tradeType: 'BUY' | 'SELL' = 'BUY'): Promise<numb
       }
 
       const response = await fetch(api.url, fetchOptions);
+      const responseTime = Date.now() - startTime;
 
       if (!response.ok) {
         console.error(`[Binance Rate] ${api.name} HTTP error: ${response.status}`);
+        // Registrar fallo
+        await saveApiHealthLog(
+          api.name.toLowerCase().replace(/-/g, '_'),
+          'failed',
+          responseTime,
+          `API Error: ${response.status} ${response.statusText}`
+        );
         throw new Error(`API Error: ${response.status} ${response.statusText}`);
       }
 
@@ -138,6 +148,12 @@ async function fetchBinanceRate(tradeType: 'BUY' | 'SELL' = 'BUY'): Promise<numb
 
       if (!rate) {
         console.error(`[Binance Rate] ${api.name} - No se pudo extraer tasa de la respuesta`);
+        await saveApiHealthLog(
+          api.name.toLowerCase().replace(/-/g, '_'),
+          'failed',
+          responseTime,
+          'Binance rate not found in response'
+        );
         throw new Error(`Binance rate not found in ${api.name} response`);
       }
 
@@ -145,14 +161,38 @@ async function fetchBinanceRate(tradeType: 'BUY' | 'SELL' = 'BUY'): Promise<numb
 
       if (!isValidBinanceRate(parsedRate)) {
         console.error(`[Binance Rate] ${api.name} - Tasa inválida: ${parsedRate}`);
+        await saveApiHealthLog(
+          api.name.toLowerCase().replace(/-/g, '_'),
+          'failed',
+          responseTime,
+          `Invalid Binance rate value: ${parsedRate}`
+        );
         throw new Error(`Invalid Binance rate value from ${api.name}: ${parsedRate}`);
       }
 
+      // Registrar éxito
+      await saveApiHealthLog(
+        api.name.toLowerCase().replace(/-/g, '_'),
+        'success',
+        responseTime,
+        undefined,
+        parsedRate
+      );
 
       return parsedRate;
 
     } catch (error: any) {
+      const responseTime = Date.now() - startTime;
       console.error(`❌ [Binance Rate] ${api.name} failed:`, error.message);
+      // Registrar fallo si no se registró antes
+      if (!error.message.includes('API Error') && !error.message.includes('not found') && !error.message.includes('Invalid')) {
+        await saveApiHealthLog(
+          api.name.toLowerCase().replace(/-/g, '_'),
+          'failed',
+          responseTime,
+          error.message || 'Unknown error'
+        );
+      }
       lastError = error;
       continue; // Intentar siguiente API
     }

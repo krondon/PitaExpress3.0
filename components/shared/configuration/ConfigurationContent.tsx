@@ -1415,10 +1415,10 @@ function AdminReviewsSection() {
                     ? `No hay reseñas con ${ratingFilter} ${ratingFilter === 1 ? 'estrella' : 'estrellas'}`
                     : t('admin.configuration.reviews.noReviews', { fallback: 'No hay reseñas aún' })
                   }
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
                 {filteredReviews.map((review) => (
               <div
                 key={review.id}
@@ -1456,8 +1456,8 @@ function AdminReviewsSection() {
                   </div>
                 )}
               </div>
-                ))}
-              </div>
+            ))}
+          </div>
             )}
           </>
         )}

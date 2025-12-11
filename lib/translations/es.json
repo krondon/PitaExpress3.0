@@ -2030,6 +2030,7 @@
       "tabs": {
         "shipping": "Envíos",
         "financial": "Finanzas",
+        "monitoring": "Monitoreo",
         "notifications": "Notificaciones"
       },
       "shipping": {
