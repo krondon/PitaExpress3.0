@@ -635,6 +635,37 @@ export default function MisPedidosPage() {
         };
       });
       setOrders(mapped);
+
+      // Proactive review status check for delivered orders (State 13)
+      const deliveredOrders = mapped.filter(o => o.stateNum === 13);
+      if (deliveredOrders.length > 0) {
+        const orderIds = deliveredOrders.map(o => parseInt(o.id));
+        try {
+          // We need to fetch the reviews to know if they exist
+          const { data: reviews } = await supabase
+            .from('order_reviews')
+            .select('order_id, rating, review_text, created_at')
+            .eq('client_id', clientId) // Assuming local Supabase client respects RLS or client_id is UUID
+            .in('order_id', orderIds);
+
+          if (reviews && reviews.length > 0) {
+            const batchReviews: Record<string, any> = {};
+            reviews.forEach((review: any) => {
+              const key = normalizeOrderId(review.order_id);
+              batchReviews[key] = {
+                rating: review.rating,
+                reviewText: review.review_text,
+                createdAt: review.created_at
+              };
+            });
+            // Update state with found reviews
+            setOrderReviews(prev => ({ ...prev, ...batchReviews }));
+          }
+        } catch (err) {
+          console.warn('Error batch fetching reviews:', err);
+        }
+      }
+
       // Exponer variables solicitadas
       setTrackingNumberMap(tnMap);
       setTrackingCompanyMap(tcMap);
@@ -816,7 +847,7 @@ export default function MisPedidosPage() {
     // Determinar ubicaciones según tipo de envío
     const shippingType = order?.shippingType || null;
     const clientLocation = order?.deliveryVenezuela || '—';
-    
+
     const getLocationForStep = (stepKey: string, index: number): string => {
       if (stepKey === 'created') {
         return clientLocation;
@@ -998,12 +1029,18 @@ export default function MisPedidosPage() {
     setIsReviewModalOpen(true);
   };
 
-  const openViewReviewModal = async (order: Order) => {
-    const orderKey = normalizeOrderId(order.id);
-    setSelectedOrderForReview(order);
-    if (!orderReviews[orderKey]) {
-      await fetchOrderReview(orderKey);
+  // Efecto de seguridad: cargar reseña si el modal de vista está abierto pero no hay datos
+  useEffect(() => {
+    if (isViewReviewModalOpen && selectedOrderForReview) {
+      const orderKey = normalizeOrderId(selectedOrderForReview.id);
+      if (!orderReviews[orderKey] && !loadingReviews[orderKey]) {
+        fetchOrderReview(orderKey);
+      }
     }
+  }, [isViewReviewModalOpen, selectedOrderForReview, orderReviews, loadingReviews]);
+
+  const openViewReviewModal = (order: Order) => {
+    setSelectedOrderForReview(order);
     setIsViewReviewModalOpen(true);
   };
 
