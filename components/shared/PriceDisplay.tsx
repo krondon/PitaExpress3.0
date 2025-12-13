@@ -35,7 +35,7 @@ export function PriceDisplay({
   // console.log('[PriceDisplay] Hook retornó - currentRate:', currentRate, 'isLoading:', isLoading, 'error:', error);
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  
+
   useEffect(() => {
     setMounted(true);
     // Forzar actualización de tasa cuando el componente se monta
@@ -43,15 +43,11 @@ export function PriceDisplay({
       refreshRate();
     }
   }, [refreshRate]);
-  
+
   // Si la tasa es la por defecto (36.25) y no está cargando, forzar actualización
-  useEffect(() => {
-    if (currentRate === 36.25 && !isLoading && refreshRate) {
-      // Silenciosamente forzar actualización sin mostrar warning
-      refreshRate();
-    }
-  }, [currentRate, isLoading, refreshRate]);
-  
+  // Efecto eliminado: Forzar actualización si la tasa es default causaba loop infinito si la API fallaba o retornaba default.
+  // La carga inicial ya es manejada por el hook useCurrencyConverter.
+
   const conversion = convert(amount, currency);
 
   // Estilos según tamaño
@@ -96,7 +92,7 @@ export function PriceDisplay({
               </TooltipProvider>
             )}
           </div>
-          
+
           <div className="space-y-1">
             <div className={`${sizeClasses[size]} font-semibold ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>
               {conversion.formatted.usd}
@@ -107,7 +103,7 @@ export function PriceDisplay({
               </div>
             )}
           </div>
-          
+
           {lastUpdated && (
             <div className={`text-xs mt-2 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}`}>
               Tasa: {currentRate.toFixed(2)} Bs/USD
@@ -135,8 +131,8 @@ export function PriceDisplay({
     case 'inline':
       return (
         <span className={`${sizeClasses[size]} ${className}`}>
-          {showBoth ? conversion.formatted.both : 
-           currency === 'USD' ? conversion.formatted.usd : conversion.formatted.bolivars}
+          {showBoth ? conversion.formatted.both :
+            currency === 'USD' ? conversion.formatted.usd : conversion.formatted.bolivars}
         </span>
       );
 
@@ -171,7 +167,7 @@ export function PriceDisplay({
               </Button>
             )}
           </div>
-          
+
           {error && (
             <div className="text-xs text-red-500 mt-1">
               Error: {error}
