@@ -38,7 +38,7 @@ export function useChatMessages({ conversationUserId, currentUserId, currentUser
                 .select('created_at')
                 .eq('user_id', currentUserId)
                 .eq('hidden_user_id', conversationUserId)
-                .single();
+                .maybeSingle();
 
             const hiddenSince = hiddenData?.created_at ? new Date(hiddenData.created_at) : null;
 
