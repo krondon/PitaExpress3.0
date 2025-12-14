@@ -138,7 +138,7 @@ CREATE POLICY "userlevel_select" ON public.userlevel
     (select auth.uid()) = id
     OR EXISTS (
       SELECT 1 FROM public.administrators
-      WHERE administrators.id = (select auth.uid())
+      WHERE administrators.user_id = (select auth.uid())
     )
   );
 
@@ -154,13 +154,13 @@ CREATE POLICY "admins_manage_userlevel" ON public.userlevel
   USING (
     EXISTS (
       SELECT 1 FROM public.administrators
-      WHERE administrators.id = (select auth.uid())
+      WHERE administrators.user_id = (select auth.uid())
     )
   )
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM public.administrators
-      WHERE administrators.id = (select auth.uid())
+      WHERE administrators.user_id = (select auth.uid())
     )
   );
 
@@ -250,13 +250,13 @@ CREATE POLICY "users_update_reviews" ON public.order_reviews
   USING (
     (select auth.uid()) = (SELECT client_id FROM public.orders WHERE orders.id = order_reviews.order_id)
     OR EXISTS (
-      SELECT 1 FROM public.administrators WHERE id = (select auth.uid())
+      SELECT 1 FROM public.administrators WHERE user_id = (select auth.uid())
     )
   )
   WITH CHECK (
     (select auth.uid()) = (SELECT client_id FROM public.orders WHERE orders.id = order_reviews.order_id)
     OR EXISTS (
-      SELECT 1 FROM public.administrators WHERE id = (select auth.uid())
+      SELECT 1 FROM public.administrators WHERE user_id = (select auth.uid())
     )
   );
 
@@ -265,7 +265,7 @@ CREATE POLICY "admins_delete_reviews" ON public.order_reviews
   FOR DELETE TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.administrators WHERE id = (select auth.uid())
+      SELECT 1 FROM public.administrators WHERE user_id = (select auth.uid())
     )
   );
 
@@ -292,12 +292,12 @@ CREATE POLICY "admins_manage_business_config" ON public.business_config
   FOR ALL TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM public.administrators WHERE id = (select auth.uid())
+      SELECT 1 FROM public.administrators WHERE user_id = (select auth.uid())
     )
   )
   WITH CHECK (
     EXISTS (
-      SELECT 1 FROM public.administrators WHERE id = (select auth.uid())
+      SELECT 1 FROM public.administrators WHERE user_id = (select auth.uid())
     )
   );
 
