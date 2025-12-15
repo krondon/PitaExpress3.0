@@ -16,12 +16,13 @@ export async function POST(request: NextRequest) {
         }
 
         // Client: Soft delete (independent visibility)
+        // Exclude -1 (payment rejected) because client can still pay again or cancel
         if (role === 'client') {
             const { data, error } = await supabase
                 .from('orders')
                 .update({ archived_by_client: true })
                 .eq('client_id', userId)
-                .in('state', [-2, -1, 13])
+                .in('state', [-2, 13]) // Solo cancelados y entregados, NO pago rechazado
                 .eq('archived_by_client', false)
                 .select();
 
