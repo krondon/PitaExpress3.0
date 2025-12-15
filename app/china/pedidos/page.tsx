@@ -1265,6 +1265,21 @@ export default function PedidosChina() {
         return;
       }
 
+      // Obtener el estado actual de la caja para poder revertirlo en caso de error
+      const { data: currentBox, error: boxFetchError } = await supabase
+        .from('boxes')
+        .select('state')
+        .eq('box_id', boxId)
+        .single();
+
+      if (boxFetchError) {
+        console.error('Error obteniendo estado de la caja:', boxFetchError);
+        toast({ title: t('chinese.ordersPage.toasts.unexpectedErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgainLater') });
+        return;
+      }
+
+      const previousBoxState = currentBox?.state ?? 3; // Estado por defecto si no se encuentra
+
       // Cambiar estado de la caja a enviado (state = 4)
       const { error: boxUpdateError } = await supabase
         .from('boxes')
@@ -1272,19 +1287,44 @@ export default function PedidosChina() {
         .eq('box_id', boxId);
 
       if (boxUpdateError) {
-        console.error('Error enviando caja:', boxUpdateError);
+        console.error('Error enviando caja:', {
+          message: boxUpdateError.message,
+          details: boxUpdateError.details,
+          hint: boxUpdateError.hint,
+          code: boxUpdateError.code,
+          error: boxUpdateError
+        });
         toast({ title: t('chinese.ordersPage.toasts.sendBoxErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgain') });
         return;
       }
 
       // Cambiar estado de todos los pedidos a enviado (state = 9)
-      const { error: ordersUpdateError } = await supabase
+      const { error: ordersUpdateError, data: updatedOrders } = await supabase
         .from('orders')
         .update({ state: 9 })
-        .eq('box_id', boxId);
+        .eq('box_id', boxId)
+        .select('id');
 
       if (ordersUpdateError) {
-        console.error('Error actualizando pedidos:', ordersUpdateError);
+        console.error('Error actualizando pedidos:', {
+          message: ordersUpdateError.message,
+          details: ordersUpdateError.details,
+          hint: ordersUpdateError.hint,
+          code: ordersUpdateError.code,
+          error: ordersUpdateError
+        });
+        
+        // Revertir el estado de la caja si falló la actualización de pedidos
+        await supabase
+          .from('boxes')
+          .update({ state: previousBoxState })
+          .eq('box_id', boxId);
+        
+        toast({ 
+          title: t('chinese.ordersPage.toasts.sendBoxErrorTitle'), 
+          description: t('chinese.ordersPage.toasts.tryAgain') || 'No se pudieron actualizar los pedidos. Por favor intenta nuevamente.' 
+        });
+        return;
       }
 
       toast({ title: t('chinese.ordersPage.toasts.boxSentTitle'), description: t('chinese.ordersPage.toasts.boxSentDesc', { boxId }) });
