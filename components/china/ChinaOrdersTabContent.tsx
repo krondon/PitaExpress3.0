@@ -17,6 +17,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { useRealtimeChina } from '@/hooks/use-realtime-china';
 import { useProductAlternatives } from '@/hooks/use-product-alternatives';
 import ProposeAlternativeModal from './ProposeAlternativeModal';
+import CotizarModal from './CotizarModal';
 import jsPDF from 'jspdf';
 import { PriceDisplayWithCNY } from '@/components/shared/PriceDisplayWithCNY';
 import { useCNYConversion } from '@/hooks/use-cny-conversion';
@@ -912,88 +913,7 @@ export default function ChinaOrdersTabContent() {
     return groups;
   }
 
-  // Componente de Grupo (Batch Header)
-  function OrderBatchGroup({ group }: { group: OrderGroup }) {
-    const [expanded, setExpanded] = useState(true);
-    const { t } = useTranslation();
 
-    // Formatear fecha relativa (ej: "Hace 5 min")
-    const getTimeAgo = (dateStr: string) => {
-      const diff = Date.now() - new Date(dateStr).getTime();
-      const mins = Math.floor(diff / 60000);
-      if (mins < 1) return 'Hace un momento';
-      if (mins < 60) return `Hace ${mins} min`;
-      const hours = Math.floor(mins / 60);
-      if (hours < 24) return `Hace ${hours} h`;
-      return new Date(dateStr).toLocaleDateString();
-    };
-
-    return (
-      <div className="mb-6 border rounded-lg shadow-sm bg-white overflow-hidden">
-        {/* Header del Lote */}
-        <div
-          className="p-4 bg-slate-50 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-slate-100 transition-colors"
-          onClick={() => setExpanded(!expanded)}
-        >
-          <div className="flex items-start gap-4">
-            {/* Icono / Avatar Cliente */}
-            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold shrink-0">
-              {group.clientName.charAt(0).toUpperCase()}
-            </div>
-
-            <div>
-              {/* Título Principal: Rango de IDs */}
-              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <span className="font-mono text-blue-600">
-                  {group.orders.length > 1
-                    ? `#ORD-${group.minId} - ${group.maxId}`
-                    : `#ORD-${group.minId}`
-                  }
-                </span>
-                {group.orders.length > 1 && (
-                  <Badge variant="secondary" className="text-xs font-normal">
-                    {group.orders.length} pedidos
-                  </Badge>
-                )}
-              </h3>
-
-              {/* Subtítulo: Cliente y Fecha */}
-              <div className="text-sm text-slate-500 flex items-center gap-2 mt-1">
-                <User className="h-3 w-3" />
-                <span className="font-medium">{group.clientName}</span>
-                <span>•</span>
-                <Calendar className="h-3 w-3" />
-                <span>{getTimeAgo(group.date)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Acciones Derecha */}
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <div className={`transform transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}>
-                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-slate-500">
-                  <path d="M3.13523 6.15803C3.3241 5.95657 3.64052 5.94637 3.84197 6.13523L7.5 9.56464L11.158 6.13523C11.3595 5.94637 11.6759 5.95657 11.8648 6.15803C12.0536 6.35949 12.0434 6.67591 11.842 6.86477L7.84197 10.6148C7.64964 10.7951 7.35036 10.7951 7.15803 10.6148L3.15803 6.86477C2.95657 6.67591 2.94637 6.35949 3.13523 6.15803Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
-                </svg>
-              </div>
-            </Button>
-          </div>
-        </div>
-
-        {/* Lista de Pedidos (Acordeón) */}
-        {expanded && (
-          <div className="divide-y">
-            {group.orders.map((pedido) => (
-              <div key={pedido.id} className="p-4 hover:bg-slate-50/50 transition-colors">
-                {/* Renderizado del pedido individual (reutilizando estructura existente pero simplificada si es necesario) */}
-                {renderPedidoRow(pedido)}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
 
   // Componente para renderizar grupo de pedidos con animación de colapso
   function OrderBatchGroup({ group }: { group: OrderGroup }) {
@@ -1795,174 +1715,18 @@ export default function ChinaOrdersTabContent() {
           </div>
         )}
 
-        {/* Modal Cotizar (portal para evitar clipping y asegurar blur pantalla completa) */}
-        {mounted && modalCotizar.open && typeof document !== 'undefined' && createPortal(
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center">
-            {/* Capa de fondo (más oscura) */}
-            <div className="absolute inset-0 bg-black/70 dark:bg-black/75 backdrop-blur-sm transition-opacity" onClick={closeModalCotizar} />
-            {/* Contenido */}
-            <div ref={modalCotizarRef} className={`relative bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-lg mx-4 w-full max-h-[90vh] shadow-2xl border border-slate-200 dark:border-slate-700 transition-all duration-200 ease-out ${isClosingModalCotizar ? 'scale-95 opacity-0' : enteredModalCotizar ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('admin.orders.china.modals.quote.title')}</h3>
-                <Button variant="ghost" size="sm" onClick={closeModalCotizar} className="h-8 w-8 p-0">✕</Button>
-              </div>
-              <div className="overflow-y-auto max-h-[calc(90vh-8rem)]">
-                <form onSubmit={e => { e.preventDefault(); const precioUnitario = Number((e.target as any).precioUnitario.value); const precioEnvio = Number((e.target as any).precioEnvio.value); const altura = Number((e.target as any).altura.value); const anchura = Number((e.target as any).anchura.value); const largo = Number((e.target as any).largo.value); const peso = Number((e.target as any).peso.value); if (precioUnitario > 0 && modalCotizar.pedido) cotizarPedido(modalCotizar.pedido, precioUnitario, precioEnvio, altura, anchura, largo, peso); }} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div><p className="font-medium">{t('admin.orders.china.modals.quote.client')}</p><p>{modalCotizar.pedido?.cliente}</p></div>
-                    <div><p className="font-medium">{t('admin.orders.china.modals.quote.product')}</p><p>{modalCotizar.pedido?.producto}</p></div>
-                    <div><p className="font-medium">{t('admin.orders.china.modals.quote.quantity')}</p><p>{modalCotizar.pedido?.cantidad}</p></div>
-                    <div><p className="font-medium">{t('admin.orders.table.status')}</p><p>{modalCotizar.pedido?.estado}</p></div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">{t('admin.orders.china.modals.quote.unitPriceLabel', { defaultValue: 'Precio de producto unitario' })} <span className="text-red-500">*</span></label>
-                    <div className="relative mt-1">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 select-none">¥</span>
-                      <input
-                        name="precioUnitario"
-                        type="number"
-                        inputMode="decimal"
-                        required
-                        min="0"
-                        step="0.01"
-                        defaultValue={modalCotizar.precioUnitario}
-                        onChange={e => {
-                          const raw = e.target.value.replace(/,/g, '').replace(/[^0-9.]/g, '');
-                          const parts = raw.split('.');
-                          let intPart = parts[0] || '';
-                          const decPartFull = parts[1] || '';
-                          if (intPart.length > 7) intPart = intPart.slice(0, 7);
-                          const decPart = decPartFull.slice(0, 2);
-                          const cleaned = decPart ? `${intPart}.${decPart}` : intPart;
-                          e.target.value = cleaned;
-                          setModalCotizar(prev => ({ ...prev, precioUnitario: Number(cleaned || 0) }));
-                        }}
-                        className={`w-full pl-7 pr-3 py-2 rounded-md bg-white dark:bg-slate-800 border focus:outline-none transition-colors ${modalCotizar.precioUnitario && modalCotizar.precioUnitario > 0 ? 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500' : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
-                        placeholder="0.00"
-                      />
-                    </div>
-                    <p className={`mt-1 text-xs ${modalCotizar.precioUnitario && modalCotizar.precioUnitario > 0 ? 'text-slate-500' : 'text-red-500'}`}>
-                      {modalCotizar.precioUnitario && modalCotizar.precioUnitario > 0 ? 'Máx 7 dígitos enteros' : 'Ingresa un precio mayor a 0'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Precio de envío <span className="text-red-500">*</span></label>
-                    <div className="relative mt-1">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 select-none">$</span>
-                      <input
-                        name="precioEnvio"
-                        type="number"
-                        inputMode="decimal"
-                        required
-                        min="0"
-                        step="0.01"
-                        defaultValue={modalCotizar.precioEnvio}
-                        onChange={e => {
-                          const raw = e.target.value.replace(/,/g, '').replace(/[^0-9.]/g, '');
-                          const parts = raw.split('.');
-                          let intPart = parts[0] || '';
-                          const decPartFull = parts[1] || '';
-                          if (intPart.length > 7) intPart = intPart.slice(0, 7);
-                          const decPart = decPartFull.slice(0, 2);
-                          const cleaned = decPart ? `${intPart}.${decPart}` : intPart;
-                          e.target.value = cleaned;
-                          setModalCotizar(prev => ({ ...prev, precioEnvio: Number(cleaned || 0) }));
-                        }}
-                        className={`w-full pl-7 pr-3 py-2 rounded-md bg-white dark:bg-slate-800 border focus:outline-none transition-colors ${modalCotizar.precioEnvio !== undefined && modalCotizar.precioEnvio >= 0 ? 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500' : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
-                        placeholder="0.00"
-                      />
-                    </div>
-                    <p className={`mt-1 text-xs ${modalCotizar.precioEnvio !== undefined && modalCotizar.precioEnvio >= 0 ? 'text-slate-500' : 'text-red-500'}`}>
-                      {modalCotizar.precioEnvio !== undefined && modalCotizar.precioEnvio >= 0 ? 'Máx 7 dígitos enteros' : 'Ingresa un precio válido'}
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <label className="text-sm font-medium">Altura (cm) <span className="text-red-500">*</span></label>
-                      <input
-                        name="altura"
-                        type="number"
-                        inputMode="decimal"
-                        required
-                        min="0"
-                        step="0.1"
-                        defaultValue={modalCotizar.altura}
-                        onChange={e => { setModalCotizar(prev => ({ ...prev, altura: Number(e.target.value || 0) })); }}
-                        className={`w-full px-3 py-2 rounded-md bg-white dark:bg-slate-800 border focus:outline-none transition-colors ${modalCotizar.altura && modalCotizar.altura > 0 ? 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500' : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
-                        placeholder="0.0"
-                      />
-                      <p className={`mt-1 text-xs ${modalCotizar.altura && modalCotizar.altura > 0 ? 'text-slate-500' : 'text-red-500'}`}>
-                        {modalCotizar.altura && modalCotizar.altura > 0 ? 'Valor válido' : 'Ingresa una altura mayor a 0'}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Anchura (cm) <span className="text-red-500">*</span></label>
-                      <input
-                        name="anchura"
-                        type="number"
-                        inputMode="decimal"
-                        required
-                        min="0"
-                        step="0.1"
-                        defaultValue={modalCotizar.anchura}
-                        onChange={e => { setModalCotizar(prev => ({ ...prev, anchura: Number(e.target.value || 0) })); }}
-                        className={`w-full px-3 py-2 rounded-md bg-white dark:bg-slate-800 border focus:outline-none transition-colors ${modalCotizar.anchura && modalCotizar.anchura > 0 ? 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500' : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
-                        placeholder="0.0"
-                      />
-                      <p className={`mt-1 text-xs ${modalCotizar.anchura && modalCotizar.anchura > 0 ? 'text-slate-500' : 'text-red-500'}`}>
-                        {modalCotizar.anchura && modalCotizar.anchura > 0 ? 'Valor válido' : 'Ingresa una anchura mayor a 0'}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Largo (cm) <span className="text-red-500">*</span></label>
-                      <input
-                        name="largo"
-                        type="number"
-                        inputMode="decimal"
-                        required
-                        min="0"
-                        step="0.1"
-                        defaultValue={modalCotizar.largo}
-                        onChange={e => { setModalCotizar(prev => ({ ...prev, largo: Number(e.target.value || 0) })); }}
-                        className={`w-full px-3 py-2 rounded-md bg-white dark:bg-slate-800 border focus:outline-none transition-colors ${modalCotizar.largo && modalCotizar.largo > 0 ? 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500' : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
-                        placeholder="0.0"
-                      />
-                      <p className={`mt-1 text-xs ${modalCotizar.largo && modalCotizar.largo > 0 ? 'text-slate-500' : 'text-red-500'}`}>
-                        {modalCotizar.largo && modalCotizar.largo > 0 ? 'Valor válido' : 'Ingresa un largo mayor a 0'}
-                      </p>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Peso (kg) <span className="text-red-500">*</span></label>
-                    <input
-                      name="peso"
-                      type="number"
-                      inputMode="decimal"
-                      required
-                      min="0"
-                      step="0.1"
-                      defaultValue={modalCotizar.peso}
-                      onChange={e => { setModalCotizar(prev => ({ ...prev, peso: Number(e.target.value || 0) })); }}
-                      className={`w-full px-3 py-2 rounded-md bg-white dark:bg-slate-800 border focus:outline-none transition-colors ${modalCotizar.peso && modalCotizar.peso > 0 ? 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500' : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
-                      placeholder="0.0"
-                    />
-                    <p className={`mt-1 text-xs ${modalCotizar.peso && modalCotizar.peso > 0 ? 'text-slate-500' : 'text-red-500'}`}>
-                      {modalCotizar.peso && modalCotizar.peso > 0 ? 'Valor válido' : 'Ingresa un peso mayor a 0'}
-                    </p>
-                  </div>
-                  <div className="text-sm">
-                    <p className="font-medium">{t('admin.orders.china.modals.quote.totalToPay')}</p>
-                    <p className="text-green-600 dark:text-green-400 font-semibold text-lg">${(((modalCotizar.precioUnitario || 0) * (modalCotizar.pedido?.cantidad || 0)) + (modalCotizar.precioEnvio || 0)).toLocaleString()}</p>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={closeModalCotizar}>{t('admin.orders.china.modals.quote.cancel')}</Button>
-                    <Button type="submit" disabled={!(modalCotizar.precioUnitario && modalCotizar.precioUnitario > 0 && String(Math.trunc(modalCotizar.precioUnitario)).length <= 7 && modalCotizar.precioEnvio !== undefined && modalCotizar.precioEnvio >= 0 && modalCotizar.altura && modalCotizar.altura > 0 && modalCotizar.anchura && modalCotizar.anchura > 0 && modalCotizar.largo && modalCotizar.largo > 0 && modalCotizar.peso && modalCotizar.peso > 0)} className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">{t('admin.orders.china.modals.quote.sendQuote')}</Button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>, document.body
-        )}
+        {/* Modal Cotizar - Componente compartido */}
+        <CotizarModal
+          open={modalCotizar.open}
+          pedido={modalCotizar.pedido}
+          onClose={() => setModalCotizar({ open: false })}
+          onSubmit={async (_, precioUnitario, precioEnvio, altura, anchura, largo, peso) => {
+            // Usar modalCotizar.pedido en lugar del parámetro para tener el tipo completo
+            if (modalCotizar.pedido) {
+              await cotizarPedido(modalCotizar.pedido, precioUnitario, precioEnvio, altura, anchura, largo, peso);
+            }
+          }}
+        />
 
         {/* Modal seleccionar caja para pedido */}
         {/* Modal aviso: pedir poner etiqueta antes de empaquetar */}
