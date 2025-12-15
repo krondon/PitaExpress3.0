@@ -1402,27 +1402,11 @@ export default function ChinaOrdersTabContent() {
                             </div>
                             <div className="w-full sm:w-auto grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-none sm:flex">
                               {stateNum === 1 && (
-                                boxShippingTypes[boxKey as any] === 'Aereo' ? (
-                                  // Botón "Enviar" para cajas Aéreas (directo) - Aunque en Admin la acción handleSendBoxDirectly no existe en este scope?
-                                  // ERROR POTENCIAL: handleSendBoxDirectly no está definido en este componente compartido
-                                  // Revisaré si existe antes. NO existe en el código previo.
-                                  // PERO: admin/pedidos/page.tsx usa este componente.
-                                  // Si este componente está duplicado parcialmente, puede faltar lógica.
-                                  // Voy a asumir que en Admin también queremos la distinción visual, pero la acción "Enviar" necesita implementación.
-                                  // Como no tengo handleSendBoxDirectly aquí, usaré una llamada simulada o condicional.
-                                  // MEJOR ESTRATEGIA: Mantenemos la lógica de botones simple si no tenemos la función,
-                                  // OJO: El usuario preguntó si "Arreglé esto en admin también".
-                                  // Si Admin no tiene "handleSendBoxDirectly", romperé el código.
-                                  // Voy a verificar handleSendBoxDirectly en este archivo primero. (NO ESTABA en el view_file).
-                                  // Solución: Agregar la función handleSendBoxDirectly al componente si falta, o usar toast "No implementado".
-                                  // SIN EMBARGO, el usuario quiere que "aparezca la opción".
-                                  // Voy a dejar el botón "Empaquetar" genérico si falla, o agregarlo.
-                                  // REVISIÓN: Este componente ChinaOrdersTabContent en teoría debería tener todo.
-                                  // Si no está handleSendBoxDirectly, lo agrego.
+                                boxShippingTypes[id as any] === 'Aereo' ? (
                                   <Button
                                     size="sm"
                                     className="flex items-center gap-1 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    disabled={(orderCountsByBoxMain[boxKey as any] ?? 0) <= 0}
+                                    disabled={(orderCountsByBoxMain[id as any] ?? 0) <= 0}
                                     onClick={() => {
                                       // TODO: Implementar envío directo en Admin si es necesario
                                       toast({ title: "Función de envío directo no disponible en vista Admin por ahora." });
@@ -1435,7 +1419,7 @@ export default function ChinaOrdersTabContent() {
                                   <Button
                                     size="sm"
                                     className="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    disabled={(orderCountsByBoxMain[boxKey as any] ?? 0) <= 0}
+                                    disabled={(orderCountsByBoxMain[id as any] ?? 0) <= 0}
                                     onClick={() => { const id = box.box_id ?? box.boxes_id ?? box.id; setModalEmpaquetarCaja({ open: true, boxId: id }); if (containers.length === 0) fetchContainers(); }}
                                   >
                                     <Boxes className="h-4 w-4" />
@@ -1838,10 +1822,10 @@ export default function ChinaOrdersTabContent() {
                   }
 
                   return (
-                    <div key={`${id}`} className={`flex items-center justify-between p-4 rounded-xl border ${!isCompatible ? 'opacity-75' : ''} ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                    <div key={`${id}`} className={`flex items-center justify-between p-4 rounded-xl border ${!isCompatible ? 'opacity-75' : ''} bg-slate-50 border-slate-200 dark:bg-slate-800 dark:border-slate-700`}>
                       <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-lg ${mounted && theme === 'dark' ? 'bg-indigo-900/30' : 'bg-indigo-100'}`}>
-                          <Boxes className={`h-5 w-5 ${mounted && theme === 'dark' ? 'text-indigo-300' : 'text-indigo-600'}`} />
+                        <div className="p-3 rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
+                          <Boxes className="h-5 w-5 text-indigo-600 dark:text-indigo-300" />
                         </div>
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
@@ -1861,7 +1845,7 @@ export default function ChinaOrdersTabContent() {
                         <Badge className={`${getBoxBadge(t, stateNum).className}`}>{getBoxBadge(t, stateNum).label}</Badge>
                         <Button
                           size="sm"
-                          className={`flex items-center gap-1 ${!isCompatible ? (mounted && theme === 'dark' ? 'bg-slate-800 text-slate-500 border-slate-700' : 'bg-slate-100 text-slate-400 border-slate-200') : 'bg-indigo-600 hover:bg-indigo-700'} disabled:opacity-75 disabled:cursor-not-allowed min-w-[100px] justify-center`}
+                          className={`flex items-center gap-1 ${!isCompatible ? 'bg-slate-100 text-slate-400 border-slate-200 dark:bg-slate-800 dark:text-slate-500 dark:border-slate-700' : 'bg-indigo-600 hover:bg-indigo-700'} disabled:opacity-75 disabled:cursor-not-allowed min-w-[100px] justify-center`}
                           disabled={stateNum >= 3 || !isCompatible}
                           onClick={() => {
                             if (modalEmpaquetarPedido.pedidoId) {
