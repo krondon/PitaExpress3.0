@@ -5,116 +5,85 @@ export async function GET() {
   try {
     const supabase = getSupabaseServiceRoleClient();
 
-    // Consultas a las tablas de origen
-    const [{ data: employees, error: employeesError }, { data: clients, error: clientsError }, { data: administrators, error: administratorsError }] = await Promise.all([
-      supabase.from('employees').select('name, user_id'),
-      supabase.from('clients').select('name, user_id'),
-      supabase.from('administrators').select('name, user_id'),
+    // ✅ NUEVA LÓGICA: Obtener usuarios desde auth.users (fuente única de verdad)
+    const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+
+    if (authError) throw authError;
+    if (!authUsers?.users || authUsers.users.length === 0) {
+      return NextResponse.json([], { status: 200 });
+    }
+
+    // Filtrar solo usuarios activos (no inactivos)
+    const activeUsers = authUsers.users.filter(u => {
+      const status = (u.user_metadata as any)?.status ?? 'activo';
+      return status !== 'inactivo';
+    });
+
+    const userIds = activeUsers.map(u => u.id);
+
+    // Obtener datos de las tablas de roles (para saber su rol y nombre)
+    const [
+      { data: employees, error: employeesError },
+      { data: clients, error: clientsError },
+      { data: administrators, error: administratorsError }
+    ] = await Promise.all([
+      supabase.from('employees').select('name, user_id').in('user_id', userIds),
+      supabase.from('clients').select('name, user_id').in('user_id', userIds),
+      supabase.from('administrators').select('name, user_id').in('user_id', userIds),
     ]);
 
     if (employeesError) throw employeesError;
     if (clientsError) throw clientsError;
     if (administratorsError) throw administratorsError;
 
-    const allUsers = [
-      ...((employees ?? []).map((e: any) => ({ name: e.name, user_id: e.user_id, role: 'employee' as const })) ),
-      ...((clients ?? []).map((c: any) => ({ name: c.name, user_id: c.user_id, role: 'client' as const })) ),
-      ...((administrators ?? []).map((a: any) => ({ name: a.name, user_id: a.user_id, role: 'administrator' as const })) ),
-    ];
+    // Crear mapas para búsqueda rápida de rol y nombre
+    const roleMap = new Map<string, { role: 'employee' | 'client' | 'administrator'; name: string }>();
 
-  const userIds = allUsers.map(u => u.user_id).filter(Boolean);
-
-    if (userIds.length === 0) {
-      return NextResponse.json([], { status: 200 });
-    }
-
-    // Obtener datos auth de forma BULK para evitar el patrón N+1 (gran causa de lentitud)
-    const usersMap = new Map<string, { email: string; created_at: string; status: 'activo' | 'inactivo' }>();
-
-    // Si la cantidad es razonable (<=1000) intentar un listUsers una sola vez
-    if (userIds.length <= 1000) {
-      const { data: listData, error: listErr } = await supabase.auth.admin.listUsers({ page: 1, perPage: userIds.length });
-      if (!listErr && listData?.users) {
-        for (const u of listData.users) {
-          if (userIds.includes(u.id)) {
-            const status = (u.user_metadata as any)?.status ?? 'activo';
-            usersMap.set(u.id, { email: u.email ?? '', created_at: u.created_at ?? '', status });
-          }
-        }
-      } else {
-        // Fallback a N+1 sólo si el bulk falla
-        const results = await Promise.allSettled(
-          userIds.map(async (id) => {
-            const { data, error } = await supabase.auth.admin.getUserById(id);
-            if (error) throw error;
-            const status = (data.user?.user_metadata as any)?.status as string | undefined;
-            return { id, email: data.user?.email ?? '', created_at: data.user?.created_at ?? '', status: status ?? 'activo' };
-          })
-        );
-        for (const r of results) {
-          if (r.status === 'fulfilled') {
-            usersMap.set(r.value.id, { email: r.value.email, created_at: r.value.created_at, status: (r.value.status as 'activo' | 'inactivo') ?? 'activo' });
-          }
-        }
+    // Prioridad: administrator > employee > client (si un usuario está en múltiples, toma el primero)
+    (administrators ?? []).forEach((a: any) => {
+      if (!roleMap.has(a.user_id)) {
+        roleMap.set(a.user_id, { role: 'administrator', name: a.name });
       }
-    } else {
-      // Demasiados IDs: optar por chunking (1000 por página) o fallback rápido
-      const CHUNK = 1000;
-      for (let i = 0; i < userIds.length; i += CHUNK) {
-        const slice = userIds.slice(i, i + CHUNK);
-        const { data: listData, error: listErr } = await supabase.auth.admin.listUsers({ page: 1, perPage: CHUNK });
-        if (listErr || !listData?.users) break; // fallback silencioso
-        for (const u of listData.users) {
-          if (slice.includes(u.id)) {
-            const status = (u.user_metadata as any)?.status ?? 'activo';
-            usersMap.set(u.id, { email: u.email ?? '', created_at: u.created_at ?? '', status });
-          }
-        }
-      }
-      // Completar faltantes (si alguno no vino) con llamadas directas mínimas
-      const missing = userIds.filter(id => !usersMap.has(id));
-      if (missing.length) {
-        const results = await Promise.allSettled(
-          missing.map(async (id) => {
-            const { data, error } = await supabase.auth.admin.getUserById(id);
-            if (error) throw error;
-            const status = (data.user?.user_metadata as any)?.status as string | undefined;
-            return { id, email: data.user?.email ?? '', created_at: data.user?.created_at ?? '', status: status ?? 'activo' };
-          })
-        );
-        for (const r of results) {
-          if (r.status === 'fulfilled') {
-            usersMap.set(r.value.id, { email: r.value.email, created_at: r.value.created_at, status: (r.value.status as 'activo' | 'inactivo') ?? 'activo' });
-          }
-        }
-      }
-    }
+    });
 
-    // Traer user_level desde userlevel para diferenciar China/Vzla
-    const { data: levelsData, error: levelsErr } = await supabase
+    (employees ?? []).forEach((e: any) => {
+      if (!roleMap.has(e.user_id)) {
+        roleMap.set(e.user_id, { role: 'employee', name: e.name });
+      }
+    });
+
+    (clients ?? []).forEach((c: any) => {
+      if (!roleMap.has(c.user_id)) {
+        roleMap.set(c.user_id, { role: 'client', name: c.name });
+      }
+    });
+
+    // Traer user_level desde userlevel
+    const { data: levelsData } = await supabase
       .from('userlevel')
       .select('id, user_level')
       .in('id', userIds);
-    if (levelsErr) {
-      // No bloquear; simplemente seguimos sin user_level
-      // console.warn('userlevel fetch failed:', levelsErr.message);
-    }
+
     const levelsMap = new Map<string, string>();
     (levelsData ?? []).forEach((row: any) => {
-      levelsMap.set(row.id as string, (row.user_level as string) ?? '');
+      levelsMap.set(row.id as string, row.user_level as string ?? '');
     });
 
-  const result = allUsers.map(u => ({
-      id: u.user_id as string,
-      name: u.name as string,
-      role: u.role,
-    email: usersMap.get(u.user_id)?.email ?? '',
-    created_at: usersMap.get(u.user_id)?.created_at ?? '',
-    status: usersMap.get(u.user_id)?.status ?? 'activo',
-    user_level: levelsMap.get(u.user_id) ?? undefined,
-  }))
-  // Excluir inactivos por defecto
-  .filter((u) => (u.status ?? 'activo') !== 'inactivo');
+    // Construir resultado final: UN usuario por cada ID en auth.users
+    const result = activeUsers.map(authUser => {
+      const roleInfo = roleMap.get(authUser.id);
+      const status = (authUser.user_metadata as any)?.status ?? 'activo';
+
+      return {
+        id: authUser.id,
+        name: roleInfo?.name ?? authUser.user_metadata?.full_name ?? authUser.email ?? 'Usuario',
+        role: roleInfo?.role ?? 'client', // Default a client si no tiene rol
+        email: authUser.email ?? '',
+        created_at: authUser.created_at ?? '',
+        status: status as 'activo' | 'inactivo',
+        user_level: levelsMap.get(authUser.id) ?? undefined,
+      };
+    });
 
     return NextResponse.json(result, { status: 200 });
   } catch (err: any) {
@@ -153,7 +122,7 @@ export async function PATCH(req: Request) {
   try {
     const supabase = getSupabaseServiceRoleClient();
     const body = await req.json();
-  const { id, fullName, email, role, status, prevRole, userLevel, newPassword }: { id: string; fullName?: string; email?: string; role?: DbRole; status?: 'activo' | 'inactivo'; prevRole?: DbRole; userLevel?: string; newPassword?: string } = body || {};
+    const { id, fullName, email, role, status, prevRole, userLevel, newPassword }: { id: string; fullName?: string; email?: string; role?: DbRole; status?: 'activo' | 'inactivo'; prevRole?: DbRole; userLevel?: string; newPassword?: string } = body || {};
 
     if (!id) {
       return NextResponse.json({ error: 'Missing user id' }, { status: 400 });
@@ -354,8 +323,8 @@ export async function POST(req: Request) {
       role,
       email,
       created_at: newUser.created_at ?? '',
-  status: 'activo',
-  user_level: levelToSet,
+      status: 'activo',
+      user_level: levelToSet,
     }, { status: 201 });
   } catch (err: any) {
     console.error('POST /api/admin/users error:', err?.message || err);
