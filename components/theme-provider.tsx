@@ -7,7 +7,14 @@ type Props = React.ComponentProps<typeof NextThemesProvider>;
 
 export function ThemeProvider({ children, ...props }: Props) {
   return (
-    <NextThemesProvider attribute="class" defaultTheme="system" enableSystem={true} {...props}>
+    <NextThemesProvider
+      attribute="class"
+      defaultTheme="dark"
+      enableSystem={false}
+      disableTransitionOnChange
+      storageKey="pita-theme"
+      {...props}
+    >
       {children}
     </NextThemesProvider>
   );

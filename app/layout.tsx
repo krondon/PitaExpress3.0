@@ -8,10 +8,10 @@ import { Toaster } from '@/components/ui/toaster';
 import RouteLoader from '@/components/shared/RouteLoader';
 import { Suspense } from 'react';
 
-const inter = Inter({ 
+const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
-  preload: false 
+  preload: false
 });
 
 export const metadata: Metadata = {
@@ -36,19 +36,33 @@ export default function RootLayout({
         <link rel="icon" href="/pita_icon.svg" type="image/svg+xml" />
         <link rel="shortcut icon" href="/pita_icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/pita_icon.svg" />
-
+        {/* Script para establecer tema antes de renderizar (previene FOUC) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const theme = localStorage.getItem('pita-theme') || 'dark';
+                  document.documentElement.classList.add(theme);
+                } catch (e) {
+                  document.documentElement.classList.add('dark');
+                }
+              })();
+            `,
+          }}
+        />
       </head>
       <body className={inter.className}>
         <ThemeProvider>
           <LanguageProvider>
             <FontSizeProvider>
-            <Suspense fallback={null}>
-              <RouteLoader />
-            </Suspense>
-            <Suspense fallback={null}>
-              {children}
-            </Suspense>
-            <Toaster />
+              <Suspense fallback={null}>
+                <RouteLoader />
+              </Suspense>
+              <Suspense fallback={null}>
+                {children}
+              </Suspense>
+              <Toaster />
             </FontSizeProvider>
           </LanguageProvider>
         </ThemeProvider>

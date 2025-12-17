@@ -336,6 +336,13 @@ html {
   }
   body {
     @apply bg-background text-foreground;
+    /* Transición suave para cambios de tema */
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+  }
+  
+  /* Prevenir flash durante la carga inicial */
+  html:not(.dark):not(.light) {
+    visibility: hidden;
   }
 }
 
