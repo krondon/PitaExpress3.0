@@ -1260,87 +1260,22 @@ export default function PedidosChina() {
   // Enviar caja directamente (para pedidos aéreos)
   const handleSendBoxDirectly = async (boxId: number | string) => {
     try {
-      const supabase = getSupabaseBrowserClient();
+      // Usar API route con service role para evitar problemas con RLS
+      const response = await fetch('/china/pedidos/api/send-box', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ boxId }),
+      });
 
-      // Verificar que la caja tenga pedidos
-      const { data: orders, error: countErr } = await supabase
-        .from('orders')
-        .select('id')
-        .eq('box_id', boxId)
-        .limit(1);
+      const result = await response.json();
 
-      if (countErr) {
-        console.error('Error verificando pedidos de la caja:', countErr);
-        toast({ title: t('chinese.ordersPage.toasts.unexpectedErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgainLater') });
-        return;
-      }
-
-      if (!orders || orders.length === 0) {
-        toast({ title: t('chinese.ordersPage.toasts.notAllowedTitle'), description: t('chinese.ordersPage.toasts.packEmptyBoxNotAllowed') });
-        return;
-      }
-
-      // Obtener el estado actual de la caja para poder revertirlo en caso de error
-      const { data: currentBox, error: boxFetchError } = await supabase
-        .from('boxes')
-        .select('state')
-        .eq('box_id', boxId)
-        .single();
-
-      if (boxFetchError) {
-        console.error('Error obteniendo estado de la caja:', boxFetchError);
-        toast({ title: t('chinese.ordersPage.toasts.unexpectedErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgainLater') });
-        return;
-      }
-
-      const previousBoxState = currentBox?.state ?? 3; // Estado por defecto si no se encuentra
-
-      // Cambiar estado de la caja a enviado (state = 4)
-      const { error: boxUpdateError } = await supabase
-        .from('boxes')
-        .update({ state: 4 })
-        .eq('box_id', boxId);
-
-      if (boxUpdateError) {
-        console.error('Error enviando caja:', {
-          message: boxUpdateError.message,
-          details: boxUpdateError.details,
-          hint: boxUpdateError.hint,
-          code: boxUpdateError.code,
-          error: boxUpdateError
-        });
-        toast({ title: t('chinese.ordersPage.toasts.sendBoxErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgain') });
-        return;
-      }
-
-      // Cambiar estado de todos los pedidos a enviado (state = 9)
-      const { error: ordersUpdateError, data: updatedOrders } = await supabase
-        .from('orders')
-        .update({ state: 9 })
-        .eq('box_id', boxId)
-        .select('id');
-
-      if (ordersUpdateError) {
-        // Logging mejorado del error
-        const errorInfo = {
-          message: ordersUpdateError.message || 'Error desconocido',
-          details: ordersUpdateError.details || null,
-          hint: ordersUpdateError.hint || null,
-          code: ordersUpdateError.code || null,
-          fullError: ordersUpdateError
-        };
-        console.error('Error actualizando pedidos:', errorInfo);
-        console.error('Error completo (JSON):', JSON.stringify(ordersUpdateError, Object.getOwnPropertyNames(ordersUpdateError)));
-
-        // Revertir el estado de la caja si falló la actualización de pedidos
-        await supabase
-          .from('boxes')
-          .update({ state: previousBoxState })
-          .eq('box_id', boxId);
-
-        toast({
-          title: t('chinese.ordersPage.toasts.sendBoxErrorTitle'),
-          description: t('chinese.ordersPage.toasts.tryAgain') || 'No se pudieron actualizar los pedidos. Por favor intenta nuevamente.'
+      if (!response.ok) {
+        console.error('Error enviando caja:', result);
+        toast({ 
+          title: t('chinese.ordersPage.toasts.sendBoxErrorTitle'), 
+          description: result.error || t('chinese.ordersPage.toasts.tryAgain') || 'No se pudo enviar la caja. Por favor intenta nuevamente.' 
         });
         return;
       }
