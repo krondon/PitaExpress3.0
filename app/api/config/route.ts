@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServiceRoleClient } from '@/lib/supabase/server';
 import { NotificationsFactory } from '@/lib/notifications';
 
+// Forzar que esta ruta sea dinámica (no se cachee en build)
+export const dynamic = 'force-dynamic';
+export const revalidate = 0; // No cachear nunca
 
 
 export async function GET(request: NextRequest) {

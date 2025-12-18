@@ -89,12 +89,33 @@ const nextConfig = {
           },
         ],
       },
+      // Caché para API de exchange rates (datos que cambian poco)
+      {
+        source: '/api/exchange-rate(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=300, stale-while-revalidate=600', // 5 min
+          },
+        ],
+      },
+      // NO cachear API de config (datos dinámicos que cambian frecuentemente)
+      {
+        source: '/api/config',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+        ],
+      },
+      // Otras APIs sin caché agresivo
       {
         source: '/api/(.*)',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=3600, stale-while-revalidate=86400',
+            value: 'no-cache, must-revalidate',
           },
         ],
       },
