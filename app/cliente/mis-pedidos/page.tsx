@@ -707,7 +707,7 @@ export default function MisPedidosPage() {
 
       // DEBUG: Log de precios para cada pedido
       console.log('[Cliente/MisPedidos] ========== PRECIOS DE PEDIDOS ==========');
-      mappedOrders.forEach((order, idx) => {
+      mapped.forEach((order, idx) => {
         console.log(`[Cliente/MisPedidos] Pedido #${order.id}:`, {
           totalQuote: order.totalQuote,
           unitQuote: order.unitQuote,
