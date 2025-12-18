@@ -3435,23 +3435,23 @@ export default function PedidosChina() {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
             <div
               ref={modalEliminarContenedorRef}
-              className={`bg-white rounded-2xl p-6 max-w-md mx-4 w-full transition-all duration-300 ${isModalEliminarContenedorClosing
+              className={`${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 max-w-md mx-4 w-full transition-all duration-300 ${isModalEliminarContenedorClosing
                 ? 'translate-y-full scale-95 opacity-0'
                 : 'animate-in slide-in-from-bottom-4 duration-300'
                 }`}
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-slate-900">{t('chinese.ordersPage.modals.deleteContainer.title')}</h3>
+                <h3 className={`text-lg font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.modals.deleteContainer.title')}</h3>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={closeModalEliminarContenedor}
-                  className="h-8 w-8 p-0"
+                  className={`h-8 w-8 p-0 ${mounted && theme === 'dark' ? 'hover:bg-slate-700' : ''}`}
                 >
-                  <span className="text-2xl">×</span>
+                  <span className={`text-2xl ${mounted && theme === 'dark' ? 'text-white' : ''}`}>×</span>
                 </Button>
               </div>
-              <p className="text-slate-600 mb-6">{t('chinese.ordersPage.modals.deleteContainer.question', { id: String(modalEliminarContenedor.container?.containers_id ?? modalEliminarContenedor.container?.id ?? modalEliminarContenedor.container?.container_id ?? '') })}</p>
+              <p className={`${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'} mb-6`}>{t('chinese.ordersPage.modals.deleteContainer.question', { id: String(modalEliminarContenedor.container?.containers_id ?? modalEliminarContenedor.container?.id ?? modalEliminarContenedor.container?.container_id ?? '') })}</p>
               <div className="flex justify-end gap-3">
                 <Button variant="outline" onClick={closeModalEliminarContenedor} disabled={deletingContainer}>{t('chinese.ordersPage.modals.deleteContainer.cancel')}</Button>
                 <Button
@@ -3868,23 +3868,23 @@ export default function PedidosChina() {
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
             <div
               ref={modalEliminarCajaRef}
-              className={`bg-white rounded-2xl p-6 max-w-md mx-4 w-full transition-all duration-300 ${isModalEliminarCajaClosing
+              className={`${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 max-w-md mx-4 w-full transition-all duration-300 ${isModalEliminarCajaClosing
                 ? 'translate-y-full scale-95 opacity-0'
                 : 'animate-in slide-in-from-bottom-4 duration-300'
                 }`}
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-slate-900">{t('chinese.ordersPage.modals.deleteBox.title')}</h3>
+                <h3 className={`text-lg font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.modals.deleteBox.title')}</h3>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={closeModalEliminarCaja}
-                  className="h-8 w-8 p-0"
+                  className={`h-8 w-8 p-0 ${mounted && theme === 'dark' ? 'hover:bg-slate-700' : ''}`}
                 >
-                  <span className="text-2xl">×</span>
+                  <span className={`text-2xl ${mounted && theme === 'dark' ? 'text-white' : ''}`}>×</span>
                 </Button>
               </div>
-              <p className="text-slate-600 mb-6">{t('chinese.ordersPage.modals.deleteBox.question', { id: String(modalEliminarCaja.box?.boxes_id ?? modalEliminarCaja.box?.id ?? modalEliminarCaja.box?.box_id ?? '') })}</p>
+              <p className={`${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'} mb-6`}>{t('chinese.ordersPage.modals.deleteBox.question', { id: String(modalEliminarCaja.box?.boxes_id ?? modalEliminarCaja.box?.id ?? modalEliminarCaja.box?.box_id ?? '') })}</p>
               <div className="flex justify-end gap-3">
                 <Button variant="outline" onClick={closeModalEliminarCaja} disabled={deletingBox}>{t('chinese.ordersPage.modals.deleteBox.cancel')}</Button>
                 <Button
@@ -3906,7 +3906,7 @@ export default function PedidosChina() {
                         .eq('box_id', id);
                       if (error) {
                         console.error('Error al eliminar caja:', error);
-                        toast({ title: t('chinese.ordersPage.toasts.deleteBoxErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgain') });
+                        toast({ title: t('chinese.ordersPage.toasts.boxDeleteErrorTitle'), description: t('chinese.ordersPage.toasts.tryAgain') });
                         return;
                       }
                       toast({ title: t('chinese.ordersPage.toasts.boxDeletedTitle'), description: t('chinese.ordersPage.toasts.boxDeletedDesc') });

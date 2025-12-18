@@ -255,6 +255,7 @@
       "totalOrders": "订单总数",
       "ordersPlaced": "已下订单",
       "pending": "待处理",
+      "ordersInProgress": "处理中订单",
       "ordersInProcess": "处理中订单",
       "inTransit": "运输中",
       "activeShipmentsShort": "进行中",
@@ -702,6 +703,7 @@
         "currentStatus": "当前状态",
         "historyTitle": "追踪历史",
         "states": {
+          "pending": "待处理",
           "created": "订单已创建",
           "processing": "处理中",
           "shipped": "已发货",
@@ -710,6 +712,7 @@
           "delivered": "已交付"
         },
         "descriptions": {
+          "pending": "您的订单待处理",
           "created": "您的订单已创建并确认",
           "processing": "产品正在准备发货",
           "shipped": "包裹已从仓库发出",
@@ -1607,6 +1610,8 @@
           "orderAssignNotAllowedDesc": "你不能在已发货的箱子中打包。",
           "orderAssignedTitle": "订单已分配",
           "orderAssignedDesc": "订单 #ORD-{{orderId}} 已分配到箱 {{boxId}}。",
+          "orderUnassignedTitle": "订单已取消分配",
+          "orderUnassignedDesc": "订单 #ORD-{{orderId}} 已从箱子中释放。",
           "orderUnpackErrorTitle": "无法解包",
           "orderNoBoxTitle": "订单无箱子",
           "orderNoBoxDesc": "此订单未分配箱子。",
@@ -1942,6 +1947,11 @@
       "deliveredOrders": "已交付订单",
       "responseTime": "响应时间",
       "satisfactionRate": "满意率"
+    },
+    "quickActions": {
+      "title": "快速操作",
+      "subtitle": "快速访问最常用的功能",
+      "reviewOrder": "审核订单"
     },
     "pedidos": {
       "title": "订单",
@@ -2910,6 +2920,8 @@
         "orderAssignNotAllowedDesc": "你不能在已发货的箱子中打包。",
         "orderAssignedTitle": "订单已分配",
         "orderAssignedDesc": "订单 #ORD-{{orderId}} 已分配到箱 {{boxId}}。",
+        "orderUnassignedTitle": "订单已取消分配",
+        "orderUnassignedDesc": "订单 #ORD-{{orderId}} 已从箱子中释放。",
         "orderUnpackErrorTitle": "无法解包",
         "orderNoBoxTitle": "订单无箱子",
         "orderNoBoxDesc": "此订单未分配箱子。",

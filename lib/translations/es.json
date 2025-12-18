@@ -305,6 +305,8 @@
       "activeShipments": "Envíos Activos",
       "totalOrders": "Total Pedidos",
       "ordersPlaced": "Pedidos realizados",
+      "ordersInProgress": "Pedidos en proceso",
+      "ordersInProcess": "Pedidos en proceso",
       "inTransit": "En Tránsito",
       "activeShipmentsShort": "Envíos activos",
       "totalSpent": "Total Pagado",
@@ -622,6 +624,7 @@
         "currentStatus": "Estado actual",
         "historyTitle": "Historial de seguimiento",
         "states": {
+          "pending": "Pendiente",
           "created": "Pedido creado",
           "processing": "En procesamiento",
           "shipped": "Enviado",
@@ -630,6 +633,7 @@
           "delivered": "Entregado"
         },
         "descriptions": {
+          "pending": "Tu pedido está pendiente de procesamiento",
           "created": "Tu pedido ha sido creado y confirmado",
           "processing": "El producto está siendo preparado para envío",
           "shipped": "El paquete ha sido enviado desde el almacén",
@@ -848,7 +852,11 @@
         "allRatings": "Todas",
         "averageRating": "Promedio de Calificación",
         "review": "reseña",
-        "reviews": "reseñas"
+        "reviews": "reseñas",
+        "success": {
+          "title": "Reseña enviada",
+          "description": "Tu reseña ha sido registrada exitosamente"
+        }
       }
     }
   },
@@ -2269,6 +2277,11 @@
       "responseTime": "Tiempo de Respuesta",
       "satisfactionRate": "Tasa de Satisfacción"
     },
+    "quickActions": {
+      "title": "Acciones Rápidas",
+      "subtitle": "Accede rápidamente a las funciones más utilizadas",
+      "reviewOrder": "Revisar Pedido"
+    },
     "pedidos": {
       "title": "Pedidos",
       "subtitle": "Revisa y envía pedidos a China para cotización",
@@ -3047,6 +3060,8 @@
         "orderAssignNotAllowedDesc": "No puedes empaquetar en una caja enviada.",
         "orderAssignedTitle": "Pedido asignado",
         "orderAssignedDesc": "Pedido #ORD-{{orderId}} asignado a caja {{boxId}}.",
+        "orderUnassignedTitle": "Pedido desasignado",
+        "orderUnassignedDesc": "Pedido #ORD-{{orderId}} liberado de la caja.",
         "orderUnpackErrorTitle": "No se pudo desempaquetar",
         "orderNoBoxTitle": "Pedido sin caja",
         "orderNoBoxDesc": "Este pedido no tiene caja asignada.",

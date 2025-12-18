@@ -252,6 +252,7 @@
       "totalOrders": "Total Orders",
       "ordersPlaced": "Orders placed",
       "pending": "Pending",
+      "ordersInProgress": "Orders in process",
       "ordersInProcess": "Orders in process",
       "inTransit": "In Transit",
       "activeShipmentsShort": "Active shipments",
@@ -706,6 +707,7 @@
         "currentStatus": "Current status",
         "historyTitle": "Tracking history",
         "states": {
+          "pending": "Pending",
           "created": "Order created",
           "processing": "Processing",
           "shipped": "Shipped",
@@ -714,6 +716,7 @@
           "delivered": "Delivered"
         },
         "descriptions": {
+          "pending": "Your order is pending processing",
           "created": "Your order has been created and confirmed",
           "processing": "The product is being prepared for shipment",
           "shipped": "The package has been sent from the warehouse",
@@ -1617,6 +1620,8 @@
           "orderAssignNotAllowedDesc": "You can't pack into a shipped box.",
           "orderAssignedTitle": "Order assigned",
           "orderAssignedDesc": "Order #ORD-{{orderId}} assigned to box {{boxId}}.",
+          "orderUnassignedTitle": "Order unassigned",
+          "orderUnassignedDesc": "Order #ORD-{{orderId}} released from the box.",
           "orderUnpackErrorTitle": "Couldn't unpack",
           "orderNoBoxTitle": "Order without box",
           "orderNoBoxDesc": "This order has no box assigned.",
@@ -2925,6 +2930,8 @@
         "orderAssignNotAllowedDesc": "You can't pack into a shipped box.",
         "orderAssignedTitle": "Order assigned",
         "orderAssignedDesc": "Order #ORD-{{orderId}} assigned to box {{boxId}}.",
+        "orderUnassignedTitle": "Order unassigned",
+        "orderUnassignedDesc": "Order #ORD-{{orderId}} released from the box.",
         "orderUnpackErrorTitle": "Couldn't unpack",
         "orderNoBoxTitle": "Order without box",
         "orderNoBoxDesc": "This order has no box assigned.",

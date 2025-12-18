@@ -3105,7 +3105,24 @@ export default function MisPedidosPage() {
                     <div className="space-y-2">
                       <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.trackingModal.currentStatus')}</p>
                       <Badge className={getTrackingStatusColor(selectedTrackingOrder.status)}>
-                        {t(`client.recentOrders.trackingModal.states.${selectedTrackingOrder.status}`)}
+                        {(() => {
+                          const statusKey = `client.recentOrders.trackingModal.states.${selectedTrackingOrder.status}`;
+                          const translated = t(statusKey);
+                          if (translated === statusKey) {
+                            // Si no se encuentra la traducción, usar un mapeo directo
+                            const statusMap: Record<string, string> = {
+                              'pending': 'Pendiente',
+                              'created': 'Pedido creado',
+                              'processing': 'En procesamiento',
+                              'shipped': 'Enviado',
+                              'in-transit': 'En tránsito',
+                              'customs': 'En aduana',
+                              'delivered': 'Entregado'
+                            };
+                            return statusMap[selectedTrackingOrder.status] || selectedTrackingOrder.status;
+                          }
+                          return translated;
+                        })()}
                       </Badge>
                     </div>
                   </div>
@@ -3127,11 +3144,50 @@ export default function MisPedidosPage() {
                             )}
                           </div>
                           <div className="flex-1">
-                            <p className={`font-medium ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{t(`client.recentOrders.trackingModal.states.${step.status}`)}</p>
+                            <p className={`font-medium ${mounted && theme === 'dark' ? 'text-white' : ''}`}>
+                              {(() => {
+                                const statusKey = `client.recentOrders.trackingModal.states.${step.status}`;
+                                const translated = t(statusKey);
+                                if (translated === statusKey) {
+                                  const statusMap: Record<string, string> = {
+                                    'pending': 'Pendiente',
+                                    'created': 'Pedido creado',
+                                    'processing': 'En procesamiento',
+                                    'shipped': 'Enviado',
+                                    'in-transit': 'En tránsito',
+                                    'customs': 'En aduana',
+                                    'delivered': 'Entregado'
+                                  };
+                                  return statusMap[step.status] || step.status;
+                                }
+                                return translated;
+                              })()}
+                            </p>
                             <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                              {t(`client.recentOrders.trackingModal.descriptions.${step.status}`, {
-                                fallback: t(`client.recentOrders.trackingModal.states.${step.status}`)
-                              })}
+                              {(() => {
+                                const descKey = `client.recentOrders.trackingModal.descriptions.${step.status}`;
+                                const translated = t(descKey);
+                                if (translated === descKey) {
+                                  // Si no hay descripción, usar el estado traducido
+                                  const statusKey = `client.recentOrders.trackingModal.states.${step.status}`;
+                                  const statusTranslated = t(statusKey);
+                                  if (statusTranslated !== statusKey) {
+                                    return statusTranslated;
+                                  }
+                                  // Fallback final
+                                  const statusMap: Record<string, string> = {
+                                    'pending': 'Tu pedido está pendiente de procesamiento',
+                                    'created': 'Tu pedido ha sido creado y confirmado',
+                                    'processing': 'El producto está siendo preparado para envío',
+                                    'shipped': 'El paquete ha sido enviado desde el almacén',
+                                    'in-transit': 'El paquete está en camino a su destino',
+                                    'customs': 'El paquete está siendo procesado en aduana',
+                                    'delivered': 'El paquete ha sido entregado exitosamente'
+                                  };
+                                  return statusMap[step.status] || step.status;
+                                }
+                                return translated;
+                              })()}
                             </p>
                             <div className="flex items-center space-x-2 mt-1">
                               <MapPin className={`w-3 h-3 ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`} />
