@@ -198,6 +198,7 @@
     "dashboard": "Panel",
     "users": "Usuarios",
     "usuarios": "Usuarios",
+    "tickets": "Tickets",
     "orders": "Pedidos",
     "pedidos": "Pedidos",
     "reports": "Reportes",
@@ -1679,6 +1680,20 @@
       "empty": {
         "noUsersFound": "No hay usuarios registrados.",
         "tryAdjustFilters": "Intenta ajustar los filtros o crea un nuevo usuario."
+      }
+    },
+    "tickets": {
+      "title": "Tickets",
+      "subtitle": "Gestión de códigos de barras",
+      "listTitle": "Lista de Tickets",
+      "search": "Buscar por nombre, código...",
+      "generateCode": "Generar Código",
+      "table": {
+        "userName": "Nombre del Usuario",
+        "date": "Fecha",
+        "baseCode": "Código Base",
+        "code": "Código",
+        "barcode": "Código de Barras"
       }
     },
     "orders": {

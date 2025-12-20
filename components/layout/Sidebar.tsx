@@ -17,7 +17,8 @@ import {
   Shield,
   BadgeDollarSign,
   Boxes,
-  MessageSquare
+  MessageSquare,
+  Ticket
 } from 'lucide-react';
 import VenezuelaFlag from '@/components/ui/common/VenezuelaFlag';
 import PitaLogo from '@/components/ui/common/PitaLogo';
@@ -173,6 +174,14 @@ const getAdminMenuItems = (t: (key: string) => string) => [
     badge: null,
     color: 'text-orange-500',
     path: '/admin/usuarios'
+  },
+  {
+    id: 'tickets',
+    label: t && typeof t === 'function' ? t('sidebar.tickets') : 'Tickets',
+    icon: Ticket,
+    badge: null,
+    color: 'text-orange-500',
+    path: '/admin/tickets'
   },
   {
     id: 'pedidos',
