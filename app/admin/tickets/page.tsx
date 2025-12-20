@@ -108,7 +108,7 @@ export default function TicketsPage() {
 
     // Paginación
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10;
+    const itemsPerPage = 8;
 
     useEffect(() => {
         setMounted(true);
@@ -337,36 +337,34 @@ export default function TicketsPage() {
                         </div>
 
                         {/* Paginación */}
-                        {totalPages > 1 && (
-                            <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
-                                <div className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                                    Mostrando {startIndex + 1} a {Math.min(startIndex + itemsPerPage, displayedTickets.length)} de {displayedTickets.length} tickets
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                                        disabled={currentPage === 1}
-                                        className={mounted && theme === 'dark' ? 'dark:border-slate-700' : ''}
-                                    >
-                                        <ChevronLeft className="w-4 h-4" />
-                                    </Button>
-                                    <span className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                                        Página {currentPage} de {totalPages}
-                                    </span>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                                        disabled={currentPage === totalPages}
-                                        className={mounted && theme === 'dark' ? 'dark:border-slate-700' : ''}
-                                    >
-                                        <ChevronRight className="w-4 h-4" />
-                                    </Button>
-                                </div>
+                        <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+                            <div className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                                Mostrando {startIndex + 1} a {Math.min(startIndex + itemsPerPage, displayedTickets.length)} de {displayedTickets.length} tickets
                             </div>
-                        )}
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                    className={mounted && theme === 'dark' ? 'dark:border-slate-700' : ''}
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                </Button>
+                                <span className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                                    Página {currentPage} de {totalPages}
+                                </span>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className={mounted && theme === 'dark' ? 'dark:border-slate-700' : ''}
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
