@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import Header from '@/components/layout/Header';
 import { useAdminLayoutContext } from '@/lib/AdminLayoutContext';
@@ -15,86 +15,22 @@ import {
     Filter,
     Plus,
     Calendar,
-    Hash,
-    Barcode as BarcodeIcon,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Barcode as BarcodeIcon,
+    History,
+    Loader2
 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { toast } from 'sonner';
+import type { Ticket } from '@/lib/tickets/types';
 
-// Interfaz para los tickets
-interface Ticket {
-    id: string;
-    userName: string;
-    date: string;
-    baseCode: string;
-    code: string;
-    barcode: string;
-}
-
-// Datos de prueba (5 registros hardcodeados)
-const MOCK_TICKETS: Ticket[] = [
-    {
-        id: '1',
-        userName: 'Alfredo Ochoa',
-        date: '10/12/2025',
-        baseCode: 'PL0002',
-        code: 'PL0002101225',
-        barcode: 'PL0002101225'
-    },
-    {
-        id: '2',
-        userName: 'Alfredo Ochoa',
-        date: '11/12/2025',
-        baseCode: 'PL0002',
-        code: 'PL0002111225',
-        barcode: 'PL0002111225'
-    },
-    {
-        id: '3',
-        userName: 'Yariana Olivares',
-        date: '10/12/2025',
-        baseCode: 'PL0003',
-        code: 'PL0003101225',
-        barcode: 'PL0003101225'
-    },
-    {
-        id: '4',
-        userName: 'Gyorel Ramos',
-        date: '11/12/2025',
-        baseCode: 'PL0005',
-        code: 'PL0005111225',
-        barcode: 'PL0005111225'
-    },
-    {
-        id: '5',
-        userName: 'Usuario Demo',
-        date: '12/12/2025',
-        baseCode: 'PL0001',
-        code: 'PL0001121225',
-        barcode: 'PL0001121225'
-    }
-];
-
-// Componente simple de código de barras usando fuente monoespaciada y estilo visual
-const BarcodeDisplay = ({ code }: { code: string }) => {
-    return (
-        <div className="flex flex-col items-center gap-1">
-            <div className="flex items-center gap-[1px] bg-white px-3 py-2 rounded">
-                {code.split('').map((char, idx) => (
-                    <div
-                        key={idx}
-                        className="h-16 bg-black"
-                        style={{
-                            width: char === '*' ? '6px' : ['0', '1'].includes(char) ? '4px' : '5px'
-                        }}
-                    />
-                ))}
-            </div>
-            <span className="text-xs font-mono text-slate-600 dark:text-slate-400">*{code}*</span>
-        </div>
-    );
-};
+// Import modals
+import CreateTicketModal from '@/components/admin/tickets/CreateTicketModal';
+import EditTicketModal from '@/components/admin/tickets/EditTicketModal';
+import DeleteTicketDialog from '@/components/admin/tickets/DeleteTicketDialog';
+import PrintLabelModal from '@/components/admin/tickets/PrintLabelModal';
+import TicketActions from '@/components/admin/tickets/TicketActions';
 
 export default function TicketsPage() {
     const { t } = useTranslation();
@@ -102,31 +38,92 @@ export default function TicketsPage() {
     const { theme } = useTheme();
     const [mounted, setMounted] = useState(false);
 
-    // Estados para filtros (no funcionales por ahora)
+    // Data state
+    const [tickets, setTickets] = useState<Ticket[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Filter states (non-functional for now)
     const [searchTerm, setSearchTerm] = useState('');
     const [filterValue, setFilterValue] = useState('all');
 
-    // Paginación
+    // Pagination
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
 
+    // Modal states
+    const [createModalOpen, setCreateModalOpen] = useState(false);
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [printModalOpen, setPrintModalOpen] = useState(false);
+    const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+
     useEffect(() => {
         setMounted(true);
+        fetchTickets();
     }, []);
 
-    // Por ahora mostramos todos los tickets sin filtrar
-    const displayedTickets = MOCK_TICKETS;
+    const fetchTickets = async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('/api/admin/tickets');
+            const data = await response.json();
 
+            if (!response.ok) {
+                throw new Error(data.error || 'Error al cargar tickets');
+            }
+
+            setTickets(data.tickets || []);
+        } catch (error: any) {
+            console.error('Error fetching tickets:', error);
+            toast.error(error.message || 'Error al cargar tickets');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Format date for display
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+    };
+
+    // Handlers
+    const handlePrint = (ticket: Ticket) => {
+        setSelectedTicket(ticket);
+        setPrintModalOpen(true);
+    };
+
+    const handleEdit = (ticket: Ticket) => {
+        setSelectedTicket(ticket);
+        setEditModalOpen(true);
+    };
+
+    const handleDelete = (ticket: Ticket) => {
+        setSelectedTicket(ticket);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleHistory = (ticket: Ticket) => {
+        // TODO: Implement history modal
+        toast.info(`Historial de ${ticket.user_name}: ${ticket.print_count || 0} impresiones`);
+    };
+
+    // Pagination
+    const displayedTickets = tickets;
     const totalPages = Math.ceil(displayedTickets.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedTickets = displayedTickets.slice(startIndex, startIndex + itemsPerPage);
 
     if (!mounted) {
         return (
-            <div className={`min-h-screen flex items-center justify-center ${theme === 'dark' ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50'}`}>
+            <div suppressHydrationWarning className={`min-h-screen flex items-center justify-center ${theme === 'dark' ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50'}`}>
                 <div className="text-center">
-                    <div className={`animate-spin rounded-full h-12 w-12 border-b-2 ${theme === 'dark' ? 'border-blue-400' : 'border-blue-600'} mx-auto`}></div>
-                    <p className={`mt-4 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>Cargando...</p>
+                    <div suppressHydrationWarning className={`animate-spin rounded-full h-12 w-12 border-b-2 ${theme === 'dark' ? 'border-blue-400' : 'border-blue-600'} mx-auto`}></div>
+                    <p suppressHydrationWarning className={`mt-4 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>Cargando...</p>
                 </div>
             </div>
         );
@@ -152,7 +149,7 @@ export default function TicketsPage() {
 
                             {/* Toolbar */}
                             <div className="flex flex-col sm:flex-row w-full sm:w-auto items-stretch sm:items-center gap-2 sm:gap-3">
-                                {/* Buscador (no funcional) */}
+                                {/* Search (non-functional) */}
                                 <div className="relative w-full sm:w-auto">
                                     <Input
                                         placeholder={t('admin.tickets.search') || 'Buscar por nombre, código...'}
@@ -162,7 +159,7 @@ export default function TicketsPage() {
                                     />
                                 </div>
 
-                                {/* Filtro (no funcional) */}
+                                {/* Filter (non-functional) */}
                                 <div className="w-full sm:w-auto">
                                     <Select value={filterValue} onValueChange={setFilterValue}>
                                         <SelectTrigger className={`h-10 w-full sm:w-48 md:w-56 px-3 whitespace-nowrap ${mounted && theme === 'dark' ? 'bg-slate-700 dark:border-slate-600 dark:text-white' : 'bg-white/80 border-slate-300'} backdrop-blur-sm focus:border-blue-500 text-sm`}>
@@ -173,20 +170,17 @@ export default function TicketsPage() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="all">Todos los códigos</SelectItem>
-                                            <SelectItem value="pl0001">PL0001</SelectItem>
-                                            <SelectItem value="pl0002">PL0002</SelectItem>
-                                            <SelectItem value="pl0003">PL0003</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
 
-                                {/* Botón Generar Código (no funcional) */}
+                                {/* Create User Button */}
                                 <div className="w-full sm:w-auto">
                                     <Button
-                                        onClick={() => { }}
+                                        onClick={() => setCreateModalOpen(true)}
                                         className="h-10 w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md hover:shadow-lg text-sm"
                                     >
-                                        <Plus className="w-3 h-3 mr-2" /> {t('admin.tickets.generateCode') || 'Generar Código'}
+                                        <Plus className="w-3 h-3 mr-2" /> Crear Usuario
                                     </Button>
                                 </div>
                             </div>
@@ -194,180 +188,244 @@ export default function TicketsPage() {
                     </CardHeader>
 
                     <CardContent className="overflow-x-hidden">
-                        {/* Vista Desktop - Tabla */}
-                        <div className={`hidden lg:block rounded-xl border ${mounted && theme === 'dark' ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-white/50'} backdrop-blur-sm overflow-x-auto`}>
-                            <div className="min-h-[400px] transition-all duration-700 ease-in-out">
-                                <table className="w-full table-fixed min-w-full">
-                                    <thead className={`bg-gradient-to-r ${mounted && theme === 'dark' ? 'from-slate-800 to-slate-700 border-slate-600' : 'from-slate-50 to-blue-50 border-slate-200'} border-b`}>
-                                        <tr>
-                                            <th className={`text-left py-4 px-6 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'} font-semibold`} style={{ width: '25%' }}>
-                                                <div className="flex items-center gap-2">
-                                                    <span>{t('admin.tickets.table.userName') || 'Nombre del Usuario'}</span>
-                                                </div>
-                                            </th>
-                                            <th className={`text-left py-4 px-6 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'} font-semibold`} style={{ width: '15%' }}>
-                                                <div className="flex items-center gap-2">
-                                                    <Calendar className="w-4 h-4" />
-                                                    {t('admin.tickets.table.date') || 'Fecha'}
-                                                </div>
-                                            </th>
-                                            <th className={`text-left py-4 px-6 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'} font-semibold`} style={{ width: '15%' }}>
-                                                <div className="flex items-center gap-2">
-                                                    <Hash className="w-4 h-4" />
-                                                    {t('admin.tickets.table.baseCode') || 'Código Base'}
-                                                </div>
-                                            </th>
-                                            <th className={`text-left py-4 px-6 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'} font-semibold`} style={{ width: '20%' }}>
-                                                <div className="flex items-center gap-2">
-                                                    <Hash className="w-4 h-4" />
-                                                    {t('admin.tickets.table.code') || 'Código'}
-                                                </div>
-                                            </th>
-                                            <th className={`text-left py-4 px-6 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'} font-semibold`} style={{ width: '25%' }}>
-                                                <div className="flex items-center gap-2">
-                                                    <BarcodeIcon className="w-4 h-4" />
-                                                    {t('admin.tickets.table.barcode') || 'Código de Barras'}
-                                                </div>
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className={`divide-y ${mounted && theme === 'dark' ? 'divide-slate-700' : 'divide-slate-100'}`}>
-                                        {paginatedTickets.map((ticket, index) => (
-                                            <tr
-                                                key={ticket.id}
-                                                className={`${mounted && theme === 'dark' ? 'hover:bg-slate-700/50' : 'hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-slate-50/50'} transition-all duration-300 ease-out group`}
-                                            >
-                                                <td className="py-4 px-6" style={{ width: '25%' }}>
-                                                    <div className="flex items-center gap-4">
-                                                        <Avatar className={`h-12 w-12 ring-2 ${mounted && theme === 'dark' ? 'ring-slate-700 group-hover:ring-blue-600' : 'ring-slate-100 group-hover:ring-blue-200'} transition-all duration-200 flex-shrink-0`}>
-                                                            <AvatarFallback className={`bg-gradient-to-br ${mounted && theme === 'dark' ? 'from-blue-900/50 to-blue-800/50 text-blue-300' : 'from-blue-100 to-blue-200 text-blue-800'} font-semibold`}>
-                                                                {ticket.userName
-                                                                    .split(' ')
-                                                                    .map((n) => n[0])
-                                                                    .slice(0, 2)
-                                                                    .join('')}
-                                                            </AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="min-w-0 flex-1">
-                                                            <div className={`font-semibold ${mounted && theme === 'dark' ? 'text-white group-hover:text-blue-300' : 'text-slate-900 group-hover:text-blue-900'} transition-colors truncate`}>
-                                                                {ticket.userName}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="py-4 px-6" style={{ width: '15%' }}>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className={`truncate ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                                                            {ticket.date}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="py-4 px-6" style={{ width: '15%' }}>
-                                                    <Badge className={`${mounted && theme === 'dark' ? 'bg-blue-900/30 text-blue-300 border-blue-700' : 'bg-blue-100 text-blue-800 border-blue-200'} border font-medium px-3 py-1`}>
-                                                        {ticket.baseCode}
-                                                    </Badge>
-                                                </td>
-                                                <td className="py-4 px-6" style={{ width: '20%' }}>
-                                                    <code className={`font-mono text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                                                        {ticket.code}
-                                                    </code>
-                                                </td>
-                                                <td className="py-4 px-6" style={{ width: '25%' }}>
-                                                    <BarcodeDisplay code={ticket.barcode} />
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                        {isLoading ? (
+                            <div className="flex items-center justify-center py-12">
+                                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
                             </div>
-                        </div>
-
-                        {/* Vista Mobile/Tablet - Cards */}
-                        <div className="lg:hidden space-y-3 md:space-y-4">
-                            {paginatedTickets.map((ticket) => (
-                                <div
-                                    key={ticket.id}
-                                    className={`${mounted && theme === 'dark' ? 'bg-slate-800/80 dark:border-slate-700' : 'bg-white/80 border-slate-200'} backdrop-blur-sm rounded-xl border p-4 hover:shadow-lg transition-all duration-300`}
+                        ) : tickets.length === 0 ? (
+                            <div className="text-center py-12">
+                                <BarcodeIcon className="h-12 w-12 mx-auto text-slate-400 mb-4" />
+                                <p className="text-slate-600 dark:text-slate-400">No hay tickets registrados</p>
+                                <Button
+                                    onClick={() => setCreateModalOpen(true)}
+                                    className="mt-4"
+                                    variant="outline"
                                 >
-                                    <div className="flex items-center gap-4 mb-4">
-                                        <Avatar className={`h-12 w-12 ring-2 ${mounted && theme === 'dark' ? 'ring-slate-700' : 'ring-slate-100'} flex-shrink-0`}>
-                                            <AvatarFallback className={`bg-gradient-to-br ${mounted && theme === 'dark' ? 'from-blue-900/50 to-blue-800/50 text-blue-300' : 'from-blue-100 to-blue-200 text-blue-800'} font-semibold`}>
-                                                {ticket.userName
-                                                    .split(' ')
-                                                    .map((n) => n[0])
-                                                    .slice(0, 2)
-                                                    .join('')}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex-1 min-w-0">
-                                            <div className={`font-semibold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'} truncate`}>
-                                                {ticket.userName}
-                                            </div>
-                                            <div className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'} flex items-center gap-1`}>
-                                                <Calendar className="w-3 h-3" />
-                                                {ticket.date}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2 mb-4">
-                                        <div className="flex items-center justify-between">
-                                            <span className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                                                Código Base:
-                                            </span>
-                                            <Badge className={`${mounted && theme === 'dark' ? 'bg-blue-900/30 text-blue-300 border-blue-700' : 'bg-blue-100 text-blue-800 border-blue-200'} border`}>
-                                                {ticket.baseCode}
-                                            </Badge>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <span className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                                                Código:
-                                            </span>
-                                            <code className={`font-mono text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                                                {ticket.code}
-                                            </code>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex justify-center pt-3 border-t border-slate-200 dark:border-slate-700">
-                                        <BarcodeDisplay code={ticket.barcode} />
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Crear primer usuario
+                                </Button>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Desktop Table */}
+                                <div className={`hidden lg:block rounded-xl border ${mounted && theme === 'dark' ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-white/50'} backdrop-blur-sm overflow-x-auto`}>
+                                    <div className="min-h-[400px] transition-all duration-700 ease-in-out">
+                                        <table className="w-full table-fixed min-w-full">
+                                            <thead className={`bg-gradient-to-r ${mounted && theme === 'dark' ? 'from-slate-800 to-slate-700 border-slate-600' : 'from-slate-50 to-blue-50 border-slate-200'} border-b`}>
+                                                <tr>
+                                                    <th className={`text-left py-4 px-6 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'} font-semibold`} style={{ width: '25%' }}>
+                                                        Nombre del Usuario
+                                                    </th>
+                                                    <th className={`text-left py-4 px-6 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'} font-semibold`} style={{ width: '15%' }}>
+                                                        <div className="flex items-center gap-2">
+                                                            <Calendar className="w-4 h-4" />
+                                                            Fecha
+                                                        </div>
+                                                    </th>
+                                                    <th className={`text-left py-4 px-6 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'} font-semibold`} style={{ width: '15%' }}>
+                                                        Código Base
+                                                    </th>
+                                                    <th className={`text-center py-4 px-6 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'} font-semibold`} style={{ width: '15%' }}>
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <History className="w-4 h-4" />
+                                                            Historial
+                                                        </div>
+                                                    </th>
+                                                    <th className={`text-center py-4 px-6 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'} font-semibold`} style={{ width: '30%' }}>
+                                                        Acciones
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className={`divide-y ${mounted && theme === 'dark' ? 'divide-slate-700' : 'divide-slate-100'}`}>
+                                                {paginatedTickets.map((ticket) => (
+                                                    <tr
+                                                        key={ticket.id}
+                                                        className={`${mounted && theme === 'dark' ? 'hover:bg-slate-700/50' : 'hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-slate-50/50'} transition-all duration-300 ease-out group`}
+                                                    >
+                                                        <td className="py-4 px-6">
+                                                            <div className="flex items-center gap-4">
+                                                                <Avatar className={`h-12 w-12 ring-2 ${mounted && theme === 'dark' ? 'ring-slate-700 group-hover:ring-blue-600' : 'ring-slate-100 group-hover:ring-blue-200'} transition-all duration-200 flex-shrink-0`}>
+                                                                    <AvatarFallback className={`bg-gradient-to-br ${mounted && theme === 'dark' ? 'from-blue-900/50 to-blue-800/50 text-blue-300' : 'from-blue-100 to-blue-200 text-blue-800'} font-semibold`}>
+                                                                        {ticket.user_name
+                                                                            .split(' ')
+                                                                            .map((n) => n[0])
+                                                                            .slice(0, 2)
+                                                                            .join('')}
+                                                                    </AvatarFallback>
+                                                                </Avatar>
+                                                                <div className="min-w-0 flex-1">
+                                                                    <div className={`font-semibold ${mounted && theme === 'dark' ? 'text-white group-hover:text-blue-300' : 'text-slate-900 group-hover:text-blue-900'} transition-colors truncate`}>
+                                                                        {ticket.user_name}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-4 px-6">
+                                                            <span className={`truncate ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                                                                {formatDate(ticket.created_at)}
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-4 px-6">
+                                                            <Badge className={`${mounted && theme === 'dark' ? 'bg-blue-900/30 text-blue-300 border-blue-700' : 'bg-blue-100 text-blue-800 border-blue-200'} border font-medium px-3 py-1`}>
+                                                                {ticket.base_code}
+                                                            </Badge>
+                                                        </td>
+                                                        <td className="py-4 px-6 text-center">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => handleHistory(ticket)}
+                                                                className="h-8"
+                                                            >
+                                                                <History className="h-4 w-4 mr-1" />
+                                                                {ticket.print_count || 0}
+                                                            </Button>
+                                                        </td>
+                                                        <td className="py-4 px-6">
+                                                            <div className="flex items-center justify-center">
+                                                                <TicketActions
+                                                                    ticket={ticket}
+                                                                    onPrint={handlePrint}
+                                                                    onEdit={handleEdit}
+                                                                    onDelete={handleDelete}
+                                                                    onHistory={handleHistory}
+                                                                />
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
 
-                        {/* Paginación */}
-                        <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
-                            <div className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                                Mostrando {startIndex + 1} a {Math.min(startIndex + itemsPerPage, displayedTickets.length)} de {displayedTickets.length} tickets
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                                    disabled={currentPage === 1}
-                                    className={mounted && theme === 'dark' ? 'dark:border-slate-700' : ''}
-                                >
-                                    <ChevronLeft className="w-4 h-4" />
-                                </Button>
-                                <span className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                                    Página {currentPage} de {totalPages}
-                                </span>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                                    disabled={currentPage === totalPages}
-                                    className={mounted && theme === 'dark' ? 'dark:border-slate-700' : ''}
-                                >
-                                    <ChevronRight className="w-4 h-4" />
-                                </Button>
-                            </div>
-                        </div>
+                                {/* Mobile Cards */}
+                                <div className="lg:hidden space-y-3 md:space-y-4">
+                                    {paginatedTickets.map((ticket) => (
+                                        <div
+                                            key={ticket.id}
+                                            className={`${mounted && theme === 'dark' ? 'bg-slate-800/80 dark:border-slate-700' : 'bg-white/80 border-slate-200'} backdrop-blur-sm rounded-xl border p-4 hover:shadow-lg transition-all duration-300`}
+                                        >
+                                            <div className="flex items-center gap-4 mb-4">
+                                                <Avatar className={`h-12 w-12 ring-2 ${mounted && theme === 'dark' ? 'ring-slate-700' : 'ring-slate-100'} flex-shrink-0`}>
+                                                    <AvatarFallback className={`bg-gradient-to-br ${mounted && theme === 'dark' ? 'from-blue-900/50 to-blue-800/50 text-blue-300' : 'from-blue-100 to-blue-200 text-blue-800'} font-semibold`}>
+                                                        {ticket.user_name
+                                                            .split(' ')
+                                                            .map((n) => n[0])
+                                                            .slice(0, 2)
+                                                            .join('')}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className={`font-semibold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'} truncate`}>
+                                                        {ticket.user_name}
+                                                    </div>
+                                                    <div className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'} flex items-center gap-1`}>
+                                                        <Calendar className="w-3 h-3" />
+                                                        {formatDate(ticket.created_at)}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2 mb-4">
+                                                <div className="flex items-center justify-between">
+                                                    <span className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                                                        Código Base:
+                                                    </span>
+                                                    <Badge className={`${mounted && theme === 'dark' ? 'bg-blue-900/30 text-blue-300 border-blue-700' : 'bg-blue-100 text-blue-800 border-blue-200'} border`}>
+                                                        {ticket.base_code}
+                                                    </Badge>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                                                        Historial:
+                                                    </span>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleHistory(ticket)}
+                                                    >
+                                                        <History className="h-4 w-4 mr-1" />
+                                                        {ticket.print_count || 0} impresiones
+                                                    </Button>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex justify-center gap-2 pt-3 border-t border-slate-200 dark:border-slate-700">
+                                                <TicketActions
+                                                    ticket={ticket}
+                                                    onPrint={handlePrint}
+                                                    onEdit={handleEdit}
+                                                    onDelete={handleDelete}
+                                                    onHistory={handleHistory}
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Pagination */}
+                                <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+                                    <div className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                                        Mostrando {startIndex + 1} a {Math.min(startIndex + itemsPerPage, displayedTickets.length)} de {displayedTickets.length} tickets
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                            disabled={currentPage === 1}
+                                            className={mounted && theme === 'dark' ? 'dark:border-slate-700' : ''}
+                                        >
+                                            <ChevronLeft className="w-4 h-4" />
+                                        </Button>
+                                        <span className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                                            Página {currentPage} de {totalPages}
+                                        </span>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                                            disabled={currentPage === totalPages}
+                                            className={mounted && theme === 'dark' ? 'dark:border-slate-700' : ''}
+                                        >
+                                            <ChevronRight className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Modals */}
+            <CreateTicketModal
+                open={createModalOpen}
+                onOpenChange={setCreateModalOpen}
+                onSuccess={fetchTickets}
+            />
+
+            <EditTicketModal
+                open={editModalOpen}
+                onOpenChange={setEditModalOpen}
+                ticket={selectedTicket}
+                onSuccess={fetchTickets}
+            />
+
+            <DeleteTicketDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                ticket={selectedTicket}
+                onSuccess={fetchTickets}
+            />
+
+            <PrintLabelModal
+                open={printModalOpen}
+                onOpenChange={setPrintModalOpen}
+                ticket={selectedTicket}
+                onSuccess={fetchTickets}
+            />
         </>
     );
 }
