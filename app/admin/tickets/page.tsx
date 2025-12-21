@@ -7,12 +7,10 @@ import { useAdminLayoutContext } from '@/lib/AdminLayoutContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
     Search,
-    Filter,
     Plus,
     Calendar,
     ChevronLeft,
@@ -42,9 +40,8 @@ export default function TicketsPage() {
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Filter states (non-functional for now)
+    // Search state
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterValue, setFilterValue] = useState('all');
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -112,8 +109,19 @@ export default function TicketsPage() {
         toast.info(`Historial de ${ticket.user_name}: ${ticket.print_count || 0} impresiones`);
     };
 
+    // Search and Filter
+    const filteredTickets = tickets.filter(ticket => {
+        if (!searchTerm.trim()) return true;
+        const search = searchTerm.toLowerCase();
+        return (
+            ticket.user_name.toLowerCase().includes(search) ||
+            ticket.base_code.toLowerCase().includes(search) ||
+            ticket.full_code.toLowerCase().includes(search)
+        );
+    });
+
     // Pagination
-    const displayedTickets = tickets;
+    const displayedTickets = filteredTickets;
     const totalPages = Math.ceil(displayedTickets.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedTickets = displayedTickets.slice(startIndex, startIndex + itemsPerPage);
@@ -149,7 +157,7 @@ export default function TicketsPage() {
 
                             {/* Toolbar */}
                             <div className="flex flex-col sm:flex-row w-full sm:w-auto items-stretch sm:items-center gap-2 sm:gap-3">
-                                {/* Search (non-functional) */}
+                                {/* Search */}
                                 <div className="relative w-full sm:w-auto">
                                     <Input
                                         placeholder={t('admin.tickets.search') || 'Buscar por nombre, código...'}
@@ -159,20 +167,7 @@ export default function TicketsPage() {
                                     />
                                 </div>
 
-                                {/* Filter (non-functional) */}
-                                <div className="w-full sm:w-auto">
-                                    <Select value={filterValue} onValueChange={setFilterValue}>
-                                        <SelectTrigger className={`h-10 w-full sm:w-48 md:w-56 px-3 whitespace-nowrap ${mounted && theme === 'dark' ? 'bg-slate-700 dark:border-slate-600 dark:text-white' : 'bg-white/80 border-slate-300'} backdrop-blur-sm focus:border-blue-500 text-sm`}>
-                                            <div className="flex items-center gap-2 truncate">
-                                                <Filter className={`w-4 h-4 mr-2 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-400'}`} />
-                                                <span>Todos los códigos</span>
-                                            </div>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">Todos los códigos</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+
 
                                 {/* Create User Button */}
                                 <div className="w-full sm:w-auto">
