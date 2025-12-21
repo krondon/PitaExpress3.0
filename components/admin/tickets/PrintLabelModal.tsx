@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Ticket } from '@/lib/tickets/types';
+import Barcode from 'react-barcode';
 
 interface PrintLabelModalProps {
     open: boolean;
@@ -14,28 +16,14 @@ interface PrintLabelModalProps {
     onSuccess: () => void;
 }
 
-// Barcode component for label
-const BarcodeDisplay = ({ code }: { code: string }) => {
-    return (
-        <div className="flex flex-col items-center gap-1">
-            <div className="flex items-center gap-[2px] bg-white px-4 py-3 rounded print:gap-[1px]">
-                {code.split('').map((char, idx) => (
-                    <div
-                        key={idx}
-                        className="h-16 bg-black print:h-32"
-                        style={{
-                            width: char === '*' ? '8px' : ['0', '1'].includes(char) ? '6px' : '7px'
-                        }}
-                    />
-                ))}
-            </div>
-            <span className="text-sm font-mono text-slate-600 tracking-widest print:text-base">{code}</span>
-        </div>
-    );
-};
-
 export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess }: PrintLabelModalProps) {
     const [isLoading, setIsLoading] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+        return () => setMounted(false);
+    }, []);
 
     const handlePrint = async () => {
         if (!ticket) return;
@@ -75,7 +63,7 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="sm:max-w-[500px]">
+                <DialogContent className="sm:max-w-[800px]">
                     <DialogHeader>
                         <DialogTitle>Imprimir Etiqueta</DialogTitle>
                         <DialogDescription>
@@ -85,23 +73,50 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
 
                     {/* Label Preview */}
                     <div className="flex justify-center py-6">
-                        <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 bg-white">
-                            <div className="flex flex-col items-center gap-4 print-label">
+                        <div className="border border-slate-300 rounded-lg p-8 bg-white" style={{ transform: 'scale(0.5)', transformOrigin: 'top' }}>
+                            <div style={{ width: '800px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                                 {/* Logo */}
-                                <div className="text-3xl font-bold text-blue-600">
+                                <div style={{ alignSelf: 'flex-start', marginBottom: '10px' }}>
+                                    <img src="/images/logos/tickets.jpg" alt="Logo" style={{ height: '80px' }} />
+                                </div>
+
+                                {/* Static Code QX304YW */}
+                                <div style={{
+                                    fontFamily: "'CustomArial', sans-serif",
+                                    fontSize: '100px',
+                                    lineHeight: 1,
+                                    fontWeight: 'normal',
+                                    color: 'black'
+                                }}>
                                     QX304YW
                                 </div>
 
-                                {/* Base Code */}
-                                <div className="text-4xl font-bold tracking-wider">
-                                    {ticket.base_code}
-                                </div>
-
                                 {/* Separator */}
-                                <div className="w-full h-px bg-slate-800 my-2"></div>
+                                <div style={{ width: '50%', height: '5px', backgroundColor: 'black', margin: '5px 0' }}></div>
 
-                                {/* Barcode */}
-                                <BarcodeDisplay code={ticket.full_code} />
+                                {/* Real Barcode */}
+                                <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    <div style={{ transform: 'scaleX(2.5)', transformOrigin: 'center' }}>
+                                        <Barcode
+                                            value={ticket.full_code}
+                                            format="CODE128"
+                                            width={1}
+                                            height={80}
+                                            displayValue={false}
+                                            margin={0}
+                                        />
+                                    </div>
+                                    <div style={{
+                                        fontFamily: "'CustomArial', sans-serif",
+                                        fontSize: '16px',
+                                        color: '#4b5563',
+                                        letterSpacing: '1.2em',
+                                        marginTop: '8px',
+                                        marginLeft: '1.2em'
+                                    }}>
+                                        {ticket.full_code}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -127,33 +142,122 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                 </DialogContent>
             </Dialog>
 
-            {/* Print-only content */}
+            {/* Print Styles */}
             <style jsx global>{`
-        @media print {
-          @page {
-            size: 11.69in 4.26in;
-            margin: 0;
-          }
-          body * {
-            visibility: hidden;
-          }
-          .print-label, .print-label * {
-            visibility: visible;
-          }
-          .print-label {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 11.69in;
-            height: 4.26in;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 0.5in;
-          }
-        }
-      `}</style>
+                @media print {
+                    @page {
+                        size: 11.69in 4.26in;
+                        margin: 0;
+                    }
+
+                    html {
+                        height: 4.26in !important;
+                        overflow: hidden !important;
+                    }
+
+                    body {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        width: 11.69in !important;
+                        height: 4.26in !important;
+                        overflow: hidden !important;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                        background: white !important;
+                    }
+
+                    /* Hide EVERYTHING except print-label */
+                    body > *:not(#print-label) {
+                        display: none !important;
+                        visibility: hidden !important;
+                        height: 0 !important;
+                        overflow: hidden !important;
+                    }
+
+                    /* Show only print label */
+                    #print-label {
+                        display: flex !important;
+                        visibility: visible !important;
+                        position: fixed !important;
+                        left: 0 !important;
+                        top: 0 !important;
+                        width: 11.69in !important;
+                        height: 4.26in !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        background: white !important;
+                        z-index: 2147483647 !important;
+                    }
+
+                    #print-label,
+                    #print-label * {
+                        visibility: visible !important;
+                        display: flex !important;
+                    }
+
+                    #print-label > div {
+                        display: flex !important;
+                    }
+                }
+            `}</style>
+
+            {/* Print Content - Rendered via Portal to be direct child of body */}
+            {mounted && createPortal(
+                <div id="print-label" style={{ display: 'none' }}>
+                    <div style={{
+                        width: '80%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '8px',
+                        maxHeight: '100%'
+                    }}>
+                        {/* Logo */}
+                        <div style={{ alignSelf: 'flex-start', marginBottom: '10px' }}>
+                            <img src="/images/logos/tickets.jpg" alt="Logo" style={{ height: '80px' }} />
+                        </div>
+
+                        {/* Static Code QX304YW */}
+                        <div style={{
+                            fontFamily: "'CustomArial', sans-serif",
+                            fontSize: '100px',
+                            lineHeight: 1,
+                            fontWeight: 'normal',
+                            color: 'black'
+                        }}>
+                            QX304YW
+                        </div>
+
+                        {/* Separator */}
+                        <div style={{ width: '50%', height: '5px', backgroundColor: 'black', margin: '5px 0' }}></div>
+
+                        {/* Real Barcode */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <div style={{ transform: 'scaleX(1.8)', transformOrigin: 'center' }}>
+                                <Barcode
+                                    value={ticket.full_code}
+                                    format="CODE128"
+                                    width={1}
+                                    height={140}
+                                    displayValue={false}
+                                    margin={0}
+                                    background="#ffffff"
+                                />
+                            </div>
+                            <div style={{
+                                fontFamily: "'CustomArial', sans-serif",
+                                fontSize: '20px',
+                                color: '#4b5563',
+                                letterSpacing: '0.8em',
+                                marginTop: '10px'
+                            }}>
+                                {ticket.full_code}
+                            </div>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
         </>
     );
 }

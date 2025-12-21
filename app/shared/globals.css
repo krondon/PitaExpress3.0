@@ -1,27 +1,46 @@
 @import url('https://fonts.cdnfonts.com/css/fh-oscar-condensed-test');
 
-body, html, * {
+body,
+html,
+* {
   font-family: 'FH Oscar Condensed Test', sans-serif !important;
 }
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* Animaciones personalizadas para la bandera de Venezuela */
 @keyframes animation-delay-200 {
-  0%, 100% { animation-delay: 0.2s; }
+
+  0%,
+  100% {
+    animation-delay: 0.2s;
+  }
 }
 
 @keyframes animation-delay-400 {
-  0%, 100% { animation-delay: 0.4s; }
+
+  0%,
+  100% {
+    animation-delay: 0.4s;
+  }
 }
 
 @keyframes animation-delay-600 {
-  0%, 100% { animation-delay: 0.6s; }
+
+  0%,
+  100% {
+    animation-delay: 0.6s;
+  }
 }
 
 @keyframes animation-delay-800 {
-  0%, 100% { animation-delay: 0.8s; }
+
+  0%,
+  100% {
+    animation-delay: 0.8s;
+  }
 }
 
 .animation-delay-200 {
@@ -42,55 +61,70 @@ body, html, * {
 
 @layer utilities {
   .w-4\.5 {
-    width: 1.125rem; /* 18px */
+    width: 1.125rem;
+    /* 18px */
   }
-  
+
   .h-4\.5 {
-    height: 1.125rem; /* 18px */
+    height: 1.125rem;
+    /* 18px */
   }
-  
+
   .w-6 {
-    width: 1.5rem; /* 24px */
+    width: 1.5rem;
+    /* 24px */
   }
-  
+
   .h-6 {
-    height: 1.5rem; /* 24px */
+    height: 1.5rem;
+    /* 24px */
   }
-  
+
   .w-7 {
-    width: 1.75rem; /* 28px */
+    width: 1.75rem;
+    /* 28px */
   }
-  
+
   .h-7 {
-    height: 1.75rem; /* 28px */
+    height: 1.75rem;
+    /* 28px */
   }
-  
+
   .p-2\.5 {
-    padding: 0.625rem; /* 10px */
+    padding: 0.625rem;
+    /* 10px */
   }
-  
+
   .px-3\.5 {
-    padding-left: 0.875rem; /* 14px */
-    padding-right: 0.875rem; /* 14px */
+    padding-left: 0.875rem;
+    /* 14px */
+    padding-right: 0.875rem;
+    /* 14px */
   }
-  
+
   .py-2\.5 {
-    padding-top: 0.625rem; /* 10px */
-    padding-bottom: 0.625rem; /* 10px */
+    padding-top: 0.625rem;
+    /* 10px */
+    padding-bottom: 0.625rem;
+    /* 10px */
   }
-  
+
   .text-\[10px\] {
-    font-size: 0.625rem; /* 10px */
+    font-size: 0.625rem;
+    /* 10px */
   }
-  
+
   /* Ocultar scrollbar para el workflow */
   .scrollbar-hide {
-    -ms-overflow-style: none;  /* Internet Explorer 10+ */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;
+    /* Internet Explorer 10+ */
+    scrollbar-width: none;
+    /* Firefox */
   }
-  
+
   .scrollbar-hide::-webkit-scrollbar {
-    display: none;  /* Safari and Chrome */
+    display: none;
+    /* Safari and Chrome */
   }
 
   /* Estilos personalizados para el scrollbar del sidebar */
@@ -126,7 +160,7 @@ body, html, * {
     overscroll-behavior: contain;
     scroll-behavior: smooth;
   }
-  
+
   /* Line clamp para controlar líneas de texto */
   .line-clamp-2 {
     display: -webkit-box;
@@ -170,13 +204,13 @@ body, html, * {
   .border-gradient {
     border: 2px solid transparent;
     background: linear-gradient(white, white) padding-box,
-                linear-gradient(135deg, #3b82f6, #f97316) border-box;
+      linear-gradient(135deg, #3b82f6, #f97316) border-box;
   }
 
   .border-gradient-dark {
     border: 2px solid transparent;
     background: linear-gradient(#1e3a8a, #1e3a8a) padding-box,
-                linear-gradient(135deg, #3b82f6, #f97316) border-box;
+      linear-gradient(135deg, #3b82f6, #f97316) border-box;
   }
 
   /* Estilos específicos para el contenido principal (no sidebar) */
@@ -287,6 +321,7 @@ body, html, * {
     --chart-5: 25 95% 40%;
     --radius: 0.5rem;
   }
+
   .dark {
     --background: 221 83% 8%;
     --foreground: 217 32% 95%;
@@ -334,12 +369,13 @@ html {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
     /* Transición suave para cambios de tema */
     transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
   }
-  
+
   /* Prevenir flash durante la carga inicial */
   html:not(.dark):not(.light) {
     visibility: hidden;
@@ -348,17 +384,22 @@ html {
 
 /* Utility classes to scale all text proportionally. Apply on <html> in app/layout.tsx */
 /* These classes modify the root font-size, which affects all rem-based text sizes */
-html.text-scale-80 { 
+html.text-scale-80 {
   --text-scale: 0.80;
-  font-size: 12.8px !important; /* Pequeño: 80% del tamaño base (16px * 0.80) */
+  font-size: 12.8px !important;
+  /* Pequeño: 80% del tamaño base (16px * 0.80) */
 }
 
-html.text-scale-100 { 
+html.text-scale-100 {
   --text-scale: 1;
-  font-size: 16px !important; /* Mediano: 100% del tamaño base (16px * 1.00) */
+  font-size: 16px !important;
+  /* Mediano: 100% del tamaño base (16px * 1.00) */
 }
 
-html.text-scale-150 { 
-  --text-scale: 1.50;
-  font-size: 24px !important; /* Grande: 150% del tamaño base (16px * 1.50) */
+
+@font-face {
+  font-family: 'CustomArial';
+  src: url('/fonts/arial/ARIAL.TTF') format('truetype');
+  font-weight: normal;
+  font-style: normal;
 }
