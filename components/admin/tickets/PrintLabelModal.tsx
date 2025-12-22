@@ -72,11 +72,19 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                     </DialogHeader>
 
                     {/* Label Preview */}
-                    <div className="flex justify-center py-6">
-                        <div className="border border-slate-300 rounded-lg p-8 bg-white" style={{ transform: 'scale(0.5)', transformOrigin: 'top' }}>
-                            <div style={{ width: '800px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                    <div className="flex justify-center items-center py-4 overflow-hidden" style={{ height: '300px' }}>
+                        <div className="border border-slate-300 shadow-sm bg-white" style={{
+                            transform: 'scale(0.5)',
+                            transformOrigin: 'center center',
+                            minWidth: '11.69in',
+                            minHeight: '4.26in',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}>
+                            <div style={{ width: '80%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                                 {/* Logo */}
-                                <div style={{ alignSelf: 'flex-start', marginBottom: '10px' }}>
+                                <div style={{ alignSelf: 'flex-start', marginBottom: '10px', marginLeft: '4.5em' }}>
                                     <img src="/images/logos/tickets.jpg" alt="Logo" style={{ height: '80px' }} />
                                 </div>
 
@@ -213,7 +221,7 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                         maxHeight: '100%'
                     }}>
                         {/* Logo */}
-                        <div style={{ alignSelf: 'flex-start', marginBottom: '10px' }}>
+                        <div style={{ alignSelf: 'flex-start', marginBottom: '10px', marginLeft: '7.5em' }}>
                             <img src="/images/logos/tickets.jpg" alt="Logo" style={{ height: '80px' }} />
                         </div>
 
@@ -233,7 +241,7 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
 
                         {/* Real Barcode */}
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <div style={{ transform: 'scaleX(1.8)', transformOrigin: 'center' }}>
+                            <div style={{ transform: 'scaleX(2.5)', transformOrigin: 'center' }}>
                                 <Barcode
                                     value={ticket.full_code}
                                     format="CODE128"
@@ -248,8 +256,9 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                                 fontFamily: "'CustomArial', sans-serif",
                                 fontSize: '20px',
                                 color: '#4b5563',
-                                letterSpacing: '0.8em',
-                                marginTop: '10px'
+                                letterSpacing: '1.0em',
+                                marginTop: '10px',
+                                marginLeft: '1.2em'
                             }}>
                                 {ticket.full_code}
                             </div>
