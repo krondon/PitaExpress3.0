@@ -1688,12 +1688,80 @@
       "listTitle": "Lista de Tickets",
       "search": "Buscar por nombre, código...",
       "generateCode": "Generar Código",
+      "createUser": "Crear Usuario",
+      "createFirstUser": "Crear primer usuario",
+      "loading": "Cargando...",
+      "noTicketsRegistered": "No hay tickets registrados",
       "table": {
         "userName": "Nombre del Usuario",
         "date": "Fecha",
         "baseCode": "Código Base",
         "code": "Código",
-        "barcode": "Código de Barras"
+        "barcode": "Código de Barras",
+        "history": "Historial",
+        "actions": "Acciones",
+        "baseCodeLabel": "Código Base:",
+        "historyLabel": "Historial:",
+        "prints": "impresiones"
+      },
+      "pagination": {
+        "showing": "Mostrando",
+        "to": "a",
+        "of": "de",
+        "tickets": "tickets",
+        "page": "Página",
+        "ofPages": "de"
+      },
+      "messages": {
+        "loadError": "Error al cargar tickets",
+        "historyOf": "Historial de"
+      },
+      "modals": {
+        "create": {
+          "title": "Crear Usuario",
+          "description": "Ingresa el nombre del usuario para generar un nuevo ticket con código de barras.",
+          "userNameLabel": "Nombre del Usuario",
+          "userNamePlaceholder": "Ej: Juan Pérez",
+          "cancel": "Cancelar",
+          "create": "Crear Usuario",
+          "createError": "Error al crear usuario",
+          "createSuccess": "Usuario creado exitosamente",
+          "nameMinLength": "El nombre debe tener al menos 3 caracteres"
+        },
+        "edit": {
+          "title": "Editar Usuario",
+          "description": "Modifica el nombre del usuario. El código de barras permanecerá igual.",
+          "userNameLabel": "Nombre del Usuario",
+          "userNamePlaceholder": "Ej: Juan Pérez",
+          "cancel": "Cancelar",
+          "save": "Guardar Cambios",
+          "updateError": "Error al actualizar usuario",
+          "updateSuccess": "Usuario actualizado exitosamente",
+          "nameMinLength": "El nombre debe tener al menos 3 caracteres"
+        },
+        "delete": {
+          "title": "¿Eliminar usuario?",
+          "description": "Estás a punto de eliminar a",
+          "irreversible": "Esta acción no se puede deshacer y se eliminará también todo el historial de impresiones.",
+          "cancel": "Cancelar",
+          "delete": "Eliminar",
+          "deleteError": "Error al eliminar usuario",
+          "deleteSuccess": "Usuario eliminado exitosamente"
+        },
+        "print": {
+          "title": "Imprimir Etiqueta",
+          "description": "Vista previa de la etiqueta para",
+          "cancel": "Cancelar",
+          "confirm": "Confirmar Impresión",
+          "printError": "Error al imprimir etiqueta",
+          "printSuccess": "Etiqueta enviada a impresión",
+          "registerError": "Error al registrar impresión"
+        }
+      },
+      "actions": {
+        "printLabel": "Imprimir etiqueta",
+        "editUser": "Editar usuario",
+        "deleteUser": "Eliminar usuario"
       }
     },
     "orders": {

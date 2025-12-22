@@ -31,7 +31,7 @@ import PrintLabelModal from '@/components/admin/tickets/PrintLabelModal';
 import TicketActions from '@/components/admin/tickets/TicketActions';
 
 export default function TicketsPage() {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
     const { toggleMobileMenu } = useAdminLayoutContext();
     const { theme } = useTheme();
     const [mounted, setMounted] = useState(false);
@@ -66,13 +66,13 @@ export default function TicketsPage() {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || 'Error al cargar tickets');
+                throw new Error(data.error || t('admin.tickets.messages.loadError'));
             }
 
             setTickets(data.tickets || []);
         } catch (error: any) {
             console.error('Error fetching tickets:', error);
-            toast.error(error.message || 'Error al cargar tickets');
+            toast.error(error.message || t('admin.tickets.messages.loadError'));
         } finally {
             setIsLoading(false);
         }
@@ -81,7 +81,12 @@ export default function TicketsPage() {
     // Format date for display
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
-        return date.toLocaleDateString('es-ES', {
+        const localeMap: Record<string, string> = {
+            'es': 'es-ES',
+            'en': 'en-US',
+            'zh': 'zh-CN'
+        };
+        return date.toLocaleDateString(localeMap[language] || 'es-ES', {
             day: '2-digit',
             month: '2-digit',
             year: 'numeric'
@@ -106,7 +111,7 @@ export default function TicketsPage() {
 
     const handleHistory = (ticket: Ticket) => {
         // TODO: Implement history modal
-        toast.info(`Historial de ${ticket.user_name}: ${ticket.print_count || 0} impresiones`);
+        toast.info(`${t('admin.tickets.messages.historyOf')} ${ticket.user_name}: ${ticket.print_count || 0} ${t('admin.tickets.table.prints')}`);
     };
 
     // Search and Filter
@@ -128,10 +133,10 @@ export default function TicketsPage() {
 
     if (!mounted) {
         return (
-            <div suppressHydrationWarning className={`min-h-screen flex items-center justify-center ${theme === 'dark' ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50'}`}>
+                <div suppressHydrationWarning className={`min-h-screen flex items-center justify-center ${theme === 'dark' ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50'}`}>
                 <div className="text-center">
                     <div suppressHydrationWarning className={`animate-spin rounded-full h-12 w-12 border-b-2 ${theme === 'dark' ? 'border-blue-400' : 'border-blue-600'} mx-auto`}></div>
-                    <p suppressHydrationWarning className={`mt-4 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>Cargando...</p>
+                    <p suppressHydrationWarning className={`mt-4 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>{t('admin.tickets.loading')}</p>
                 </div>
             </div>
         );
@@ -175,7 +180,7 @@ export default function TicketsPage() {
                                         onClick={() => setCreateModalOpen(true)}
                                         className="h-10 w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md hover:shadow-lg text-sm"
                                     >
-                                        <Plus className="w-3 h-3 mr-2" /> Crear Usuario
+                                        <Plus className="w-3 h-3 mr-2" /> {t('admin.tickets.createUser')}
                                     </Button>
                                 </div>
                             </div>
@@ -190,14 +195,14 @@ export default function TicketsPage() {
                         ) : tickets.length === 0 ? (
                             <div className="text-center py-12">
                                 <BarcodeIcon className="h-12 w-12 mx-auto text-slate-400 mb-4" />
-                                <p className="text-slate-600 dark:text-slate-400">No hay tickets registrados</p>
+                                <p className="text-slate-600 dark:text-slate-400">{t('admin.tickets.noTicketsRegistered')}</p>
                                 <Button
                                     onClick={() => setCreateModalOpen(true)}
                                     className="mt-4"
                                     variant="outline"
                                 >
                                     <Plus className="w-4 h-4 mr-2" />
-                                    Crear primer usuario
+                                    {t('admin.tickets.createFirstUser')}
                                 </Button>
                             </div>
                         ) : (
@@ -209,25 +214,25 @@ export default function TicketsPage() {
                                             <thead className={`bg-gradient-to-r ${mounted && theme === 'dark' ? 'from-slate-800 to-slate-700 border-slate-600' : 'from-slate-50 to-blue-50 border-slate-200'} border-b`}>
                                                 <tr>
                                                     <th className={`text-left py-4 px-6 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'} font-semibold`} style={{ width: '25%' }}>
-                                                        Nombre del Usuario
+                                                        {t('admin.tickets.table.userName')}
                                                     </th>
                                                     <th className={`text-left py-4 px-6 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'} font-semibold`} style={{ width: '15%' }}>
                                                         <div className="flex items-center gap-2">
                                                             <Calendar className="w-4 h-4" />
-                                                            Fecha
+                                                            {t('admin.tickets.table.date')}
                                                         </div>
                                                     </th>
                                                     <th className={`text-left py-4 px-6 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'} font-semibold`} style={{ width: '15%' }}>
-                                                        Código Base
+                                                        {t('admin.tickets.table.baseCode')}
                                                     </th>
                                                     <th className={`text-center py-4 px-6 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'} font-semibold`} style={{ width: '15%' }}>
                                                         <div className="flex items-center justify-center gap-2">
                                                             <History className="w-4 h-4" />
-                                                            Historial
+                                                            {t('admin.tickets.table.history')}
                                                         </div>
                                                     </th>
                                                     <th className={`text-center py-4 px-6 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'} font-semibold`} style={{ width: '30%' }}>
-                                                        Acciones
+                                                        {t('admin.tickets.table.actions')}
                                                     </th>
                                                 </tr>
                                             </thead>
@@ -320,7 +325,7 @@ export default function TicketsPage() {
                                             <div className="space-y-2 mb-4">
                                                 <div className="flex items-center justify-between">
                                                     <span className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                                                        Código Base:
+                                                        {t('admin.tickets.table.baseCodeLabel')}
                                                     </span>
                                                     <Badge className={`${mounted && theme === 'dark' ? 'bg-blue-900/30 text-blue-300 border-blue-700' : 'bg-blue-100 text-blue-800 border-blue-200'} border`}>
                                                         {ticket.base_code}
@@ -328,11 +333,11 @@ export default function TicketsPage() {
                                                 </div>
                                                 <div className="flex items-center justify-between">
                                                     <span className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                                                        Historial:
+                                                        {t('admin.tickets.table.historyLabel')}
                                                     </span>
                                                     <div className="flex items-center text-sm text-slate-600 dark:text-slate-400">
                                                         <History className="h-4 w-4 mr-2" />
-                                                        {ticket.print_count || 0} impresiones
+                                                        {ticket.print_count || 0} {t('admin.tickets.table.prints')}
                                                     </div>
                                                 </div>
                                             </div>
@@ -353,7 +358,7 @@ export default function TicketsPage() {
                                 {/* Pagination */}
                                 <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
                                     <div className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                                        Mostrando {startIndex + 1} a {Math.min(startIndex + itemsPerPage, displayedTickets.length)} de {displayedTickets.length} tickets
+                                        {t('admin.tickets.pagination.showing')} {startIndex + 1} {t('admin.tickets.pagination.to')} {Math.min(startIndex + itemsPerPage, displayedTickets.length)} {t('admin.tickets.pagination.of')} {displayedTickets.length} {t('admin.tickets.pagination.tickets')}
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Button
@@ -366,7 +371,7 @@ export default function TicketsPage() {
                                             <ChevronLeft className="w-4 h-4" />
                                         </Button>
                                         <span className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                                            Página {currentPage} de {totalPages}
+                                            {t('admin.tickets.pagination.page')} {currentPage} {t('admin.tickets.pagination.ofPages')} {totalPages}
                                         </span>
                                         <Button
                                             variant="outline"

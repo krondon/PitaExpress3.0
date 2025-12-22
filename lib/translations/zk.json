@@ -831,6 +831,7 @@
     "dashboard": "控制面板",
     "users": "用户",
     "usuarios": "用户",
+    "tickets": "票据",
     "orders": "订单",
     "pedidos": "订单",
     "reports": "报告",
@@ -1224,6 +1225,85 @@
       "empty": {
         "noUsersFound": "没有注册的用户。",
         "tryAdjustFilters": "尝试调整过滤或创建新用户。"
+      }
+    },
+    "tickets": {
+      "title": "票据",
+      "subtitle": "条形码管理",
+      "listTitle": "票据列表",
+      "search": "按姓名、代码搜索...",
+      "createUser": "创建用户",
+      "createFirstUser": "创建第一个用户",
+      "loading": "加载中...",
+      "noTicketsRegistered": "没有注册的票据",
+      "table": {
+        "userName": "用户名",
+        "date": "日期",
+        "baseCode": "基础代码",
+        "history": "历史",
+        "actions": "操作",
+        "baseCodeLabel": "基础代码：",
+        "historyLabel": "历史：",
+        "prints": "次打印"
+      },
+      "pagination": {
+        "showing": "显示",
+        "to": "至",
+        "of": "共",
+        "tickets": "个票据",
+        "page": "第",
+        "ofPages": "页，共"
+      },
+      "messages": {
+        "loadError": "加载票据时出错",
+        "historyOf": "历史记录"
+      },
+      "modals": {
+        "create": {
+          "title": "创建用户",
+          "description": "输入用户名以生成带条形码的新票据。",
+          "userNameLabel": "用户名",
+          "userNamePlaceholder": "例如：张三",
+          "cancel": "取消",
+          "create": "创建用户",
+          "createError": "创建用户时出错",
+          "createSuccess": "用户创建成功",
+          "nameMinLength": "名称必须至少 3 个字符"
+        },
+        "edit": {
+          "title": "编辑用户",
+          "description": "修改用户名。条形码将保持不变。",
+          "userNameLabel": "用户名",
+          "userNamePlaceholder": "例如：张三",
+          "cancel": "取消",
+          "save": "保存更改",
+          "updateError": "更新用户时出错",
+          "updateSuccess": "用户更新成功",
+          "nameMinLength": "名称必须至少 3 个字符"
+        },
+        "delete": {
+          "title": "删除用户？",
+          "description": "你即将删除",
+          "irreversible": "此操作无法撤销，并将删除所有打印历史记录。",
+          "cancel": "取消",
+          "delete": "删除",
+          "deleteError": "删除用户时出错",
+          "deleteSuccess": "用户删除成功"
+        },
+        "print": {
+          "title": "打印标签",
+          "description": "标签预览",
+          "cancel": "取消",
+          "confirm": "确认打印",
+          "printError": "打印标签时出错",
+          "printSuccess": "标签已发送打印",
+          "registerError": "注册打印时出错"
+        }
+      },
+      "actions": {
+        "printLabel": "打印标签",
+        "editUser": "编辑用户",
+        "deleteUser": "删除用户"
       }
     },
     "orders": {

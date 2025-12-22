@@ -24,7 +24,7 @@ export default function CreateTicketModal({ open, onOpenChange, onSuccess }: Cre
         e.preventDefault();
 
         if (userName.trim().length < 3) {
-            toast.error('El nombre debe tener al menos 3 caracteres');
+            toast.error(t('admin.tickets.modals.create.nameMinLength'));
             return;
         }
 
@@ -40,16 +40,16 @@ export default function CreateTicketModal({ open, onOpenChange, onSuccess }: Cre
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || 'Error al crear usuario');
+                throw new Error(data.error || t('admin.tickets.modals.create.createError'));
             }
 
-            toast.success('Usuario creado exitosamente');
+            toast.success(t('admin.tickets.modals.create.createSuccess'));
             setUserName('');
             onOpenChange(false);
             onSuccess();
         } catch (error: any) {
             console.error('Error creating ticket:', error);
-            toast.error(error.message || 'Error al crear usuario');
+            toast.error(error.message || t('admin.tickets.modals.create.createError'));
         } finally {
             setIsLoading(false);
         }
@@ -59,18 +59,18 @@ export default function CreateTicketModal({ open, onOpenChange, onSuccess }: Cre
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Crear Usuario</DialogTitle>
+                    <DialogTitle>{t('admin.tickets.modals.create.title')}</DialogTitle>
                     <DialogDescription>
-                        Ingresa el nombre del usuario para generar un nuevo ticket con código de barras.
+                        {t('admin.tickets.modals.create.description')}
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit}>
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="userName">Nombre del Usuario</Label>
+                            <Label htmlFor="userName">{t('admin.tickets.modals.create.userNameLabel')}</Label>
                             <Input
                                 id="userName"
-                                placeholder="Ej: Juan Pérez"
+                                placeholder={t('admin.tickets.modals.create.userNamePlaceholder')}
                                 value={userName}
                                 onChange={(e) => setUserName(e.target.value)}
                                 disabled={isLoading}
@@ -87,11 +87,11 @@ export default function CreateTicketModal({ open, onOpenChange, onSuccess }: Cre
                             onClick={() => onOpenChange(false)}
                             disabled={isLoading}
                         >
-                            Cancelar
+                            {t('admin.tickets.modals.create.cancel')}
                         </Button>
                         <Button type="submit" disabled={isLoading}>
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Crear Usuario
+                            {t('admin.tickets.modals.create.create')}
                         </Button>
                     </DialogFooter>
                 </form>

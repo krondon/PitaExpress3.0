@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Loader2, Printer } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { Ticket } from '@/lib/tickets/types';
 import Barcode from 'react-barcode';
 
@@ -17,6 +18,7 @@ interface PrintLabelModalProps {
 }
 
 export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess }: PrintLabelModalProps) {
+    const { t } = useTranslation();
     const [isLoading, setIsLoading] = useState(false);
     const [mounted, setMounted] = useState(false);
 
@@ -41,18 +43,18 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || 'Error al registrar impresión');
+                throw new Error(data.error || t('admin.tickets.modals.print.registerError'));
             }
 
             // Open print dialog
             window.print();
 
-            toast.success('Etiqueta enviada a impresión');
+            toast.success(t('admin.tickets.modals.print.printSuccess'));
             onOpenChange(false);
             onSuccess();
         } catch (error: any) {
             console.error('Error printing label:', error);
-            toast.error(error.message || 'Error al imprimir etiqueta');
+            toast.error(error.message || t('admin.tickets.modals.print.printError'));
         } finally {
             setIsLoading(false);
         }
@@ -65,9 +67,9 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
             <Dialog open={open} onOpenChange={onOpenChange}>
                 <DialogContent className="sm:max-w-[800px]">
                     <DialogHeader>
-                        <DialogTitle>Imprimir Etiqueta</DialogTitle>
+                        <DialogTitle>{t('admin.tickets.modals.print.title')}</DialogTitle>
                         <DialogDescription>
-                            Vista previa de la etiqueta para {ticket.user_name}
+                            {t('admin.tickets.modals.print.description')} {ticket.user_name}
                         </DialogDescription>
                     </DialogHeader>
 
@@ -136,7 +138,7 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                             onClick={() => onOpenChange(false)}
                             disabled={isLoading}
                         >
-                            Cancelar
+                            {t('admin.tickets.modals.print.cancel')}
                         </Button>
                         <Button onClick={handlePrint} disabled={isLoading}>
                             {isLoading ? (
@@ -144,7 +146,7 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                             ) : (
                                 <Printer className="mr-2 h-4 w-4" />
                             )}
-                            Confirmar Impresión
+                            {t('admin.tickets.modals.print.confirm')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

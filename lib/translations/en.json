@@ -835,6 +835,7 @@
     "dashboard": "Dashboard",
     "users": "Users",
     "usuarios": "Users",
+    "tickets": "Tickets",
     "orders": "Orders",
     "pedidos": "Orders",
     "reports": "Reports",
@@ -1233,6 +1234,85 @@
       "empty": {
         "noUsersFound": "There are no users registered.",
         "tryAdjustFilters": "Try adjusting the filters or create a new user."
+      }
+    },
+    "tickets": {
+      "title": "Tickets",
+      "subtitle": "Barcode management",
+      "listTitle": "Ticket List",
+      "search": "Search by name, code...",
+      "createUser": "Create User",
+      "createFirstUser": "Create first user",
+      "loading": "Loading...",
+      "noTicketsRegistered": "No tickets registered",
+      "table": {
+        "userName": "User Name",
+        "date": "Date",
+        "baseCode": "Base Code",
+        "history": "History",
+        "actions": "Actions",
+        "baseCodeLabel": "Base Code:",
+        "historyLabel": "History:",
+        "prints": "prints"
+      },
+      "pagination": {
+        "showing": "Showing",
+        "to": "to",
+        "of": "of",
+        "tickets": "tickets",
+        "page": "Page",
+        "ofPages": "of"
+      },
+      "messages": {
+        "loadError": "Error loading tickets",
+        "historyOf": "History of"
+      },
+      "modals": {
+        "create": {
+          "title": "Create User",
+          "description": "Enter the user name to generate a new ticket with barcode.",
+          "userNameLabel": "User Name",
+          "userNamePlaceholder": "E.g.: John Doe",
+          "cancel": "Cancel",
+          "create": "Create User",
+          "createError": "Error creating user",
+          "createSuccess": "User created successfully",
+          "nameMinLength": "Name must be at least 3 characters"
+        },
+        "edit": {
+          "title": "Edit User",
+          "description": "Modify the user name. The barcode will remain the same.",
+          "userNameLabel": "User Name",
+          "userNamePlaceholder": "E.g.: John Doe",
+          "cancel": "Cancel",
+          "save": "Save Changes",
+          "updateError": "Error updating user",
+          "updateSuccess": "User updated successfully",
+          "nameMinLength": "Name must be at least 3 characters"
+        },
+        "delete": {
+          "title": "Delete user?",
+          "description": "You are about to delete",
+          "irreversible": "This action cannot be undone and will also delete all print history.",
+          "cancel": "Cancel",
+          "delete": "Delete",
+          "deleteError": "Error deleting user",
+          "deleteSuccess": "User deleted successfully"
+        },
+        "print": {
+          "title": "Print Label",
+          "description": "Label preview for",
+          "cancel": "Cancel",
+          "confirm": "Confirm Print",
+          "printError": "Error printing label",
+          "printSuccess": "Label sent to print",
+          "registerError": "Error registering print"
+        }
+      },
+      "actions": {
+        "printLabel": "Print label",
+        "editUser": "Edit user",
+        "deleteUser": "Delete user"
       }
     },
     "orders": {

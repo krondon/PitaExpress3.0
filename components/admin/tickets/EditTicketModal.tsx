@@ -34,7 +34,7 @@ export default function EditTicketModal({ open, onOpenChange, ticket, onSuccess 
         if (!ticket) return;
 
         if (userName.trim().length < 3) {
-            toast.error('El nombre debe tener al menos 3 caracteres');
+            toast.error(t('admin.tickets.modals.edit.nameMinLength'));
             return;
         }
 
@@ -50,15 +50,15 @@ export default function EditTicketModal({ open, onOpenChange, ticket, onSuccess 
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || 'Error al actualizar usuario');
+                throw new Error(data.error || t('admin.tickets.modals.edit.updateError'));
             }
 
-            toast.success('Usuario actualizado exitosamente');
+            toast.success(t('admin.tickets.modals.edit.updateSuccess'));
             onOpenChange(false);
             onSuccess();
         } catch (error: any) {
             console.error('Error updating ticket:', error);
-            toast.error(error.message || 'Error al actualizar usuario');
+            toast.error(error.message || t('admin.tickets.modals.edit.updateError'));
         } finally {
             setIsLoading(false);
         }
@@ -68,18 +68,18 @@ export default function EditTicketModal({ open, onOpenChange, ticket, onSuccess 
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Editar Usuario</DialogTitle>
+                    <DialogTitle>{t('admin.tickets.modals.edit.title')}</DialogTitle>
                     <DialogDescription>
-                        Modifica el nombre del usuario. El código de barras permanecerá igual.
+                        {t('admin.tickets.modals.edit.description')}
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit}>
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="userName">Nombre del Usuario</Label>
+                            <Label htmlFor="userName">{t('admin.tickets.modals.edit.userNameLabel')}</Label>
                             <Input
                                 id="userName"
-                                placeholder="Ej: Juan Pérez"
+                                placeholder={t('admin.tickets.modals.edit.userNamePlaceholder')}
                                 value={userName}
                                 onChange={(e) => setUserName(e.target.value)}
                                 disabled={isLoading}
@@ -96,11 +96,11 @@ export default function EditTicketModal({ open, onOpenChange, ticket, onSuccess 
                             onClick={() => onOpenChange(false)}
                             disabled={isLoading}
                         >
-                            Cancelar
+                            {t('admin.tickets.modals.edit.cancel')}
                         </Button>
                         <Button type="submit" disabled={isLoading}>
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Guardar Cambios
+                            {t('admin.tickets.modals.edit.save')}
                         </Button>
                     </DialogFooter>
                 </form>

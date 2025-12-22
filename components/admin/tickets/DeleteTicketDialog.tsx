@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { Ticket } from '@/lib/tickets/types';
 
 interface DeleteTicketDialogProps {
@@ -23,6 +24,7 @@ interface DeleteTicketDialogProps {
 }
 
 export default function DeleteTicketDialog({ open, onOpenChange, ticket, onSuccess }: DeleteTicketDialogProps) {
+    const { t } = useTranslation();
     const [isLoading, setIsLoading] = useState(false);
 
     const handleDelete = async () => {
@@ -40,15 +42,15 @@ export default function DeleteTicketDialog({ open, onOpenChange, ticket, onSucce
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || 'Error al eliminar usuario');
+                throw new Error(data.error || t('admin.tickets.modals.delete.deleteError'));
             }
 
-            toast.success('Usuario eliminado exitosamente');
+            toast.success(t('admin.tickets.modals.delete.deleteSuccess'));
             onOpenChange(false);
             onSuccess();
         } catch (error: any) {
             console.error('Error deleting ticket:', error);
-            toast.error(error.message || 'Error al eliminar usuario');
+            toast.error(error.message || t('admin.tickets.modals.delete.deleteError'));
         } finally {
             setIsLoading(false);
         }
@@ -58,22 +60,22 @@ export default function DeleteTicketDialog({ open, onOpenChange, ticket, onSucce
         <AlertDialog open={open} onOpenChange={onOpenChange}>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>¿Eliminar usuario?</AlertDialogTitle>
+                    <AlertDialogTitle>{t('admin.tickets.modals.delete.title')}</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Estás a punto de eliminar a <strong>{ticket?.user_name}</strong>.
+                        {t('admin.tickets.modals.delete.description')} <strong>{ticket?.user_name}</strong>.
                         <br /><br />
-                        Esta acción no se puede deshacer y se eliminará también todo el historial de impresiones.
+                        {t('admin.tickets.modals.delete.irreversible')}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel disabled={isLoading}>Cancelar</AlertDialogCancel>
+                    <AlertDialogCancel disabled={isLoading}>{t('admin.tickets.modals.delete.cancel')}</AlertDialogCancel>
                     <AlertDialogAction
                         onClick={handleDelete}
                         disabled={isLoading}
                         className="bg-red-600 hover:bg-red-700"
                     >
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Eliminar
+                        {t('admin.tickets.modals.delete.delete')}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
