@@ -2498,16 +2498,16 @@ export default function MisPedidosPage() {
 
                   {/* Step 4: Caja / Resumen de Solicitud */}
                   {currentStep === 4 && (
-                    <div className="space-y-6">
-                      <div className={`rounded-lg p-6 ${mounted && theme === 'dark' ? 'bg-slate-700' : 'bg-slate-50'}`}>
-                        <div className="flex items-center justify-between mb-4">
-                          <h4 className={`font-semibold text-lg ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{t('client.recentOrders.newOrder.itemsInBox')} ({orderQueue.length})</h4>
+                    <div className="space-y-4 sm:space-y-6">
+                      <div className={`rounded-lg p-4 sm:p-6 ${mounted && theme === 'dark' ? 'bg-slate-700' : 'bg-slate-50'}`}>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                          <h4 className={`font-semibold text-base sm:text-lg ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{t('client.recentOrders.newOrder.itemsInBox')} ({orderQueue.length})</h4>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={handleAddNewItem}
                             disabled={orderQueue.length >= 5}
-                            className="text-blue-500 border-blue-500 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full sm:w-auto text-blue-500 border-blue-500 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <Plus className="w-4 h-4 mr-1" />
                             {orderQueue.length >= 5 ? t('client.recentOrders.newOrder.maxItems') : t('client.recentOrders.newOrder.addAnotherProduct')}
@@ -2520,40 +2520,40 @@ export default function MisPedidosPage() {
                             {t('client.recentOrders.newOrder.emptyBoxMessage')}
                           </div>
                         ) : (
-                          <div className="space-y-3">
+                          <div className="space-y-2 sm:space-y-3">
                             {orderQueue.map((item, index) => (
-                              <div key={index} className={`flex items-center gap-4 p-3 rounded-lg border ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-600' : 'bg-white border-slate-200'}`}>
-                                <div className="w-16 h-16 rounded-md overflow-hidden bg-slate-100 flex-shrink-0">
+                              <div key={index} className={`flex items-center gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg border ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-600' : 'bg-white border-slate-200'}`}>
+                                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-md overflow-hidden bg-slate-100 flex-shrink-0">
                                   {item.productImage ? (
                                     <img src={URL.createObjectURL(item.productImage)} alt="" className="w-full h-full object-cover" />
                                   ) : (
                                     <div className="w-full h-full flex items-center justify-center text-slate-400">
-                                      <ImageIcon className="w-6 h-6" />
+                                      <ImageIcon className="w-5 h-5 sm:w-6 sm:h-6" />
                                     </div>
                                   )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className={`font-medium truncate ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{item.productName}</p>
-                                  <p className="text-sm text-slate-500 truncate">{item.quantity} {t('client.recentOrders.newOrder.units')} • {item.deliveryType === 'air' ? t('client.recentOrders.newOrder.air') : t('client.recentOrders.newOrder.maritime')}</p>
+                                  <p className={`font-medium text-sm sm:text-base truncate ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{item.productName}</p>
+                                  <p className="text-xs sm:text-sm text-slate-500 truncate">{item.quantity} {t('client.recentOrders.newOrder.units')} • {item.deliveryType === 'air' ? t('client.recentOrders.newOrder.air') : t('client.recentOrders.newOrder.maritime')}</p>
                                 </div>
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
                                   <Button
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleEditFromQueue(index)}
                                     disabled={processingQueue}
-                                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="h-8 w-8 sm:h-9 sm:w-9 text-blue-500 hover:text-blue-700 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
-                                    <Pencil className="w-4 h-4" />
+                                    <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                   </Button>
                                   <Button
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => handleRemoveFromQueue(index)}
                                     disabled={processingQueue}
-                                    className="text-red-500 hover:text-red-700 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="h-8 w-8 sm:h-9 sm:w-9 text-red-500 hover:text-red-700 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
-                                    <Trash2 className="w-4 h-4" />
+                                    <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                   </Button>
                                 </div>
                               </div>
@@ -2566,15 +2566,15 @@ export default function MisPedidosPage() {
 
                   {/* Enhanced Navigation Buttons - Hide if Success OR Error Animation is showing */}
                   {!showSuccessAnimation && !showErrorAnimation && (
-                    <div className={`flex justify-between pt-8 border-t ${mounted && theme === 'dark' ? 'border-slate-700' : 'border-slate-200/50'}`}>
+                    <div className={`flex flex-col sm:flex-row justify-between gap-3 pt-4 sm:pt-6 mt-4 border-t ${mounted && theme === 'dark' ? 'border-slate-700' : 'border-slate-200/50'}`}>
                       <Button
                         variant="outline"
                         onClick={handlePrevStep}
                         disabled={currentStep === 1 || isTransitioning}
-                        className={`transition-all duration-300 hover:shadow-md transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${mounted && theme === 'dark' ? 'hover:bg-slate-700 border-slate-600' : 'hover:bg-slate-50'}`}
+                        className={`w-full sm:w-auto transition-all duration-300 hover:shadow-md transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${mounted && theme === 'dark' ? 'hover:bg-slate-700 border-slate-600' : 'hover:bg-slate-50'}`}
                       >
                         {isTransitioning ? (
-                          <div className="flex items-center">
+                          <div className="flex items-center justify-center">
                             <div className="w-4 h-4 border-2 border-slate-600 border-t-transparent rounded-full animate-spin mr-2"></div>
                             {t('client.recentOrders.newOrder.transitioning')}
                           </div>
@@ -2587,12 +2587,12 @@ export default function MisPedidosPage() {
                       </Button>
 
                       {/* Botones del Modal */}
-                      <div className="flex justify-center gap-3">
+                      <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 w-full sm:w-auto">
                         {currentStep === 3 && (
                           <Button
                             onClick={handleAddToQueue}
                             variant="outline"
-                            className="bg-blue-600 text-white hover:bg-blue-700 border-transparent shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                            className="w-full sm:w-auto bg-blue-600 text-white hover:bg-blue-700 border-transparent shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                           >
                             <ShoppingBag className="w-4 h-4 mr-2" />
                             {t('client.recentOrders.newOrder.addToBox')}
@@ -2603,10 +2603,10 @@ export default function MisPedidosPage() {
                           <Button
                             onClick={handleNextStep}
                             disabled={!canProceedToNext() || isTransitioning}
-                            className="bg-gradient-to-r from-blue-500 to-orange-500 hover:from-blue-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-orange-500 hover:from-blue-600 hover:to-orange-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {isTransitioning ? (
-                              <div className="flex items-center">
+                              <div className="flex items-center justify-center">
                                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                                 {t('client.recentOrders.newOrder.transitioning')}
                               </div>
@@ -2618,26 +2618,23 @@ export default function MisPedidosPage() {
                             )}
                           </Button>
                         ) : currentStep === 4 ? (
-                          <div className="flex gap-2">
-                            {/* Botón enviar lote */}
-                            <Button
-                              onClick={handleProcessQueue}
-                              disabled={processingQueue || orderQueue.length === 0}
-                              className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50"
-                            >
-                              {processingQueue ? (
-                                <div className="flex items-center">
-                                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                                  {t('client.recentOrders.newOrder.processingQueue')}
-                                </div>
-                              ) : (
-                                <>
-                                  <Send className="w-4 h-4 mr-2" />
-                                  {t('client.recentOrders.newOrder.sendRequest')} ({orderQueue.length})
-                                </>
-                              )}
-                            </Button>
-                          </div>
+                          <Button
+                            onClick={handleProcessQueue}
+                            disabled={processingQueue || orderQueue.length === 0}
+                            className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50"
+                          >
+                            {processingQueue ? (
+                              <div className="flex items-center justify-center">
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                                {t('client.recentOrders.newOrder.processingQueue')}
+                              </div>
+                            ) : (
+                              <>
+                                <Send className="w-4 h-4 mr-2" />
+                                {t('client.recentOrders.newOrder.sendRequest')} ({orderQueue.length})
+                              </>
+                            )}
+                          </Button>
                         ) : null}
                       </div>
                     </div>
