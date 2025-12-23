@@ -1403,7 +1403,7 @@ export default function PedidosPage() {
                     return (
                       <div
                         key={order.id}
-                        className={`bg-white/80 backdrop-blur-sm rounded-xl border border-slate-200 p-4 md:p-5 hover:shadow-lg transition-all duration-300 group cursor-pointer ${mounted && theme === 'dark' ? 'bg-slate-800/80 border-slate-700' : ''}`}
+                        className={`backdrop-blur-sm rounded-xl border p-4 md:p-5 hover:shadow-lg transition-all duration-300 group cursor-pointer ${mounted && theme === 'dark' ? 'bg-slate-800/80 border-slate-700' : 'bg-white/80 border-slate-200'}`}
                         onClick={() => setSelectedOrder(order)}
                       >
                         <div className="flex flex-col gap-3 md:gap-4">
