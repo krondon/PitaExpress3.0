@@ -324,14 +324,23 @@ const SidebarMenuItem = memo(function SidebarMenuItem({
   isExpanded,
   screenWidth,
   t,
-  disablePrefetch
+  disablePrefetch,
+  onMobileMenuClose
 }: any) {
   const Icon = item.icon;
+
+  // Handler para cerrar el menú móvil al hacer click
+  const handleClick = () => {
+    if ((responsiveConfig.isMobile || responsiveConfig.isTablet) && isMobileMenuOpen && onMobileMenuClose) {
+      onMobileMenuClose();
+    }
+  };
   return (
     <div key={item.id}>
       <Link
         href={item.path}
         prefetch={disablePrefetch ? false : true}
+        onClick={handleClick}
         className={`
             w-full flex items-center ${(responsiveConfig.isMobile || responsiveConfig.isTablet) ? (isMobileMenuOpen ? 'space-x-3 px-4 py-3' : `justify-center ${responsiveConfig.buttonPadding}`) : (isExpanded ? 'space-x-3 px-4 py-3' : `justify-center ${responsiveConfig.buttonPadding}`)} rounded-xl
             transition-all duration-120 ease-out group relative
@@ -1130,9 +1139,10 @@ export default function Sidebar({ isExpanded, setIsExpanded, isMobileMenuOpen = 
         screenWidth={screenWidth}
         t={t}
         disablePrefetch={disablePrefetch}
+        onMobileMenuClose={onMobileMenuClose}
       />
     );
-  }, [deferredActiveItem, responsiveConfig, isMobileMenuOpen, isExpanded, screenWidth, t, disablePrefetch]);
+  }, [deferredActiveItem, responsiveConfig, isMobileMenuOpen, isExpanded, screenWidth, t, disablePrefetch, onMobileMenuClose]);
 
   return (
     <>
@@ -1249,6 +1259,11 @@ export default function Sidebar({ isExpanded, setIsExpanded, isMobileMenuOpen = 
                     key={item.id}
                     href={item.path}
                     prefetch={true}
+                    onClick={() => {
+                      if ((responsiveConfig.isMobile || responsiveConfig.isTablet) && isMobileMenuOpen && onMobileMenuClose) {
+                        onMobileMenuClose();
+                      }
+                    }}
                     className={`
                     w-full flex items-center ${(responsiveConfig.isMobile || responsiveConfig.isTablet) ? (isMobileMenuOpen ? 'space-x-3 px-4 py-3' : 'justify-center p-2') : 'space-x-3 px-4 py-3'} rounded-xl transition-all duration-150 ease-out group
                     ${isActive
