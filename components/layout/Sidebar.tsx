@@ -1046,11 +1046,11 @@ export default function Sidebar({ isExpanded, setIsExpanded, isMobileMenuOpen = 
           ? (screenWidth < 1440 ? 'w-64' : 'w-72')
           : 'w-20';
 
-    const iconSize = 'w-4 h-4';
+    const iconSize = 'w-5 h-5';
     // Aumentar ligeramente el tamaño del logo en pantallas <1440px cuando está expandido
     const logoSize: 'sm' | 'md' | 'lg' | 'xl' = isExpanded ? (screenWidth < 1440 ? 'md' : 'md') : 'md';
     const padding = isExpanded ? 'p-4' : 'p-2';
-    const buttonPadding = isExpanded ? 'px-4 py-3' : 'p-2';
+    const buttonPadding = isExpanded ? 'px-4 py-3' : 'p-3 min-h-[44px]';
 
     return {
       sidebarWidth,
@@ -1062,7 +1062,7 @@ export default function Sidebar({ isExpanded, setIsExpanded, isMobileMenuOpen = 
       titleSize: isSmallScreen ? 'text-lg' : 'text-xl',
       subtitleSize: 'text-xs',
       badgeSize: 'text-xs',
-      iconContainerSize: isExpanded ? 'w-8 h-8' : 'w-full h-full',
+      iconContainerSize: isExpanded ? 'w-8 h-8' : 'w-10 h-10',
       userContainerSize: isSmallScreen ? 'w-8 h-8' : 'w-10 h-10',
       userTextSize: isSmallScreen ? 'text-xs' : 'text-sm',
       userSubtextSize: 'text-xs',

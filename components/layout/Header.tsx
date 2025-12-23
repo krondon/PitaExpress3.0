@@ -42,10 +42,10 @@ interface HeaderProps {
   notificationsUserId?: string; // opcional, si no se pasa se obtiene de Supabase
 }
 
-export default function Header({ 
-  notifications, 
-  onMenuToggle, 
-  title = "Dashboard", 
+export default function Header({
+  notifications,
+  onMenuToggle,
+  title = "Dashboard",
   subtitle = "Resumen de la operación",
   hideTitle = false,
   showTitleOnMobile = false,
@@ -61,7 +61,7 @@ export default function Header({
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
-  
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -89,7 +89,7 @@ export default function Header({
       supabase.auth.getUser().then(({ data }) => {
         const uid = data?.user?.id;
         if (uid) setInternalUserId(uid);
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }, [notificationsUserId, roleToUse]);
 
@@ -108,7 +108,7 @@ export default function Header({
   const effectiveItems = (baseItems || []).filter((n) => (n.unread === undefined ? true : !!n.unread));
 
   return (
-  <header className={`${mounted && theme === 'dark' ? 'bg-slate-800/90 dark:border-slate-700' : 'bg-white/90 border-slate-200'} backdrop-blur-sm border-b sticky top-0 z-40 shadow-sm`}>
+    <header className={`${mounted && theme === 'dark' ? 'bg-slate-800/90 dark:border-slate-700' : 'bg-white/90 border-slate-200'} backdrop-blur-sm border-b sticky top-0 z-40 shadow-sm`}>
       <div className="px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Left Section */}
@@ -116,13 +116,13 @@ export default function Header({
             {/* Mobile Menu Button */}
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={handleMenuToggle}
-              className={`lg:hidden p-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors`}
+              className={`lg:hidden min-w-[44px] min-h-[44px] p-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors`}
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="w-6 h-6" />
             </Button>
-            
+
             {/* Title Section */}
             {!hideTitle && (
               <div className={showTitleOnMobile ? "block" : "hidden sm:block"}>
@@ -131,15 +131,15 @@ export default function Header({
               </div>
             )}
           </div>
-          
+
           {/* Right Section */}
           <div className="flex items-center space-x-2 sm:space-x-4">
             {/* Desktop Notifications (Dropdown) */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className={`relative hidden sm:flex hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors`}
                 >
                   <Bell className="w-4 h-4 mr-2" />
@@ -198,18 +198,18 @@ export default function Header({
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
-            
+
             {/* Mobile Notifications (Dropdown) */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className={`relative sm:hidden hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors`}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={`relative sm:hidden min-w-[44px] min-h-[44px] hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors`}
                 >
-                  <Bell className="w-4 h-4" />
+                  <Bell className="w-5 h-5" />
                   {effectiveNotifications > 0 && (
-                    <Badge className="absolute -top-2 -right-2 w-5 h-5 p-0 flex items-center justify-center bg-[#202841] text-white text-xs">
+                    <Badge className="absolute -top-1 -right-1 min-w-[20px] h-5 p-0 flex items-center justify-center bg-[#202841] text-white text-xs">
                       {effectiveNotifications}
                     </Badge>
                   )}
