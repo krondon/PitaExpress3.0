@@ -31,7 +31,10 @@ import {
   Moon,
   Save,
   Star,
-  RefreshCw
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/lib/LanguageContext';
@@ -1119,6 +1122,8 @@ function AdminReviewsSection() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
   const [ratingFilter, setRatingFilter] = useState<number | null>(null); // Filtro por estrellas
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
   const { toast } = useToast();
   const supabase = getSupabaseBrowserClient();
 
@@ -1361,12 +1366,15 @@ function AdminReviewsSection() {
                 <Label className={`text-sm mb-3 block ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
                   {t('admin.configuration.reviews.filterByRating', { fallback: 'Filtrar por calificación' })}:
                 </Label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex overflow-x-auto pb-2 -mx-1 px-1 gap-2 scrollbar-hide md:flex-wrap">
                   <Button
                     variant={ratingFilter === null ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setRatingFilter(null)}
-                    className="gap-2"
+                    onClick={() => {
+                      setRatingFilter(null);
+                      setCurrentPage(1);
+                    }}
+                    className="gap-2 flex-shrink-0"
                   >
                     {t('admin.configuration.reviews.allRatings', { fallback: 'Todas' })}
                     <Badge variant="secondary" className="ml-1">
@@ -1380,8 +1388,11 @@ function AdminReviewsSection() {
                         key={rating}
                         variant={ratingFilter === rating ? 'default' : 'outline'}
                         size="sm"
-                        onClick={() => setRatingFilter(rating)}
-                        className="gap-2"
+                        onClick={() => {
+                          setRatingFilter(rating);
+                          setCurrentPage(1);
+                        }}
+                        className="gap-2 flex-shrink-0"
                         disabled={count === 0}
                       >
                         <div className="flex gap-0.5">
@@ -1405,7 +1416,7 @@ function AdminReviewsSection() {
               </div>
 
               {/* Gauge de Promedio de Reseñas - Derecha */}
-              <div className="flex justify-end md:justify-start">
+              <div className="flex justify-center md:justify-start">
                 <div className={`flex flex-col items-center gap-2 p-4 rounded-xl border ${mounted && theme === 'dark' ? 'bg-slate-700/50 border-slate-600' : 'bg-slate-50 border-slate-200'}`}>
                   <div className="flex items-center gap-1.5 mb-1">
                     <Star className={`w-4 h-4 ${getRatingColor()}`} />
@@ -1439,44 +1450,92 @@ function AdminReviewsSection() {
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredReviews.map((review) => (
-                  <div
-                    key={review.id}
-                    className={`p-4 rounded-lg border ${mounted && theme === 'dark'
-                      ? 'bg-slate-700/50 border-slate-600'
-                      : 'bg-slate-50 border-slate-200'
-                      }`}
-                  >
-                    <div className="flex items-start justify-between gap-4 mb-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge variant="outline" className="text-xs">
-                            {t('admin.configuration.reviews.order', { fallback: 'Pedido' })} #{review.orderId}
-                          </Badge>
-                          <span className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                            {review.orderProductName}
-                          </span>
+                {filteredReviews
+                  .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+                  .map((review) => (
+                    <div
+                      key={review.id}
+                      className={`p-4 rounded-lg border ${mounted && theme === 'dark'
+                        ? 'bg-slate-700/50 border-slate-600'
+                        : 'bg-slate-50 border-slate-200'
+                        }`}
+                    >
+                      <div className="flex items-start justify-between gap-4 mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline" className="text-xs">
+                              {t('admin.configuration.reviews.order', { fallback: 'Pedido' })} #{review.orderId}
+                            </Badge>
+                            <span className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                              {review.orderProductName}
+                            </span>
+                          </div>
+                          <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
+                            {t('admin.configuration.reviews.client', { fallback: 'Cliente' })}:{' '}
+                            <span className="font-medium">{review.clientName}</span>
+                          </p>
                         </div>
-                        <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                          {t('admin.configuration.reviews.client', { fallback: 'Cliente' })}:{' '}
-                          <span className="font-medium">{review.clientName}</span>
-                        </p>
+                        <div className="text-right">
+                          {renderStars(review.rating)}
+                          <p className={`text-xs mt-1 ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                            {new Date(review.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        {renderStars(review.rating)}
-                        <p className={`text-xs mt-1 ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
-                          {new Date(review.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
+                      {review.reviewText && (
+                        <div className={`mt-3 p-3 rounded ${mounted && theme === 'dark' ? 'bg-slate-800 text-slate-200' : 'bg-white text-slate-800'
+                          }`}>
+                          <p className="text-sm whitespace-pre-wrap">{review.reviewText}</p>
+                        </div>
+                      )}
                     </div>
-                    {review.reviewText && (
-                      <div className={`mt-3 p-3 rounded ${mounted && theme === 'dark' ? 'bg-slate-800 text-slate-200' : 'bg-white text-slate-800'
-                        }`}>
-                        <p className="text-sm whitespace-pre-wrap">{review.reviewText}</p>
-                      </div>
-                    )}
+                  ))}
+              </div>
+            )}
+
+            {/* Paginación */}
+            {filteredReviews.length > 0 && (
+              <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                  {t('admin.configuration.reviews.pagination.showing', {
+                    start: (currentPage - 1) * ITEMS_PER_PAGE + 1,
+                    end: Math.min(currentPage * ITEMS_PER_PAGE, filteredReviews.length),
+                    total: filteredReviews.length,
+                    fallback: `Mostrando ${(currentPage - 1) * ITEMS_PER_PAGE + 1} - ${Math.min(currentPage * ITEMS_PER_PAGE, filteredReviews.length)} de ${filteredReviews.length}`
+                  })}
+                </p>
+
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+
+                  {/* Números de página simple */}
+                  <div className="flex items-center gap-1 px-2">
+                    <span className="text-sm font-medium">
+                      {currentPage}
+                    </span>
+                    <span className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                      / {Math.ceil(filteredReviews.length / ITEMS_PER_PAGE)}
+                    </span>
                   </div>
-                ))}
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredReviews.length / ITEMS_PER_PAGE), p + 1))}
+                    disabled={currentPage >= Math.ceil(filteredReviews.length / ITEMS_PER_PAGE)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             )}
           </>
