@@ -981,7 +981,7 @@ export default function ConfiguracionPage() {
         {/* Header personalizado con botón de guardar */}
         <header className={mounted && theme === 'dark' ? 'bg-slate-800/80 backdrop-blur-sm border-b border-slate-700 sticky top-0 z-40' : 'bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-40'}>
           <div className="px-4 md:px-5 lg:px-6 py-4">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6">
+            <div className="flex flex-col md:flex-row items-starts md:items-center justify-between gap-4 md:gap-6">
               <div className="flex items-center gap-4">
                 {/* Mobile Menu Button */}
                 <Button
