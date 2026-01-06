@@ -979,8 +979,8 @@ export default function ConfigurationContent({ role, onUserImageUpdate, layoutMo
                           <Mail className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                           <Label className="text-base font-semibold">{t('admin.configuration.support.email.title', { fallback: 'Correo Electrónico' })}</Label>
                         </div>
-                        <div className="flex items-center gap-2 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
-                          <span className="flex-1 font-mono text-sm">info@pitacompra.com</span>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-2 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                          <span className="flex-1 font-mono text-sm break-all sm:break-normal">info@pitacompra.com</span>
                           <SupportActionButtons
                             type="email"
                             value="info@pitacompra.com"
@@ -997,7 +997,7 @@ export default function ConfigurationContent({ role, onUserImageUpdate, layoutMo
                           <MessageCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
                           <Label className="text-base font-semibold">{t('admin.configuration.support.phone.title', { fallback: 'Teléfono / WhatsApp' })}</Label>
                         </div>
-                        <div className="flex items-center gap-2 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-2 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
                           <span className="flex-1 font-mono text-sm">+58 424-4545294</span>
                           <SupportActionButtons
                             type="whatsapp"
@@ -1071,12 +1071,12 @@ function SupportActionButtons({ type, value, t }: { type: 'email' | 'whatsapp'; 
   };
 
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 w-full sm:w-auto">
       <Button
         variant="outline"
         size="sm"
         onClick={handleCopy}
-        className="flex items-center gap-1"
+        className="flex-1 sm:flex-none flex items-center justify-center gap-1"
       >
         {copied ? (
           <>
@@ -1094,7 +1094,7 @@ function SupportActionButtons({ type, value, t }: { type: 'email' | 'whatsapp'; 
         variant="default"
         size="sm"
         onClick={handleOpen}
-        className={`flex items-center gap-1 ${type === 'email' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}
+        className={`flex-1 sm:flex-none flex items-center justify-center gap-1 ${type === 'email' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}`}
       >
         {type === 'email' ? (
           <>
