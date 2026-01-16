@@ -639,6 +639,7 @@
         "doorToDoorDesc": "We pick up at your address",
         "air": "Air Shipping",
         "airDesc": "Fast shipping by plane (About 1 month)",
+        "airComingSoon": "Air shipping will be available very soon.",
         "maritime": "Maritime Shipping",
         "maritimeDesc": "Economical shipping by boat (About 2 to 3 months)",
         "deliveryVenezuela": "Delivery Option in Venezuela",
@@ -2048,6 +2049,7 @@
     }
   },
   "common": {
+    "comingSoon": "Coming Soon",
     "save": "Save changes",
     "saving": "Saving...",
     "cancel": "Cancel",

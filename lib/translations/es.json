@@ -557,6 +557,7 @@
         "doorToDoorDesc": "Recogemos en tu dirección",
         "air": "Envío Aéreo",
         "airDesc": "Envío rápido por avión (1 mes aprox.)",
+        "airComingSoon": "El envío aéreo estará disponible muy pronto.",
         "maritime": "Envío Marítimo",
         "maritimeDesc": "Envío económico por barco (2 a 3 meses aprox.)",
         "deliveryVenezuela": "Opción de Entrega en Venezuela",
@@ -1301,6 +1302,7 @@
     }
   },
   "common": {
+    "comingSoon": "Próximamente",
     "save": "Guardar cambios",
     "saving": "Guardando...",
     "cancel": "Cancelar",

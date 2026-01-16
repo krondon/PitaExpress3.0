@@ -635,6 +635,7 @@
         "doorToDoorDesc": "我们到你地址取件",
         "air": "空运",
         "airDesc": "飞机快速运输 (约1个月)",
+        "airComingSoon": "空运服务即将推出，敬请期待。",
         "maritime": "海运",
         "maritimeDesc": "船舶经济运输 (约2到3个月)",
         "deliveryVenezuela": "委内瑞拉交付选项",
@@ -2038,6 +2039,7 @@
     }
   },
   "common": {
+    "comingSoon": "即将推出",
     "save": "保存更改",
     "saving": "保存中...",
     "cancel": "取消",

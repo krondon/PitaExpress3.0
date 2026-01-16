@@ -1994,7 +1994,8 @@ export default function MisPedidosPage() {
         if (newOrderData.productName.length > NAME_MAX) return false;
         if (newOrderData.description.length > DESCRIPTION_MAX) return false;
         if (!isValidQuantity(newOrderData.quantity)) return false;
-        if (!newOrderData.productUrl || !isValidUrl(newOrderData.productUrl)) return false;
+        // productUrl ahora es opcional. Solo validamos si existe
+        if (newOrderData.productUrl && !isValidUrl(newOrderData.productUrl)) return false;
         if (!newOrderData.productImage) return false;
         return true;
       case 2:
@@ -2293,22 +2294,18 @@ export default function MisPedidosPage() {
                           </div>
                         </div>
 
-                        {/* URL del producto (siempre visible) */}
                         <div className="space-y-2">
-                          <Label htmlFor="productUrl" className="flex items-center gap-1">{t('client.recentOrders.newOrder.productUrl')}<span className="text-red-500">*</span></Label>
+                          <Label htmlFor="productUrl" className="flex items-center gap-1">{t('client.recentOrders.newOrder.productUrl')}</Label>
                           <Input
                             id="productUrl"
                             type="url"
                             value={newOrderData.productUrl || ''}
                             onChange={(e) => setNewOrderData({ ...newOrderData, productUrl: e.target.value })}
                             placeholder={t('client.recentOrders.newOrder.productUrlPlaceholder')}
-                            className={`transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm ${mounted && theme === 'dark' ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white/80 border-slate-200'} ${attemptedStep1 && (!newOrderData.productUrl || !isValidUrl(newOrderData.productUrl)) ? 'border-red-500 ring-1 ring-red-400 focus:border-red-500 focus:ring-red-500' : ''}`}
+                            className={`transition-all duration-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 backdrop-blur-sm group-hover:border-blue-300 ${mounted && theme === 'dark' ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white/80 border-slate-200'} ${attemptedStep1 && newOrderData.productUrl && !isValidUrl(newOrderData.productUrl) ? 'border-red-500 ring-1 ring-red-400 focus:border-red-500 focus:ring-red-500' : ''}`}
                           />
                           {newOrderData.productUrl && !isValidUrl(newOrderData.productUrl) && (
                             <p className="text-xs text-red-500 mt-1">{t('client.recentOrders.newOrder.invalidUrl')}</p>
-                          )}
-                          {attemptedStep1 && !newOrderData.productUrl && (
-                            <p className="text-xs text-red-500 mt-1">{t('client.recentOrders.newOrder.requiredField') || 'Campo requerido'}</p>
                           )}
                         </div>
 
@@ -2367,32 +2364,36 @@ export default function MisPedidosPage() {
                           <Label className={mounted && theme === 'dark' ? 'text-slate-300' : ''}>{t('client.recentOrders.newOrder.deliveryType')}</Label>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div
-                              className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${mounted && theme === 'dark' ? (
-                                newOrderData.deliveryType === 'air'
-                                  ? 'border-blue-500 bg-blue-900/20'
-                                  : 'border-slate-600 hover:border-slate-500 bg-slate-700'
+                              className={`relative p-4 border-2 rounded-lg transition-all duration-300 group overflow-hidden ${mounted && theme === 'dark' ? (
+                                'border-slate-700 bg-slate-800/50 opacity-60 grayscale cursor-not-allowed'
                               ) : (
-                                newOrderData.deliveryType === 'air'
-                                  ? 'border-blue-500 bg-blue-50'
-                                  : 'border-slate-200 hover:border-slate-300'
+                                'border-slate-100 bg-slate-50/50 opacity-60 grayscale cursor-not-allowed'
                               )
                                 }`}
-                              onClick={() => setNewOrderData({ ...newOrderData, deliveryType: 'air' })}
-                              onMouseEnter={() => setHoveredDeliveryOption('air')}
-                              onMouseLeave={() => setHoveredDeliveryOption(null)}
+                              onClick={() => {
+                                toast({
+                                  title: t('common.comingSoon'),
+                                  description: t('client.recentOrders.newOrder.airComingSoon'),
+                                });
+                              }}
                             >
+                              <div className="absolute top-2 right-2 z-10">
+                                <Badge className="bg-gradient-to-r from-amber-400 to-orange-500 text-white border-none shadow-sm text-[10px] px-2 py-0.5 animate-pulse uppercase font-bold tracking-wider">
+                                  {t('common.comingSoon') || "Próximamente"}
+                                </Badge>
+                              </div>
+
                               <div className="text-center space-y-2">
-                                <div className="w-8 h-8 mx-auto">
+                                <div className="w-8 h-8 mx-auto opacity-50">
                                   <Player
-                                    key={hoveredDeliveryOption === 'air' ? 'airplane-active' : 'airplane-inactive'}
                                     src={airPlaneLottie}
                                     className="w-full h-full"
                                     loop={false}
-                                    autoplay={hoveredDeliveryOption === 'air'}
+                                    autoplay={false}
                                   />
                                 </div>
-                                <p className={`font-medium ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{t('client.recentOrders.newOrder.air')}</p>
-                                <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>{t('client.recentOrders.newOrder.airDesc')}</p>
+                                <p className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{t('client.recentOrders.newOrder.air')}</p>
+                                <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>{t('client.recentOrders.newOrder.airDesc')}</p>
                               </div>
                             </div>
                             <div
