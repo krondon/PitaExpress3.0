@@ -61,7 +61,7 @@ export function useCurrencyConverter(): UseCurrencyConverterReturn {
     }
     return null;
   });
-  
+
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Log cuando el hook se inicializa
@@ -69,22 +69,22 @@ export function useCurrencyConverter(): UseCurrencyConverterReturn {
     console.warn('🚀 [CurrencyConverter] Hook inicializado, tasa inicial:', rate);
   }, []);
 
-    // Helper seguro para abortar con una razón explícita y limpiar
-    const safeAbort = (reason: string) => {
-      try {
-        if (abortControllerRef.current) {
-          if (!abortControllerRef.current.signal.aborted) {
-            // Proveer una razón explícita reduce warnings en algunos runtimes
-            (abortControllerRef.current as any).abort(reason);
-          }
-          // Limpieza: evitar reutilizar un controller abortado
-          abortControllerRef.current = null;
+  // Helper seguro para abortar con una razón explícita y limpiar
+  const safeAbort = (reason: string) => {
+    try {
+      if (abortControllerRef.current) {
+        if (!abortControllerRef.current.signal.aborted) {
+          // Proveer una razón explícita reduce warnings en algunos runtimes
+          (abortControllerRef.current as any).abort(reason);
         }
-      } catch (e) {
-        // Silenciar cualquier error de abort redundante
-        // console.debug('Abort ignore:', e);
+        // Limpieza: evitar reutilizar un controller abortado
+        abortControllerRef.current = null;
       }
-    };
+    } catch (e) {
+      // Silenciar cualquier error de abort redundante
+      // console.debug('Abort ignore:', e);
+    }
+  };
 
   // Función para obtener la tasa de cambio actual
   const fetchCurrentRate = useCallback(async () => {
@@ -104,7 +104,8 @@ export function useCurrencyConverter(): UseCurrencyConverterReturn {
     try {
       // SIEMPRE intentar obtener la tasa de la API primero (tasa más actualizada)
       try {
-        const exchangeResponse = await fetch('/api/exchange-rate', {
+        // Usar tasa de Binance (la más alta disponible) en lugar de BCV
+        const exchangeResponse = await fetch('/api/exchange-rate/binance', {
           signal: abortControllerRef.current.signal,
           cache: 'no-store', // Evitar caché para obtener tasa actualizada
           headers: {
@@ -117,7 +118,7 @@ export function useCurrencyConverter(): UseCurrencyConverterReturn {
           console.log('[CurrencyConverter] Respuesta de API recibida:', exchangeData);
           if (exchangeData.success && exchangeData.rate && !isNaN(exchangeData.rate) && exchangeData.rate > 0) {
             const newRate = parseFloat(exchangeData.rate);
-            console.log('✅ [CurrencyConverter] Tasa obtenida de API:', newRate, 'Bs/USD - Fuente:', exchangeData.source);
+            console.log('✅ [CurrencyConverter] Tasa Binance obtenida:', newRate, 'Bs/USD - Fuente:', exchangeData.source);
             setRate(newRate);
             const updateTime = new Date(exchangeData.timestamp);
             setLastUpdated(updateTime);
@@ -153,7 +154,7 @@ export function useCurrencyConverter(): UseCurrencyConverterReturn {
         // Si la API falla por otra razón, continuar con fallback a tasa manual
         console.warn('❌ [CurrencyConverter] API exchange-rate falló, usando fallback:', apiError.message || apiError);
       }
-      
+
       // Fallback: Usar tasa de configuración manual si la API falla
       // Intentar obtener desde localStorage primero
       try {
@@ -167,7 +168,7 @@ export function useCurrencyConverter(): UseCurrencyConverterReturn {
           }
         }
       } catch (e) {
-  console.debug('Warn using localStorage config for rate:', e);
+        console.debug('Warn using localStorage config for rate:', e);
       }
 
       // Fallback a API de config si localStorage no funciona
@@ -194,8 +195,8 @@ export function useCurrencyConverter(): UseCurrencyConverterReturn {
       if (error.name === 'AbortError') {
         return;
       }
-      
-  console.debug('Error fetching currency rate (final fallback):', error);
+
+      console.debug('Error fetching currency rate (final fallback):', error);
       setError(error.message || 'Failed to fetch currency rate');
       // Mantener la tasa actual (por defecto o última conocida) en lugar de lanzar error
     } finally {
@@ -206,10 +207,10 @@ export function useCurrencyConverter(): UseCurrencyConverterReturn {
   // Función de conversión
   const convert = useCallback((amount: number, fromCurrency: 'USD' | 'VES' = 'USD'): ConversionResult => {
     const numAmount = Number(amount) || 0;
-    
+
     let usd: number;
     let bolivars: number;
-    
+
     if (fromCurrency === 'USD') {
       usd = numAmount;
       bolivars = numAmount * rate;
@@ -259,7 +260,7 @@ export function useCurrencyConverter(): UseCurrencyConverterReturn {
       }
       try {
         if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
-            safeAbort('component-unmount');
+          safeAbort('component-unmount');
         }
       } catch (error) {
         // Ignorar errores de abort si ya está abortado
