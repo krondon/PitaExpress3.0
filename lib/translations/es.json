@@ -2532,7 +2532,11 @@
         "pending": "Pendientes",
         "reviewing": "Revisando",
         "quoted": "Cotizados",
-        "processing": "Procesando"
+        "processing": "Procesando",
+        "inProcess": "En Proceso",
+        "inTransit": "En Tránsito",
+        "received": "Recibidos",
+        "delivered": "Entregados"
       },
       "statusExtended": {
         "delivered": "Entregado",

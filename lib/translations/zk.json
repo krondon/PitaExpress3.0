@@ -2199,7 +2199,11 @@
         "pending": "待处理",
         "reviewing": "审核中",
         "quoted": "已报价",
-        "processing": "处理中"
+        "processing": "处理中",
+        "inProcess": "进行中",
+        "inTransit": "运输中",
+        "received": "已接收",
+        "delivered": "已交付"
       },
       "statusExtended": {
         "delivered": "已交付",

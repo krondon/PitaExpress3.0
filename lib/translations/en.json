@@ -2204,7 +2204,11 @@
         "pending": "Pending",
         "reviewing": "Reviewing",
         "quoted": "Quoted",
-        "processing": "Processing"
+        "processing": "Processing",
+        "inProcess": "In Process",
+        "inTransit": "In Transit",
+        "received": "Received",
+        "delivered": "Delivered"
       },
       "statusExtended": {
         "delivered": "Delivered",
