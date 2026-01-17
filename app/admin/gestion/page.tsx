@@ -1382,7 +1382,7 @@ export default function ConfiguracionPage() {
                     <div className={`space-y-3 p-4 border border-orange-200 dark:border-orange-800 rounded-lg bg-orange-50/50 dark:bg-orange-900/20`}>
                       <div className="flex items-center gap-2">
                         <span className="text-lg">🪙</span>
-                        <Label className={`text-sm font-semibold text-orange-800 dark:text-orange-300`}>Tasa Binance P2P</Label>
+                        <Label className={`text-sm font-semibold text-orange-800 dark:text-orange-300`}>Tasa STABLECOIN</Label>
                       </div>
                       <div className="relative">
                         <Input
@@ -1410,7 +1410,7 @@ export default function ConfiguracionPage() {
                           onClick={() => refreshRateBinance()}
                           disabled={isLoading || exchangeRateLoadingBinance}
                           className={`absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-slate-700`}
-                          title="Actualizar tasa desde Binance P2P"
+                          title="Actualizar tasa desde STABLECOIN"
                         >
                           {exchangeRateLoadingBinance ? (
                             <RefreshCw className={`h-4 w-4 animate-spin text-black dark:text-white`} />
@@ -1529,7 +1529,7 @@ export default function ConfiguracionPage() {
                     <div className={`space-y-3 p-4 border border-orange-200 dark:border-orange-800 rounded-lg bg-orange-50/50 dark:bg-orange-900/20`}>
                       <div className="flex items-center gap-2">
                         <span className="text-lg">🪙</span>
-                        <Label className={`text-sm font-semibold text-orange-800 dark:text-orange-300`}>Tasa Binance P2P</Label>
+                        <Label className={`text-sm font-semibold text-orange-800 dark:text-orange-300`}>Tasa STABLECOIN</Label>
                       </div>
                       <div className="relative">
                         <Input
@@ -1557,7 +1557,7 @@ export default function ConfiguracionPage() {
                           onClick={() => refreshRateBinanceSell()}
                           disabled={isLoading || exchangeRateLoadingBinanceSell}
                           className={`absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-slate-700`}
-                          title="Actualizar tasa de venta desde Binance P2P"
+                          title="Actualizar tasa de venta desde STABLECOIN"
                         >
                           {exchangeRateLoadingBinanceSell ? (
                             <RefreshCw className={`h-4 w-4 animate-spin text-black dark:text-white`} />

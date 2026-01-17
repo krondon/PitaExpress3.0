@@ -82,23 +82,23 @@ export function useExchangeRateBinance(options: UseExchangeRateBinanceOptions = 
         setFromDatabase(data.from_database || false);
         setAgeMinutes(data.age_minutes || null);
         setWarning(data.warning || null);
-        
+
         // Callback para actualizar el componente padre
         if (onRateUpdateRef.current) {
           onRateUpdateRef.current(data.rate);
         }
 
         if (showToast && toastRef.current) {
-          const title = data.from_database 
+          const title = data.from_database
             ? t('admin.management.financial.binanceRateRecovered')
             : t('admin.management.financial.binanceRateUpdated');
-          
-          const description = data.from_database 
-            ? (data.age_minutes 
-                ? t('admin.management.financial.binanceRateRecoveredDescription', { rate: data.rate.toFixed(2), age: data.age_minutes })
-                : t('admin.management.financial.binanceRateRecoveredDescriptionNoAge', { rate: data.rate.toFixed(2) }))
-            : t('admin.management.financial.binanceRateUpdatedDescription', { rate: data.rate.toFixed(2), source: data.source || 'Binance P2P' });
-          
+
+          const description = data.from_database
+            ? (data.age_minutes
+              ? t('admin.management.financial.binanceRateRecoveredDescription', { rate: data.rate.toFixed(2), age: data.age_minutes })
+              : t('admin.management.financial.binanceRateRecoveredDescriptionNoAge', { rate: data.rate.toFixed(2) }))
+            : t('admin.management.financial.binanceRateUpdatedDescription', { rate: data.rate.toFixed(2), source: data.source || 'STABLECOIN' });
+
           toastRef.current({
             title,
             description,
@@ -128,7 +128,7 @@ export function useExchangeRateBinance(options: UseExchangeRateBinanceOptions = 
 
       const errorMessage = error.message || 'Error de conexión';
       setError(errorMessage);
-      
+
       if (showToast && toastRef.current) {
         toastRef.current({
           title: "Error al actualizar tasa Binance",
@@ -186,7 +186,7 @@ export function useExchangeRateBinance(options: UseExchangeRateBinanceOptions = 
       // Configurar intervalo para actualizar cada 30 minutos con force=true
       intervalRef.current = setInterval(() => {
         console.log(`[useExchangeRateBinance] Auto-actualización ejecutándose para ${tradeType}...`);
-        
+
         // Usar force=true para forzar actualización desde API, no desde BD
         fetch(`/api/exchange-rate/binance?force=true&tradeType=${tradeType}`, {
           method: 'GET',
@@ -199,15 +199,15 @@ export function useExchangeRateBinance(options: UseExchangeRateBinanceOptions = 
             if (data.success && data.rate) {
               setRate(data.rate);
               setLastUpdated(new Date(data.timestamp || new Date().toISOString()));
-              setSource(data.source || 'Binance P2P');
+              setSource(data.source || 'STABLECOIN');
               setFromDatabase(data.from_database || false);
               setAgeMinutes(data.age_minutes || null);
-              
+
               // Callback para actualizar el componente padre
               if (onRateUpdateRef.current) {
                 onRateUpdateRef.current(data.rate);
               }
-              
+
               console.log(`[useExchangeRateBinance] ✅ Tasa ${tradeType} actualizada automáticamente: ${data.rate} VES/USDT`);
             }
           })
@@ -262,17 +262,17 @@ export function useExchangeRateBinance(options: UseExchangeRateBinanceOptions = 
   // Función para obtener el tiempo transcurrido desde la última actualización
   const getTimeSinceUpdate = useCallback(() => {
     if (!lastUpdated) return null;
-    
+
     const now = new Date();
     const diffMs = now.getTime() - lastUpdated.getTime();
     const diffMinutes = Math.floor(diffMs / (1000 * 60));
-    
+
     if (diffMinutes < 1) return 'Hace menos de 1 minuto';
     if (diffMinutes < 60) return `Hace ${diffMinutes} minuto${diffMinutes > 1 ? 's' : ''}`;
-    
+
     const diffHours = Math.floor(diffMinutes / 60);
     if (diffHours < 24) return `Hace ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
-    
+
     const diffDays = Math.floor(diffHours / 24);
     return `Hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
   }, [lastUpdated]);

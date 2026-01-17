@@ -213,7 +213,7 @@ export async function GET(request: NextRequest) {
 
     // 1. Intentar obtener de APIs externas primero
     let apiRate: number | null = null;
-    let apiSource = tradeType === 'SELL' ? 'Binance P2P (Venta)' : 'Binance P2P';
+    let apiSource = tradeType === 'SELL' ? 'STABLECOIN (Venta)' : 'STABLECOIN';
     let apiError: any = null;
 
     try {
@@ -355,7 +355,7 @@ export async function POST(request: NextRequest) {
       const apiRate = await fetchBinanceRate(tradeTypeValue);
 
       // Guardar tasa de API en BD
-      await saveBinanceRate(apiRate, 'Binance P2P (Manual Refresh)', false, {
+      await saveBinanceRate(apiRate, 'STABLECOIN (Manual Refresh)', false, {
         manual_refresh: true,
         force_refresh: forceRefresh || false
       }, tradeTypeValue);

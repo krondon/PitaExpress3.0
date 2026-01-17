@@ -208,9 +208,9 @@ export default function ApiHealthMonitor() {
       'dollarvzla.com': 'DollarVzla.com',
       'exchangerate-api': 'ExchangeRate-API',
       'fawazahmed0_currency_api': 'Fawazahmed0 Currency API',
-      'binance_p2p_direct': 'Binance P2P Direct',
-      'pydolarvenezuela_binance': 'PyDolarVenezuela (Binance)',
-      'dollarvzla_binance': 'DollarVzla (Binance)',
+      'binance_p2p_direct': 'STABLECOIN Direct',
+      'pydolarvenezuela_binance': 'PyDolarVenezuela (STABLECOIN)',
+      'dollarvzla_binance': 'DollarVzla (STABLECOIN)',
       'exchangerate_api_cny': 'ExchangeRate-API (CNY)',
       'fixer_free_cny': 'Fixer-Free (CNY)'
     };
