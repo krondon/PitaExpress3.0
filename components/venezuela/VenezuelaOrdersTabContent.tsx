@@ -249,7 +249,7 @@ export default function VenezuelaOrdersTabContent() {
     if (s >= 3) return { label: t('chinese.ordersPage.containerBadges.shipped'), className: `${base} bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-700` };
     return { label: t('chinese.ordersPage.containerBadges.state', { num: s }), className: `${base} bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-700` };
   }
-  
+
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch =
@@ -301,7 +301,7 @@ export default function VenezuelaOrdersTabContent() {
         const supabase = getSupabaseBrowserClient();
         const { data: { user } } = await supabase.auth.getUser();
         setVzlaId(user?.id);
-      } catch {}
+      } catch { }
     })();
   }, []);
 
@@ -372,7 +372,7 @@ export default function VenezuelaOrdersTabContent() {
       supabase.removeChannel(containersChannel);
     };
   }, []);
-  
+
   // Evita hidratar contenido antes de montar (mantén todos los hooks por encima)
   if (!mounted) return null;
 
@@ -384,8 +384,8 @@ export default function VenezuelaOrdersTabContent() {
           <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm md:text-base font-medium text-yellow-700 dark:text-yellow-300">{t('venezuela.pedidos.stats.pending')}</p>
-                <p className="text-2xl md:text-3xl font-bold text-yellow-800 dark:text-yellow-200">{orders.filter(o => o.state === 1).length}</p>
+                <p className="text-sm md:text-base font-medium text-yellow-700 dark:text-yellow-300">{t('venezuela.pedidos.stats.inProcess') || 'En Proceso'}</p>
+                <p className="text-2xl md:text-3xl font-bold text-yellow-800 dark:text-yellow-200">{orders.filter(o => o.state >= 5 && o.state <= 7).length}</p>
               </div>
               <div className="w-10 h-10 md:w-12 md:h-12 bg-yellow-100 dark:bg-yellow-800/30 rounded-lg flex items-center justify-center">
                 <Clock className="w-5 h-5 md:w-6 md:h-6 text-yellow-600 dark:text-yellow-400" />
@@ -397,11 +397,11 @@ export default function VenezuelaOrdersTabContent() {
           <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm md:text-base font-medium text-green-700 dark:text-green-300">{t('venezuela.pedidos.stats.reviewing')}</p>
-                <p className="text-2xl md:text-3xl font-bold text-green-800 dark:text-green-200">{orders.filter(o => o.state === 2).length}</p>
+                <p className="text-sm md:text-base font-medium text-green-700 dark:text-green-300">{t('venezuela.pedidos.stats.inTransit') || 'En Tránsito'}</p>
+                <p className="text-2xl md:text-3xl font-bold text-green-800 dark:text-green-200">{orders.filter(o => o.state >= 8 && o.state <= 10).length}</p>
               </div>
               <div className="w-10 h-10 md:w-12 md:h-12 bg-green-100 dark:bg-green-800/30 rounded-lg flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 md:w-6 md:h-6 text-green-600 dark:text-green-400" />
+                <Send className="w-5 h-5 md:w-6 md:h-6 text-green-600 dark:text-green-400" />
               </div>
             </div>
           </CardContent>
@@ -410,8 +410,8 @@ export default function VenezuelaOrdersTabContent() {
           <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm md:text-base font-medium text-purple-700 dark:text-purple-300">{t('venezuela.pedidos.stats.quoted')}</p>
-                <p className="text-2xl md:text-3xl font-bold text-purple-800 dark:text-purple-200">{orders.filter(o => o.state === 3).length}</p>
+                <p className="text-sm md:text-base font-medium text-purple-700 dark:text-purple-300">{t('venezuela.pedidos.stats.received') || 'Recibidos'}</p>
+                <p className="text-2xl md:text-3xl font-bold text-purple-800 dark:text-purple-200">{orders.filter(o => o.state >= 11 && o.state <= 12).length}</p>
               </div>
               <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-100 dark:bg-purple-800/30 rounded-lg flex items-center justify-center">
                 <Package className="w-5 h-5 md:w-6 md:h-6 text-purple-600 dark:text-purple-400" />
@@ -423,11 +423,11 @@ export default function VenezuelaOrdersTabContent() {
           <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm md:text-base font-medium text-blue-700 dark:text-blue-300">{t('venezuela.pedidos.stats.processing')}</p>
-                <p className="text-2xl md:text-3xl font-bold text-blue-800 dark:text-blue-200">{orders.filter(o => o.state === 4).length}</p>
+                <p className="text-sm md:text-base font-medium text-blue-700 dark:text-blue-300">{t('venezuela.pedidos.stats.delivered') || 'Entregados'}</p>
+                <p className="text-2xl md:text-3xl font-bold text-blue-800 dark:text-blue-200">{orders.filter(o => o.state === 13).length}</p>
               </div>
               <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 dark:bg-blue-800/30 rounded-lg flex items-center justify-center">
-                <Send className="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400" />
+                <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
           </CardContent>
@@ -441,12 +441,12 @@ export default function VenezuelaOrdersTabContent() {
           <span
             className="absolute top-1 bottom-1 rounded-md bg-slate-900/95 dark:bg-slate-200 transition-all duration-300 ease-out shadow-sm"
             style={{
-              left: `${(['pedidos','cajas','contenedores'] as const).indexOf(activeSubTab)*(100/3)}%`,
+              left: `${(['pedidos', 'cajas', 'contenedores'] as const).indexOf(activeSubTab) * (100 / 3)}%`,
               width: 'calc((100% - 0.5rem * 2) / 3)', // ancho aproximado compensando gap interno (gap-2 -> 0.5rem)
               transform: 'translateX(0)'
             }}
           />
-          {(['pedidos','cajas','contenedores'] as const).map(tab => (
+          {(['pedidos', 'cajas', 'contenedores'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveSubTab(tab)}
@@ -466,7 +466,7 @@ export default function VenezuelaOrdersTabContent() {
         </div>
       </div>
 
-  {/* Toolbar pedidos unificada se integra en el encabezado del listado */}
+      {/* Toolbar pedidos unificada se integra en el encabezado del listado */}
 
       {/* Contenido principal según sub-tab */}
       {activeSubTab === 'pedidos' && (
@@ -511,82 +511,83 @@ export default function VenezuelaOrdersTabContent() {
                     const { start, end } = getPageSlice(total, ordersPage);
                     const pageItems = sortedOrders.slice(start, end);
                     return pageItems.map(order => {
-                    const stateNum = Number(order.state);
+                      const stateNum = Number(order.state);
                       return (
-                      <div
-                        key={order.id}
-                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-xl bg-gradient-to-r from-slate-50 to-slate-100 border border-slate-200 hover:shadow-md transition-all duration-300 dark:from-slate-800 dark:to-slate-700 dark:border-slate-600"
-                      >
-                        <div className="min-w-0 flex items-center gap-4">
-                          <div className="p-3 bg-blue-100 rounded-lg dark:bg-blue-800/40"><Package className="h-5 w-5 text-blue-600 dark:text-blue-300" /></div>
-                          <div className="min-w-0 space-y-1">
-                            <h3 className="font-semibold text-slate-900 dark:text-white truncate">#ORD-{String(order.id)} • {order.clientName}</h3>
-                            <div className="flex flex-wrap gap-4 text-xs text-slate-500 dark:text-slate-400">
-                              <span className="truncate">{t('admin.orders.form.quantity')}: {order.quantity}</span>
-                              <span className="truncate">{t('admin.orders.form.deliveryType')}: {order.deliveryType}</span>
-                              <span className="truncate">{t('admin.orders.pdf.shippingType')}: {order.shippingType}</span>
+                        <div
+                          key={order.id}
+                          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-xl bg-gradient-to-r from-slate-50 to-slate-100 border border-slate-200 hover:shadow-md transition-all duration-300 dark:from-slate-800 dark:to-slate-700 dark:border-slate-600"
+                        >
+                          <div className="min-w-0 flex items-center gap-4">
+                            <div className="p-3 bg-blue-100 rounded-lg dark:bg-blue-800/40"><Package className="h-5 w-5 text-blue-600 dark:text-blue-300" /></div>
+                            <div className="min-w-0 space-y-1">
+                              <h3 className="font-semibold text-slate-900 dark:text-white truncate">#ORD-{String(order.id)} • {order.clientName}</h3>
+                              <div className="flex flex-wrap gap-4 text-xs text-slate-500 dark:text-slate-400">
+                                <span className="truncate">{t('admin.orders.form.quantity')}: {order.quantity}</span>
+                                <span className="truncate">{t('admin.orders.form.deliveryType')}: {order.deliveryType}</span>
+                                <span className="truncate">{t('admin.orders.pdf.shippingType')}: {order.shippingType}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3">
+                            {/* Badges: agrupar en una fila envolvente en móvil */}
+                            <div className="flex flex-wrap gap-2 sm:gap-3 justify-start sm:justify-end">
+                              {stateNum === 13 && (<Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:ring-1 hover:ring-emerald-200 dark:hover:brightness-125 dark:hover:ring-1 dark:hover:ring-emerald-700/50">{t('admin.orders.status.entregado')}</Badge>)}
+                              {stateNum === 12 && (<Badge className="bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:border-blue-300 hover:ring-1 hover:ring-blue-200 dark:hover:brightness-125 dark:hover:ring-1 dark:hover:ring-blue-700/50">{t('venezuela.pedidos.statusExtended.readyToDeliver')}</Badge>)}
+                              {stateNum === 11 && (<Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:ring-1 hover:ring-emerald-200 dark:hover:brightness-125 dark:hover:ring-1 dark:hover:ring-emerald-700/50">{t('venezuela.pedidos.statusExtended.received')}</Badge>)}
+                              {stateNum === 10 && (<Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 hover:bg-indigo-50 hover:border-indigo-300 hover:ring-1 hover:ring-indigo-200 dark:hover:brightness-125 dark:hover:ring-1 dark:hover:ring-indigo-700/50">{t('venezuela.pedidos.statusExtended.customs')}</Badge>)}
+                              {stateNum === 9 && (<Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:ring-1 hover:ring-emerald-200 dark:hover:brightness-125 dark:hover:ring-1 dark:hover:ring-emerald-700/50">{t('venezuela.pedidos.statusExtended.arrivedVzla')}</Badge>)}
+                              {stateNum === 8 && (<Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:ring-1 hover:ring-emerald-200 dark:hover:brightness-125 dark:hover:ring-1 dark:hover:ring-emerald-700/50">{t('venezuela.pedidos.statusExtended.inTransit')}</Badge>)}
+                              {stateNum === 1 && (<Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:border-yellow-300 hover:ring-1 hover:ring-yellow-200 dark:hover:brightness-125 dark:hover:ring-1 dark:hover:ring-yellow-700/50">{t('venezuela.pedidos.statusExtended.pending')}</Badge>)}
+                              {stateNum === 2 && (<Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-50 hover:border-green-300 hover:ring-1 hover:ring-green-200 dark:hover:brightness-125 dark:hover:ring-1 dark:hover:ring-green-700/50">{t('venezuela.pedidos.statusExtended.reviewing')}</Badge>)}
+                              {stateNum === 3 && (<Badge className="bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-50 hover:border-purple-300 hover:ring-1 hover:ring-purple-200 dark:hover:brightness-125 dark:hover:ring-1 dark:hover:ring-purple-700/50">{t('venezuela.pedidos.statusExtended.quoted')}</Badge>)}
+                              {stateNum === 4 && (<Badge className="bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:border-blue-300 hover:ring-1 hover:ring-blue-200 dark:hover:brightness-125 dark:hover:ring-1 dark:hover:ring-blue-700/50">{t('venezuela.pedidos.statusExtended.processing')}</Badge>)}
+                              {(stateNum >= 5 && stateNum <= 7) && (<Badge className="bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:ring-1 hover:ring-gray-200 dark:hover:brightness-125 dark:hover:ring-1 dark:hover:ring-gray-700/50">{t('venezuela.pedidos.statusExtended.inProcess')}</Badge>)}
+                            </div>
+
+                            {/* Acciones – en móvil apiladas y de ancho completo */}
+                            <div className="w-full sm:w-auto grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-none sm:flex">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full sm:w-auto flex items-center gap-1"
+                                onClick={() => {
+                                  if (order.pdfRoutes) {
+                                    const win = window.open(order.pdfRoutes, '_blank');
+                                    if (!win) setModalAviso({ open: true, title: t('venezuela.pedidos.pdf.openError') || 'No se pudo abrir el PDF', description: t('venezuela.pedidos.pdf.notAvailableOrder') || 'Intenta nuevamente o verifica más tarde.' });
+                                  } else {
+                                    setModalAviso({ open: true, title: 'Sin PDF', description: t('venezuela.pedidos.pdf.notAvailable') || 'No hay PDF disponible para este pedido.' });
+                                  }
+                                }}
+                              >
+                                <Eye className="h-4 w-4" /> {t('admin.orders.actions.view')}
+                              </Button>
+                              <Button
+                                size="sm"
+                                className="w-full sm:w-auto"
+                                disabled={loading || ![1, 8, 11, 12].includes(stateNum)}
+                                onClick={async () => {
+                                  const advance = async (url: string, body: any) => {
+                                    const res = await fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                                    if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'Error'); }
+                                    await fetchOrders();
+                                  };
+                                  try {
+                                    if (stateNum === 1) return advance('/venezuela/pedidos/api/send-to-china', { orderId: order.id });
+                                    if (stateNum === 8) return advance('/venezuela/pedidos/api/advance-state', { orderId: order.id, nextState: 9 });
+                                    if (stateNum === 9) return advance('/venezuela/pedidos/api/advance-state', { orderId: order.id, nextState: 10 });
+                                    if (stateNum === 11) return advance('/venezuela/pedidos/api/advance-state', { orderId: order.id, nextState: 12 });
+                                    if (stateNum === 12) return advance('/venezuela/pedidos/api/advance-state', { orderId: order.id, nextState: 13 });
+                                  } catch (e: any) { alert(e.message || 'Error'); }
+                                }}
+                              >
+                                {stateNum >= 13 ? (<><CheckCircle className="w-4 h-4 mr-2" />{t('admin.orders.status.entregado')}</>) : stateNum === 12 ? (<><CheckCircle className="w-4 h-4 mr-2" />{t('admin.orders.status.entregado')}</>) : stateNum === 11 ? (<><Package className="w-4 h-4 mr-2" />RECEIVED</>) : stateNum === 9 ? (<><Package className="w-4 h-4 mr-2" />RECEIVED</>) : stateNum === 8 ? (<><Package className="w-4 h-4 mr-2" />IN TRANSIT</>) : stateNum === 10 ? (<><Clock className="w-4 h-4 mr-2" />CUSTOMS</>) : (stateNum >= 2 && stateNum <= 7) ? (<><Clock className="w-4 h-4 mr-2" />WAITING</>) : (<><Send className="w-4 h-4 mr-2" />{t('venezuela.pedidos.actions.send')}</>)}
+                              </Button>
                             </div>
                           </div>
                         </div>
-                        <div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3">
-                          {/* Badges: agrupar en una fila envolvente en móvil */}
-                          <div className="flex flex-wrap gap-2 sm:gap-3 justify-start sm:justify-end">
-                            {stateNum === 13 && (<Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:ring-1 hover:ring-emerald-200 dark:hover:brightness-125 dark:hover:ring-1 dark:hover:ring-emerald-700/50">{t('admin.orders.status.entregado')}</Badge>)}
-                            {stateNum === 12 && (<Badge className="bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:border-blue-300 hover:ring-1 hover:ring-blue-200 dark:hover:brightness-125 dark:hover:ring-1 dark:hover:ring-blue-700/50">{t('venezuela.pedidos.statusExtended.readyToDeliver')}</Badge>)}
-                            {stateNum === 11 && (<Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:ring-1 hover:ring-emerald-200 dark:hover:brightness-125 dark:hover:ring-1 dark:hover:ring-emerald-700/50">{t('venezuela.pedidos.statusExtended.received')}</Badge>)}
-                            {stateNum === 10 && (<Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 hover:bg-indigo-50 hover:border-indigo-300 hover:ring-1 hover:ring-indigo-200 dark:hover:brightness-125 dark:hover:ring-1 dark:hover:ring-indigo-700/50">{t('venezuela.pedidos.statusExtended.customs')}</Badge>)}
-                            {stateNum === 9 && (<Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:ring-1 hover:ring-emerald-200 dark:hover:brightness-125 dark:hover:ring-1 dark:hover:ring-emerald-700/50">{t('venezuela.pedidos.statusExtended.arrivedVzla')}</Badge>)}
-                            {stateNum === 8 && (<Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 hover:ring-1 hover:ring-emerald-200 dark:hover:brightness-125 dark:hover:ring-1 dark:hover:ring-emerald-700/50">{t('venezuela.pedidos.statusExtended.inTransit')}</Badge>)}
-                            {stateNum === 1 && (<Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:border-yellow-300 hover:ring-1 hover:ring-yellow-200 dark:hover:brightness-125 dark:hover:ring-1 dark:hover:ring-yellow-700/50">{t('venezuela.pedidos.statusExtended.pending')}</Badge>)}
-                            {stateNum === 2 && (<Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-50 hover:border-green-300 hover:ring-1 hover:ring-green-200 dark:hover:brightness-125 dark:hover:ring-1 dark:hover:ring-green-700/50">{t('venezuela.pedidos.statusExtended.reviewing')}</Badge>)}
-                            {stateNum === 3 && (<Badge className="bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-50 hover:border-purple-300 hover:ring-1 hover:ring-purple-200 dark:hover:brightness-125 dark:hover:ring-1 dark:hover:ring-purple-700/50">{t('venezuela.pedidos.statusExtended.quoted')}</Badge>)}
-                            {stateNum === 4 && (<Badge className="bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:border-blue-300 hover:ring-1 hover:ring-blue-200 dark:hover:brightness-125 dark:hover:ring-1 dark:hover:ring-blue-700/50">{t('venezuela.pedidos.statusExtended.processing')}</Badge>)}
-                            {(stateNum >= 5 && stateNum <= 7) && (<Badge className="bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:ring-1 hover:ring-gray-200 dark:hover:brightness-125 dark:hover:ring-1 dark:hover:ring-gray-700/50">{t('venezuela.pedidos.statusExtended.inProcess')}</Badge>)}
-                          </div>
-
-                          {/* Acciones – en móvil apiladas y de ancho completo */}
-                          <div className="w-full sm:w-auto grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-none sm:flex">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full sm:w-auto flex items-center gap-1"
-                              onClick={() => {
-                                if (order.pdfRoutes) {
-                                  const win = window.open(order.pdfRoutes, '_blank');
-                                  if (!win) setModalAviso({ open: true, title: t('venezuela.pedidos.pdf.openError') || 'No se pudo abrir el PDF', description: t('venezuela.pedidos.pdf.notAvailableOrder') || 'Intenta nuevamente o verifica más tarde.' });
-                                } else {
-                                  setModalAviso({ open: true, title: 'Sin PDF', description: t('venezuela.pedidos.pdf.notAvailable') || 'No hay PDF disponible para este pedido.' });
-                                }
-                              }}
-                            >
-                              <Eye className="h-4 w-4" /> {t('admin.orders.actions.view')}
-                            </Button>
-                            <Button
-                              size="sm"
-                              className="w-full sm:w-auto"
-                              disabled={loading || ![1,8,11,12].includes(stateNum)}
-                              onClick={async () => {
-                                const advance = async (url: string, body: any) => {
-                                  const res = await fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-                                  if (!res.ok) { const err = await res.json().catch(()=>({})); throw new Error(err.error || 'Error'); }
-                                  await fetchOrders();
-                                };
-                                try {
-                                  if (stateNum === 1) return advance('/venezuela/pedidos/api/send-to-china', { orderId: order.id });
-                                  if (stateNum === 8) return advance('/venezuela/pedidos/api/advance-state', { orderId: order.id, nextState: 9 });
-                                  if (stateNum === 9) return advance('/venezuela/pedidos/api/advance-state', { orderId: order.id, nextState: 10 });
-                                  if (stateNum === 11) return advance('/venezuela/pedidos/api/advance-state', { orderId: order.id, nextState: 12 });
-                                  if (stateNum === 12) return advance('/venezuela/pedidos/api/advance-state', { orderId: order.id, nextState: 13 });
-                                } catch (e:any) { alert(e.message || 'Error'); }
-                              }}
-                            >
-                              {stateNum >= 13 ? (<><CheckCircle className="w-4 h-4 mr-2" />{t('admin.orders.status.entregado')}</>) : stateNum === 12 ? (<><CheckCircle className="w-4 h-4 mr-2" />{t('admin.orders.status.entregado')}</>) : stateNum === 11 ? (<><Package className="w-4 h-4 mr-2" />RECEIVED</>) : stateNum === 9 ? (<><Package className="w-4 h-4 mr-2" />RECEIVED</>) : stateNum === 8 ? (<><Package className="w-4 h-4 mr-2" />IN TRANSIT</>) : stateNum === 10 ? (<><Clock className="w-4 h-4 mr-2" />CUSTOMS</>) : (stateNum >= 2 && stateNum <= 7) ? (<><Clock className="w-4 h-4 mr-2" />WAITING</>) : (<><Send className="w-4 h-4 mr-2" />{t('venezuela.pedidos.actions.send')}</>)}
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }); })()}
+                      );
+                    });
+                  })()}
                   {(() => {
                     const total = sortedOrders.length;
                     const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
@@ -596,13 +597,13 @@ export default function VenezuelaOrdersTabContent() {
                       <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">{t('admin.orders.pagination.showing', { defaultValue: 'Mostrando' })} {Math.min(total, start + 1)} {t('admin.orders.pagination.to', { defaultValue: 'a' })} {end} {t('admin.orders.pagination.of', { defaultValue: 'de' })} {total} {t('admin.orders.pagination.results', { defaultValue: 'resultados' })}</p>
                         <div className="flex items-center gap-1 justify-end flex-wrap">
-                          <Button variant="outline" size="sm" disabled={ordersPage<=1} onClick={()=>setOrdersPage(p=>Math.max(1,p-1))}>{t('admin.orders.pagination.prev', { defaultValue: 'Anterior' })}</Button>
-                          {pages[0] > 1 && (<><Button variant="outline" size="sm" onClick={()=>setOrdersPage(1)}>1</Button><span className="px-1 text-slate-400">…</span></>)}
+                          <Button variant="outline" size="sm" disabled={ordersPage <= 1} onClick={() => setOrdersPage(p => Math.max(1, p - 1))}>{t('admin.orders.pagination.prev', { defaultValue: 'Anterior' })}</Button>
+                          {pages[0] > 1 && (<><Button variant="outline" size="sm" onClick={() => setOrdersPage(1)}>1</Button><span className="px-1 text-slate-400">…</span></>)}
                           {pages.map(p => (
-                            <Button key={p} variant={p===ordersPage? 'default':'outline'} size="sm" onClick={()=>setOrdersPage(p)}>{p}</Button>
+                            <Button key={p} variant={p === ordersPage ? 'default' : 'outline'} size="sm" onClick={() => setOrdersPage(p)}>{p}</Button>
                           ))}
-                          {pages[pages.length-1] < totalPages && (<><span className="px-1 text-slate-400">…</span><Button variant="outline" size="sm" onClick={()=>setOrdersPage(totalPages)}>{totalPages}</Button></>)}
-                          <Button variant="outline" size="sm" disabled={ordersPage>=totalPages} onClick={()=>setOrdersPage(p=>Math.min(totalPages,p+1))}>{t('admin.orders.pagination.next', { defaultValue: 'Siguiente' })}</Button>
+                          {pages[pages.length - 1] < totalPages && (<><span className="px-1 text-slate-400">…</span><Button variant="outline" size="sm" onClick={() => setOrdersPage(totalPages)}>{totalPages}</Button></>)}
+                          <Button variant="outline" size="sm" disabled={ordersPage >= totalPages} onClick={() => setOrdersPage(p => Math.min(totalPages, p + 1))}>{t('admin.orders.pagination.next', { defaultValue: 'Siguiente' })}</Button>
                         </div>
                       </div>
                     );
@@ -622,88 +623,92 @@ export default function VenezuelaOrdersTabContent() {
                 <Boxes className="h-5 w-5" /> {t('venezuela.pedidos.tabs.boxes')}
               </CardTitle>
               <div className="w-full sm:w-auto flex items-center justify-end gap-2 md:gap-3 flex-wrap">
-                <Input value={filtroCaja} onChange={(e)=>setFiltroCaja(e.target.value)} placeholder={t('chinese.ordersPage.filters.searchBoxPlaceholder')} className="h-10 w-full sm:w-64 px-3" />
+                <Input value={filtroCaja} onChange={(e) => setFiltroCaja(e.target.value)} placeholder={t('chinese.ordersPage.filters.searchBoxPlaceholder')} className="h-10 w-full sm:w-64 px-3" />
               </div>
             </div>
           </CardHeader>
           <CardContent>
-      {boxes.length === 0 ? (
+            {boxes.length === 0 ? (
               <div className={`text-center py-10 text-sm text-slate-500 dark:text-slate-400`}>{t('venezuela.pedidos.emptyBoxesTitle')}</div>
-      ) : filteredBoxesList.length === 0 ? (
+            ) : filteredBoxesList.length === 0 ? (
               <div className={`text-center py-10 text-sm text-slate-500 dark:text-slate-400`}>{t('venezuela.pedidos.emptyBoxesDesc')}</div>
             ) : (
               <div className="space-y-3">
-        {(() => { const total=filteredBoxesList.length; const totalPages=Math.max(1, Math.ceil(total/ITEMS_PER_PAGE)); const { start, end } = getPageSlice(total, boxesPage); return filteredBoxesList.slice(start,end).map((box, idx) => {
-                  const id = box.box_id ?? box.boxes_id ?? box.id ?? idx;
-                  const created = box.creation_date ?? box.created_at ?? '';
-                  const stateNum = (box.state ?? 1) as number;
-                  const countKey = box.box_id ?? box.boxes_id ?? box.id ?? id;
-                  return (
-                    <div key={`${id}`} className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-xl bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 border border-slate-200 dark:border-slate-600 hover:shadow-md transition-all duration-300`}>
-                      <div className="min-w-0 flex items-center gap-4">
-                        <div className={`p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg`}><Boxes className={`h-5 w-5 text-indigo-600 dark:text-indigo-400`} /></div>
-                        <div className="space-y-1">
-                          <h3 className={`font-semibold text-slate-900 dark:text-white truncate`}>#BOX-{id}</h3>
-                          <div className={`flex flex-wrap gap-4 text-xs text-slate-500 dark:text-slate-400`}>
-                            <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{created ? new Date(created).toLocaleString('es-ES') : '—'}</span>
-                            <span className="flex items-center gap-1"><List className="h-3 w-3" />{t('venezuela.pedidos.labels.ordersCount')} {orderCountsByBoxMain[countKey as any] ?? 0}</span>
+                {(() => {
+                  const total = filteredBoxesList.length; const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE)); const { start, end } = getPageSlice(total, boxesPage); return filteredBoxesList.slice(start, end).map((box, idx) => {
+                    const id = box.box_id ?? box.boxes_id ?? box.id ?? idx;
+                    const created = box.creation_date ?? box.created_at ?? '';
+                    const stateNum = (box.state ?? 1) as number;
+                    const countKey = box.box_id ?? box.boxes_id ?? box.id ?? id;
+                    return (
+                      <div key={`${id}`} className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-xl bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 border border-slate-200 dark:border-slate-600 hover:shadow-md transition-all duration-300`}>
+                        <div className="min-w-0 flex items-center gap-4">
+                          <div className={`p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg`}><Boxes className={`h-5 w-5 text-indigo-600 dark:text-indigo-400`} /></div>
+                          <div className="space-y-1">
+                            <h3 className={`font-semibold text-slate-900 dark:text-white truncate`}>#BOX-{id}</h3>
+                            <div className={`flex flex-wrap gap-4 text-xs text-slate-500 dark:text-slate-400`}>
+                              <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{created ? new Date(created).toLocaleString('es-ES') : '—'}</span>
+                              <span className="flex items-center gap-1"><List className="h-3 w-3" />{t('venezuela.pedidos.labels.ordersCount')} {orderCountsByBoxMain[countKey as any] ?? 0}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3">
+                          <div className="flex flex-wrap gap-2 sm:gap-3 justify-start sm:justify-end">
+                            <Badge className={`${getBoxBadge(stateNum).className}`}>{getBoxBadge(stateNum).label}</Badge>
+                          </div>
+                          <div className="w-full sm:w-auto grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-none sm:flex">
+                            {(stateNum === 5 || (stateNum === 4 && boxesWithAirShipping[countKey])) && (
+                              <Button variant="outline" size="sm" className="w-full sm:w-auto flex items-center gap-1 text-emerald-700 border-emerald-300 hover:bg-emerald-50" onClick={async () => {
+                                const nextState = 6;
+                                try {
+                                  const res = await fetch('/venezuela/pedidos/api/advance-box', {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ boxId: box.box_id ?? box.boxes_id ?? box.id ?? id, nextState })
+                                  });
+                                  if (!res.ok) {
+                                    const err = await res.json().catch(() => ({}));
+                                    throw new Error(err.error || 'Error');
+                                  }
+                                  // Actualizar pedidos asociados a estado 11
+                                  const supabase = getSupabaseBrowserClient();
+                                  const { data: ordersData } = await supabase.from('orders').select('id').eq('box_id', box.box_id ?? box.boxes_id ?? box.id ?? id);
+                                  if (ordersData) {
+                                    for (const order of ordersData) {
+                                      await fetch(`/api/admin/orders/${order.id}`, {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ state: 11 })
+                                      });
+                                    }
+                                  }
+                                  await Promise.all([fetchBoxes(), fetchOrders()]);
+                                } catch (e) {
+                                  alert((e as Error).message);
+                                }
+                              }}><CheckCircle className="h-4 w-4" />Recibido</Button>
+                            )}
+                            <Button variant="outline" size="sm" className="w-full sm:w-auto flex items-center gap-1" onClick={() => { const boxId = box.box_id ?? box.boxes_id ?? box.id; setModalVerPedidos({ open: true, boxId }); if (boxId !== undefined) fetchOrdersByBoxId(boxId as any); }}><List className="h-4 w-4" />{t('venezuela.pedidos.actions.viewOrders')}</Button>
                           </div>
                         </div>
                       </div>
-                      <div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3">
-                        <div className="flex flex-wrap gap-2 sm:gap-3 justify-start sm:justify-end">
-                          <Badge className={`${getBoxBadge(stateNum).className}`}>{getBoxBadge(stateNum).label}</Badge>
-                        </div>
-                        <div className="w-full sm:w-auto grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-none sm:flex">
-                          {(stateNum === 5 || (stateNum === 4 && boxesWithAirShipping[countKey])) && (
-                          <Button variant="outline" size="sm" className="w-full sm:w-auto flex items-center gap-1 text-emerald-700 border-emerald-300 hover:bg-emerald-50" onClick={async () => {
-                            const nextState = 6;
-                            try {
-                              const res = await fetch('/venezuela/pedidos/api/advance-box', {
-                                method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ boxId: box.box_id ?? box.boxes_id ?? box.id ?? id, nextState })
-                              });
-                              if (!res.ok) {
-                                const err = await res.json().catch(() => ({}));
-                                throw new Error(err.error || 'Error');
-                              }
-                              // Actualizar pedidos asociados a estado 11
-                              const supabase = getSupabaseBrowserClient();
-                              const { data: ordersData } = await supabase.from('orders').select('id').eq('box_id', box.box_id ?? box.boxes_id ?? box.id ?? id);
-                              if (ordersData) {
-                                for (const order of ordersData) {
-                                  await fetch(`/api/admin/orders/${order.id}`, {
-                                    method: 'PATCH',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ state: 11 })
-                                  });
-                                }
-                              }
-                              await Promise.all([fetchBoxes(), fetchOrders()]);
-                            } catch (e) {
-                              alert((e as Error).message);
-                            }
-                          }}><CheckCircle className="h-4 w-4" />Recibido</Button>
-                        )}
-                        <Button variant="outline" size="sm" className="w-full sm:w-auto flex items-center gap-1" onClick={() => { const boxId = box.box_id ?? box.boxes_id ?? box.id; setModalVerPedidos({ open: true, boxId }); if (boxId !== undefined) fetchOrdersByBoxId(boxId as any); }}><List className="h-4 w-4" />{t('venezuela.pedidos.actions.viewOrders')}</Button>
-                        </div>
+                    );
+                  });
+                })()}
+                {(() => {
+                  const total = filteredBoxesList.length; const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE)); const { start, end } = getPageSlice(total, boxesPage); const pages = getVisiblePages(totalPages, boxesPage); return (
+                    <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">{t('admin.orders.pagination.showing', { defaultValue: 'Mostrando' })} {Math.min(total, start + 1)} {t('admin.orders.pagination.to', { defaultValue: 'a' })} {end} {t('admin.orders.pagination.of', { defaultValue: 'de' })} {total} {t('admin.orders.pagination.results', { defaultValue: 'resultados' })}</p>
+                      <div className="flex items-center gap-1 justify-end flex-wrap">
+                        <Button variant="outline" size="sm" disabled={boxesPage <= 1} onClick={() => setBoxesPage(p => Math.max(1, p - 1))}>{t('admin.orders.pagination.prev', { defaultValue: 'Anterior' })}</Button>
+                        {pages[0] > 1 && (<><Button variant="outline" size="sm" onClick={() => setBoxesPage(1)}>1</Button><span className="px-1 text-slate-400">…</span></>)}
+                        {pages.map(p => (<Button key={p} variant={p === boxesPage ? 'default' : 'outline'} size="sm" onClick={() => setBoxesPage(p)}>{p}</Button>))}
+                        {pages[pages.length - 1] < totalPages && (<><span className="px-1 text-slate-400">…</span><Button variant="outline" size="sm" onClick={() => setBoxesPage(totalPages)}>{totalPages}</Button></>)}
+                        <Button variant="outline" size="sm" disabled={boxesPage >= totalPages} onClick={() => setBoxesPage(p => Math.min(totalPages, p + 1))}>{t('admin.orders.pagination.next', { defaultValue: 'Siguiente' })}</Button>
                       </div>
                     </div>
                   );
-                }); })()}
-                {(() => { const total=filteredBoxesList.length; const totalPages=Math.max(1, Math.ceil(total/ITEMS_PER_PAGE)); const { start, end } = getPageSlice(total, boxesPage); const pages=getVisiblePages(totalPages, boxesPage); return (
-                  <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">{t('admin.orders.pagination.showing', { defaultValue: 'Mostrando' })} {Math.min(total, start + 1)} {t('admin.orders.pagination.to', { defaultValue: 'a' })} {end} {t('admin.orders.pagination.of', { defaultValue: 'de' })} {total} {t('admin.orders.pagination.results', { defaultValue: 'resultados' })}</p>
-                    <div className="flex items-center gap-1 justify-end flex-wrap">
-                      <Button variant="outline" size="sm" disabled={boxesPage<=1} onClick={()=>setBoxesPage(p=>Math.max(1,p-1))}>{t('admin.orders.pagination.prev', { defaultValue: 'Anterior' })}</Button>
-                      {pages[0] > 1 && (<><Button variant="outline" size="sm" onClick={()=>setBoxesPage(1)}>1</Button><span className="px-1 text-slate-400">…</span></>)}
-                      {pages.map(p => (<Button key={p} variant={p===boxesPage? 'default':'outline'} size="sm" onClick={()=>setBoxesPage(p)}>{p}</Button>))}
-                      {pages[pages.length-1] < totalPages && (<><span className="px-1 text-slate-400">…</span><Button variant="outline" size="sm" onClick={()=>setBoxesPage(totalPages)}>{totalPages}</Button></>)}
-                      <Button variant="outline" size="sm" disabled={boxesPage>=totalPages} onClick={()=>setBoxesPage(p=>Math.min(totalPages,p+1))}>{t('admin.orders.pagination.next', { defaultValue: 'Siguiente' })}</Button>
-                    </div>
-                  </div>
-                ); })()}
+                })()}
               </div>
             )}
             {boxesLoading && <p className="text-center text-sm text-slate-500 mt-4">{t('venezuela.pedidos.loadingBoxes')}</p>}
@@ -719,58 +724,62 @@ export default function VenezuelaOrdersTabContent() {
                 <Boxes className="h-5 w-5" /> {t('venezuela.pedidos.tabs.containers')}
               </CardTitle>
               <div className="w-full sm:w-auto flex items-center justify-end gap-2 md:gap-3 flex-wrap">
-                <Input value={filtroContenedor} onChange={(e)=>setFiltroContenedor(e.target.value)} placeholder={t('chinese.ordersPage.filters.searchContainerPlaceholder')} className="h-10 w-full sm:w-64 px-3" />
+                <Input value={filtroContenedor} onChange={(e) => setFiltroContenedor(e.target.value)} placeholder={t('chinese.ordersPage.filters.searchContainerPlaceholder')} className="h-10 w-full sm:w-64 px-3" />
               </div>
             </div>
           </CardHeader>
           <CardContent>
-      {containers.length === 0 ? (
+            {containers.length === 0 ? (
               <div className={`text-center py-10 text-sm text-slate-500 dark:text-slate-400`}>{t('venezuela.pedidos.emptyContainersTitle')}</div>
-      ) : filteredContainersList.length === 0 ? (
+            ) : filteredContainersList.length === 0 ? (
               <div className={`text-center py-10 text-sm text-slate-500 dark:text-slate-400`}>{t('venezuela.pedidos.emptyContainersDesc')}</div>
             ) : (
               <div className="space-y-3">
-    {(() => { const total=filteredContainersList.length; const totalPages=Math.max(1, Math.ceil(total/ITEMS_PER_PAGE)); const { start, end } = getPageSlice(total, containersPage); return filteredContainersList.slice(start,end).map((container, idx) => {
-                  const id = container.container_id ?? container.containers_id ?? container.id ?? idx;
-                  const created = container.creation_date ?? container.created_at ?? '';
-                  const stateNum = (container.state ?? 1) as number;
-                  return (
-          <div key={`${id}`} className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-xl bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 border border-slate-200 dark:border-slate-600 hover:shadow-md transition-all duration-300`}>
-            <div className="min-w-0 flex items-center gap-4">
-                        <div className={`p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg`}><Boxes className={`h-5 w-5 text-indigo-600 dark:text-indigo-400`} /></div>
-                        <div className="space-y-1">
-              <h3 className={`font-semibold text-slate-900 dark:text-white truncate`}>#CONT-{id}</h3>
-              <div className={`flex flex-wrap gap-4 text-xs text-slate-500 dark:text-slate-400`}>
-                            <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{created ? new Date(created).toLocaleString('es-ES') : '—'}</span>
+                {(() => {
+                  const total = filteredContainersList.length; const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE)); const { start, end } = getPageSlice(total, containersPage); return filteredContainersList.slice(start, end).map((container, idx) => {
+                    const id = container.container_id ?? container.containers_id ?? container.id ?? idx;
+                    const created = container.creation_date ?? container.created_at ?? '';
+                    const stateNum = (container.state ?? 1) as number;
+                    return (
+                      <div key={`${id}`} className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-xl bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 border border-slate-200 dark:border-slate-600 hover:shadow-md transition-all duration-300`}>
+                        <div className="min-w-0 flex items-center gap-4">
+                          <div className={`p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg`}><Boxes className={`h-5 w-5 text-indigo-600 dark:text-indigo-400`} /></div>
+                          <div className="space-y-1">
+                            <h3 className={`font-semibold text-slate-900 dark:text-white truncate`}>#CONT-{id}</h3>
+                            <div className={`flex flex-wrap gap-4 text-xs text-slate-500 dark:text-slate-400`}>
+                              <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{created ? new Date(created).toLocaleString('es-ES') : '—'}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3">
+                          <div className="flex flex-wrap gap-2 sm:gap-3 justify-start sm:justify-end">
+                            <Badge className={getContainerBadge(stateNum).className}>{getContainerBadge(stateNum).label}</Badge>
+                          </div>
+                          <div className="w-full sm:w-auto grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-none sm:flex">
+                            {stateNum === 3 && (
+                              <Button variant="outline" size="sm" className="w-full sm:w-auto flex items-center gap-1 text-emerald-700 border-emerald-300 hover:bg-emerald-50" onClick={async () => { try { const res = await fetch('/venezuela/pedidos/api/advance-container', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ containerId: container.container_id ?? container.containers_id ?? container.id ?? id, nextState: 4 }) }); if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.error || 'No se pudo actualizar el contenedor'); } await Promise.all([fetchContainers(), fetchBoxes(), fetchOrders()]); } catch (e) { alert((e as Error).message); } }}><CheckCircle className="h-4 w-4" />Recibido</Button>
+                            )}
+                            <Button variant="outline" size="sm" className="w-full sm:w-auto flex items-center gap-1" onClick={() => { const containerId = container.container_id ?? container.containers_id ?? container.id; setModalVerCajas({ open: true, containerId }); if (containerId !== undefined) fetchBoxesByContainerId(containerId as any); }}><List className="h-4 w-4" />{t('venezuela.pedidos.actions.viewBoxes')}</Button>
                           </div>
                         </div>
                       </div>
-            <div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3">
-                        <div className="flex flex-wrap gap-2 sm:gap-3 justify-start sm:justify-end">
-                          <Badge className={getContainerBadge(stateNum).className}>{getContainerBadge(stateNum).label}</Badge>
-                        </div>
-                        <div className="w-full sm:w-auto grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-none sm:flex">
-                          {stateNum === 3 && (
-                          <Button variant="outline" size="sm" className="w-full sm:w-auto flex items-center gap-1 text-emerald-700 border-emerald-300 hover:bg-emerald-50" onClick={async () => { try { const res = await fetch('/venezuela/pedidos/api/advance-container', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ containerId: container.container_id ?? container.containers_id ?? container.id ?? id, nextState: 4 }) }); if (!res.ok) { const err = await res.json().catch(()=>({})); throw new Error(err.error || 'No se pudo actualizar el contenedor'); } await Promise.all([fetchContainers(), fetchBoxes(), fetchOrders()]); } catch (e) { alert((e as Error).message); } }}><CheckCircle className="h-4 w-4" />Recibido</Button>
-                        )}
-                        <Button variant="outline" size="sm" className="w-full sm:w-auto flex items-center gap-1" onClick={() => { const containerId = container.container_id ?? container.containers_id ?? container.id; setModalVerCajas({ open: true, containerId }); if (containerId !== undefined) fetchBoxesByContainerId(containerId as any); }}><List className="h-4 w-4" />{t('venezuela.pedidos.actions.viewBoxes')}</Button>
-                        </div>
+                    );
+                  });
+                })()}
+                {(() => {
+                  const total = filteredContainersList.length; const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE)); const { start, end } = getPageSlice(total, containersPage); const pages = getVisiblePages(totalPages, containersPage); return (
+                    <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">{t('admin.orders.pagination.showing', { defaultValue: 'Mostrando' })} {Math.min(total, start + 1)} {t('admin.orders.pagination.to', { defaultValue: 'a' })} {end} {t('admin.orders.pagination.of', { defaultValue: 'de' })} {total} {t('admin.orders.pagination.results', { defaultValue: 'resultados' })}</p>
+                      <div className="flex items-center gap-1 justify-end flex-wrap">
+                        <Button variant="outline" size="sm" disabled={containersPage <= 1} onClick={() => setContainersPage(p => Math.max(1, p - 1))}>{t('admin.orders.pagination.prev', { defaultValue: 'Anterior' })}</Button>
+                        {pages[0] > 1 && (<><Button variant="outline" size="sm" onClick={() => setContainersPage(1)}>1</Button><span className="px-1 text-slate-400">…</span></>)}
+                        {pages.map(p => (<Button key={p} variant={p === containersPage ? 'default' : 'outline'} size="sm" onClick={() => setContainersPage(p)}>{p}</Button>))}
+                        {pages[pages.length - 1] < totalPages && (<><span className="px-1 text-slate-400">…</span><Button variant="outline" size="sm" onClick={() => setContainersPage(totalPages)}>{totalPages}</Button></>)}
+                        <Button variant="outline" size="sm" disabled={containersPage >= totalPages} onClick={() => setContainersPage(p => Math.min(totalPages, p + 1))}>{t('admin.orders.pagination.next', { defaultValue: 'Siguiente' })}</Button>
                       </div>
                     </div>
                   );
-                }); })()}
-                {(() => { const total=filteredContainersList.length; const totalPages=Math.max(1, Math.ceil(total/ITEMS_PER_PAGE)); const { start, end } = getPageSlice(total, containersPage); const pages=getVisiblePages(totalPages, containersPage); return (
-                  <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">{t('admin.orders.pagination.showing', { defaultValue: 'Mostrando' })} {Math.min(total, start + 1)} {t('admin.orders.pagination.to', { defaultValue: 'a' })} {end} {t('admin.orders.pagination.of', { defaultValue: 'de' })} {total} {t('admin.orders.pagination.results', { defaultValue: 'resultados' })}</p>
-                    <div className="flex items-center gap-1 justify-end flex-wrap">
-                      <Button variant="outline" size="sm" disabled={containersPage<=1} onClick={()=>setContainersPage(p=>Math.max(1,p-1))}>{t('admin.orders.pagination.prev', { defaultValue: 'Anterior' })}</Button>
-                      {pages[0] > 1 && (<><Button variant="outline" size="sm" onClick={()=>setContainersPage(1)}>1</Button><span className="px-1 text-slate-400">…</span></>)}
-                      {pages.map(p => (<Button key={p} variant={p===containersPage? 'default':'outline'} size="sm" onClick={()=>setContainersPage(p)}>{p}</Button>))}
-                      {pages[pages.length-1] < totalPages && (<><span className="px-1 text-slate-400">…</span><Button variant="outline" size="sm" onClick={()=>setContainersPage(totalPages)}>{totalPages}</Button></>)}
-                      <Button variant="outline" size="sm" disabled={containersPage>=totalPages} onClick={()=>setContainersPage(p=>Math.min(totalPages,p+1))}>{t('admin.orders.pagination.next', { defaultValue: 'Siguiente' })}</Button>
-                    </div>
-                  </div>
-                ); })()}
+                })()}
               </div>
             )}
             {containersLoading && <p className="text-center text-sm text-slate-500 mt-4">{t('venezuela.pedidos.loadingContainers')}</p>}
@@ -798,8 +807,8 @@ export default function VenezuelaOrdersTabContent() {
               <div className="space-y-3">
                 {ordersByBox.map((o) => (
                   <div key={o.id} className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 border border-slate-200 dark:border-slate-600">
-                      <div className="flex items-center gap-3">
-                        <div className="p-3 bg-blue-100 dark:bg-blue-800/40 rounded-lg"><Package className="h-5 w-5 text-blue-600 dark:text-blue-300" /></div>
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-blue-100 dark:bg-blue-800/40 rounded-lg"><Package className="h-5 w-5 text-blue-600 dark:text-blue-300" /></div>
                       <div className="space-y-1">
                         <h3 className="font-semibold text-slate-900 dark:text-white">#ORD-{o.id}</h3>
                         <p className="text-sm text-slate-600 dark:text-slate-400">{o.productName}</p>

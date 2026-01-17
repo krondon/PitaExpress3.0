@@ -742,9 +742,9 @@ export default function VenezuelaPedidosPage() {
                 <CardContent className="p-4 md:p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm md:text-base font-medium text-blue-700 dark:text-blue-300">{t('venezuela.pedidos.stats.pending')}</p>
+                      <p className="text-sm md:text-base font-medium text-blue-700 dark:text-blue-300">{t('venezuela.pedidos.stats.inProcess') || 'En Proceso'}</p>
                       <p className="text-2xl md:text-3xl font-bold text-blue-800 dark:text-blue-200">
-                        {orders.filter(o => o.state === 1).length}
+                        {orders.filter(o => o.state >= 5 && o.state <= 7).length}
                       </p>
                     </div>
                     <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 dark:bg-blue-800/30 rounded-lg flex items-center justify-center">
@@ -758,13 +758,13 @@ export default function VenezuelaPedidosPage() {
                 <CardContent className="p-4 md:p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm md:text-base font-medium text-orange-700 dark:text-orange-300">{t('venezuela.pedidos.stats.reviewing')}</p>
+                      <p className="text-sm md:text-base font-medium text-orange-700 dark:text-orange-300">{t('venezuela.pedidos.stats.inTransit') || 'En Tránsito'}</p>
                       <p className="text-2xl md:text-3xl font-bold text-orange-800 dark:text-orange-200">
-                        {orders.filter(o => o.state === 2).length}
+                        {orders.filter(o => o.state >= 8 && o.state <= 10).length}
                       </p>
                     </div>
                     <div className="w-10 h-10 md:w-12 md:h-12 bg-orange-100 dark:bg-orange-800/30 rounded-lg flex items-center justify-center">
-                      <AlertTriangle className="w-5 h-5 md:w-6 md:h-6 text-orange-600 dark:text-orange-400" />
+                      <Send className="w-5 h-5 md:w-6 md:h-6 text-orange-600 dark:text-orange-400" />
                     </div>
                   </div>
                 </CardContent>
@@ -774,9 +774,9 @@ export default function VenezuelaPedidosPage() {
                 <CardContent className="p-4 md:p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm md:text-base font-medium text-blue-700 dark:text-blue-300">{t('venezuela.pedidos.stats.quoted')}</p>
+                      <p className="text-sm md:text-base font-medium text-blue-700 dark:text-blue-300">{t('venezuela.pedidos.stats.received') || 'Recibidos'}</p>
                       <p className="text-2xl md:text-3xl font-bold text-blue-800 dark:text-blue-200">
-                        {orders.filter(o => o.state === 3).length}
+                        {orders.filter(o => o.state >= 11 && o.state <= 12).length}
                       </p>
                     </div>
                     <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 dark:bg-blue-800/30 rounded-lg flex items-center justify-center">
@@ -790,13 +790,13 @@ export default function VenezuelaPedidosPage() {
                 <CardContent className="p-4 md:p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm md:text-base font-medium text-orange-700 dark:text-orange-300">{t('venezuela.pedidos.stats.processing')}</p>
+                      <p className="text-sm md:text-base font-medium text-orange-700 dark:text-orange-300">{t('venezuela.pedidos.stats.delivered') || 'Entregados'}</p>
                       <p className="text-2xl md:text-3xl font-bold text-orange-800 dark:text-orange-200">
-                        {orders.filter(o => o.state === 4).length}
+                        {orders.filter(o => o.state === 13).length}
                       </p>
                     </div>
                     <div className="w-10 h-10 md:w-12 md:h-12 bg-orange-100 dark:bg-orange-800/30 rounded-lg flex items-center justify-center">
-                      <Send className="w-5 h-5 md:w-6 md:h-6 text-orange-600 dark:text-orange-400" />
+                      <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-orange-600 dark:text-orange-400" />
                     </div>
                   </div>
                 </CardContent>
