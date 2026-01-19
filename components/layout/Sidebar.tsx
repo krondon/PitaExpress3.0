@@ -112,6 +112,20 @@ const VENEZUELA_MENU_ITEMS = [
     badge: null,
     color: 'text-orange-500',
     path: '/venezuela/pedidos'
+  },
+  {
+    id: 'tickets',
+    icon: Ticket,
+    badge: null,
+    color: 'text-orange-500',
+    path: '/venezuela/tickets'
+  },
+  {
+    id: 'chat',
+    icon: MessageSquare,
+    badge: null,
+    color: 'text-orange-500',
+    path: '/venezuela/chat'
   }
 ];
 
@@ -155,6 +169,13 @@ const getPagosMenuItems = (pending: number | null) => [
     badge: typeof pending === 'number' && pending > 0 ? pending : null,
     color: 'text-orange-500',
     path: '/pagos/validacion-pagos'
+  },
+  {
+    id: 'chat',
+    icon: MessageSquare,
+    badge: null,
+    color: 'text-orange-500',
+    path: '/pagos/chat'
   }
 ];
 
