@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -247,6 +247,7 @@ export function GroupInfoSheet({
                                                                     className={`w-full flex items-center gap-2 p-2 rounded transition-colors ${mounted && theme === 'dark' ? 'hover:bg-slate-600' : 'hover:bg-slate-100'}`}
                                                                 >
                                                                     <Avatar className="w-6 h-6">
+                                                                        <AvatarImage src={user.avatar_url || ''} />
                                                                         <AvatarFallback className="bg-blue-500 text-white text-xs">
                                                                             {user.name.charAt(0)}
                                                                         </AvatarFallback>
@@ -284,6 +285,7 @@ export function GroupInfoSheet({
                                                         className={`flex items-center gap-3 p-2 rounded-lg ${mounted && theme === 'dark' ? 'bg-slate-700/50' : 'bg-slate-50'}`}
                                                     >
                                                         <Avatar className="w-10 h-10">
+                                                            <AvatarImage src={member.user_avatar || ''} />
                                                             <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
                                                                 {(member.user_name || 'U').charAt(0).toUpperCase()}
                                                             </AvatarFallback>

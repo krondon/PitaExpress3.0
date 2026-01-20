@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -157,24 +157,30 @@ export function CreateGroupModal({
                 <div className="space-y-4 py-4">
                     {/* Group Name */}
                     <div className="space-y-2">
-                        <Label htmlFor="groupName" className={mounted && theme === 'dark' ? 'text-slate-200' : ''}>
-                            {t('chat.groups.create.name') || 'Nombre del grupo'} *
-                        </Label>
+                        <div className="flex justify-between">
+                            <Label htmlFor="groupName" className={mounted && theme === 'dark' ? 'text-slate-200' : ''}>
+                                {t('chat.groups.create.name') || 'Nombre del grupo'} *
+                            </Label>
+                            <span className="text-xs text-slate-500">{groupName.length}/30</span>
+                        </div>
                         <Input
                             id="groupName"
                             value={groupName}
                             onChange={(e) => setGroupName(e.target.value)}
                             placeholder={t('chat.groups.create.namePlaceholder') || 'Ej: Equipo de ventas'}
                             className={mounted && theme === 'dark' ? 'bg-slate-700 border-slate-600' : ''}
-                            maxLength={50}
+                            maxLength={30}
                         />
                     </div>
 
                     {/* Group Description */}
                     <div className="space-y-2">
-                        <Label htmlFor="groupDescription" className={mounted && theme === 'dark' ? 'text-slate-200' : ''}>
-                            {t('chat.groups.create.descriptionLabel') || 'Descripción (opcional)'}
-                        </Label>
+                        <div className="flex justify-between">
+                            <Label htmlFor="groupDescription" className={mounted && theme === 'dark' ? 'text-slate-200' : ''}>
+                                {t('chat.groups.create.descriptionLabel') || 'Descripción (opcional)'}
+                            </Label>
+                            <span className="text-xs text-slate-500">{groupDescription.length}/100</span>
+                        </div>
                         <Textarea
                             id="groupDescription"
                             value={groupDescription}
@@ -182,7 +188,7 @@ export function CreateGroupModal({
                             placeholder={t('chat.groups.create.descriptionPlaceholder') || 'Describe el propósito del grupo...'}
                             className={`resize-none ${mounted && theme === 'dark' ? 'bg-slate-700 border-slate-600' : ''}`}
                             rows={2}
-                            maxLength={200}
+                            maxLength={100}
                         />
                     </div>
 
@@ -248,6 +254,7 @@ export function CreateGroupModal({
                                                     className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
                                                 />
                                                 <Avatar className="w-9 h-9">
+                                                    <AvatarImage src={user.avatar_url || ''} />
                                                     <AvatarFallback className={`${getRoleBadgeColor(user.role)} text-white text-sm`}>
                                                         {user.name.charAt(0).toUpperCase()}
                                                     </AvatarFallback>
