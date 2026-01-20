@@ -40,6 +40,7 @@ interface GroupInfoSheetProps {
     currentUserId: string;
     onLeaveGroup?: () => void;
     onDeleteGroup?: () => void;
+    isOwner?: boolean;
 }
 
 export function GroupInfoSheet({
@@ -50,6 +51,7 @@ export function GroupInfoSheet({
     currentUserId,
     onLeaveGroup,
     onDeleteGroup,
+    isOwner = false,
 }: GroupInfoSheetProps) {
     const [members, setMembers] = useState<ChatGroupMember[]>([]);
     const [loading, setLoading] = useState(true);
@@ -59,6 +61,8 @@ export function GroupInfoSheet({
     const [showAddMembers, setShowAddMembers] = useState(false);
     const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [removeMemberDialogOpen, setRemoveMemberDialogOpen] = useState(false);
+    const [memberToRemove, setMemberToRemove] = useState<string | null>(null);
     const [removing, setRemoving] = useState<string | null>(null);
     const [adding, setAdding] = useState<string | null>(null);
 
@@ -126,7 +130,7 @@ export function GroupInfoSheet({
     }, [searchQuery, showAddMembers, members, searchUsers]);
 
     const currentUserMember = members.find((m) => m.user_id === currentUserId);
-    const isAdmin = currentUserMember?.role === 'admin';
+    const isAdmin = currentUserMember?.role === 'admin' || isOwner;
 
     const handleAddMember = async (userId: string) => {
         setAdding(userId);
@@ -141,13 +145,16 @@ export function GroupInfoSheet({
         setAdding(null);
     };
 
-    const handleRemoveMember = async (userId: string) => {
-        setRemoving(userId);
-        const success = await removeMember(groupId, userId);
+    const confirmRemoveMember = async () => {
+        if (!memberToRemove) return;
+        setRemoving(memberToRemove);
+        const success = await removeMember(groupId, memberToRemove);
         if (success) {
-            setMembers((prev) => prev.filter((m) => m.user_id !== userId));
+            setMembers((prev) => prev.filter((m) => m.user_id !== memberToRemove));
         }
         setRemoving(null);
+        setRemoveMemberDialogOpen(false);
+        setMemberToRemove(null);
     };
 
     const handleLeaveGroup = async () => {
@@ -303,8 +310,11 @@ export function GroupInfoSheet({
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                onClick={() => handleRemoveMember(member.user_id)}
                                                                 disabled={removing === member.user_id}
+                                                                onClick={() => {
+                                                                    setMemberToRemove(member.user_id);
+                                                                    setRemoveMemberDialogOpen(true);
+                                                                }}
                                                                 className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
                                                             >
                                                                 {removing === member.user_id ? (
@@ -333,7 +343,7 @@ export function GroupInfoSheet({
                                             {t('chat.groups.info.leaveGroup') || 'Salir del grupo'}
                                         </Button>
 
-                                        {isAdmin && (
+                                        {isOwner && (
                                             <Button
                                                 variant="outline"
                                                 className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -449,6 +459,28 @@ export function GroupInfoSheet({
                             className="bg-red-600 hover:bg-red-700"
                         >
                             {t('chat.groups.delete.confirm') || 'Eliminar'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            {/* Remove Member Dialog */}
+            <AlertDialog open={removeMemberDialogOpen} onOpenChange={setRemoveMemberDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {t('chat.groups.members.remove.title') || '¿Eliminar miembro?'}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('chat.groups.members.remove.description') || 'Este usuario será eliminado del grupo.'}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>{t('common.cancel') || 'Cancelar'}</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmRemoveMember}
+                            className="bg-red-600 hover:bg-red-700"
+                        >
+                            {t('common.confirm') || 'Eliminar'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

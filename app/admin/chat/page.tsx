@@ -192,6 +192,7 @@ export default function AdminChatPage() {
                     groupId={selectedGroupId || ''}
                     currentUserId={adminId || ''}
                     groupName={groups.find(g => g.id === selectedGroupId)?.name || ''}
+                    isOwner={groups.find(g => g.id === selectedGroupId)?.created_by === adminId}
                     onLeaveGroup={() => {
                         setShowGroupInfo(false);
                         handleBackToList();

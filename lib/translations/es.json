@@ -3512,7 +3512,7 @@
       "info": {
         "title": "Info de Grupo",
         "description": "Descripción",
-        "members": "Miembros [{{count}}]",
+        "members": "Miembros",
         "addMember": "Añadir Miembro",
         "searchUsers": "Buscar usuarios...",
         "leaveGroup": "Salir del grupo",
@@ -3525,6 +3525,12 @@
           "photos": "Fotos",
           "documents": "Documentos",
           "empty": "No hay archivos compartidos"
+        }
+      },
+      "members": {
+        "remove": {
+          "title": "¿Eliminar miembro?",
+          "description": "Este usuario será eliminado del grupo. ¿Estás seguro?"
         }
       }
     },
