@@ -94,7 +94,7 @@ export function GroupInfoSheet({
         }
     }, [open, groupId]);
 
-    const { getGroupMembers, addMember, removeMember, promoteMember, leaveGroup, deleteGroup, searchUsers } = useChatGroups({ currentUserId });
+    const { getGroupMembers, addMember, removeMember, promoteMember, demoteMember, leaveGroup, deleteGroup, searchUsers, groups } = useChatGroups({ currentUserId });
     const { theme } = useTheme();
     const { t } = useTranslation();
     const [mounted, setMounted] = useState(false);
@@ -153,6 +153,14 @@ export function GroupInfoSheet({
 
     const handlePromoteMember = async (userId: string) => {
         const success = await promoteMember(groupId, userId);
+        if (success) {
+            const updatedMembers = await getGroupMembers(groupId);
+            setMembers(updatedMembers);
+        }
+    };
+
+    const handleDemoteMember = async (userId: string) => {
+        const success = await demoteMember(groupId, userId);
         if (success) {
             const updatedMembers = await getGroupMembers(groupId);
             setMembers(updatedMembers);
@@ -330,11 +338,19 @@ export function GroupInfoSheet({
                                                                     </Button>
                                                                 </DropdownMenuTrigger>
                                                                 <DropdownMenuContent align="end">
-                                                                    {member.role !== 'admin' && (
+                                                                    {member.role !== 'admin' ? (
                                                                         <DropdownMenuItem onClick={() => handlePromoteMember(member.user_id)}>
                                                                             <Crown className="mr-2 h-4 w-4" />
                                                                             {t('chat.groups.members.promote') || 'Hacer administrador'}
                                                                         </DropdownMenuItem>
+                                                                    ) : (
+                                                                        // Only show demote if the target is NOT the group owner
+                                                                        groups.find(g => g.id === groupId)?.created_by !== member.user_id && (
+                                                                            <DropdownMenuItem onClick={() => handleDemoteMember(member.user_id)}>
+                                                                                <UserMinus className="mr-2 h-4 w-4" />
+                                                                                {t('chat.groups.members.demote') || 'Quitar administrador'}
+                                                                            </DropdownMenuItem>
+                                                                        )
                                                                     )}
                                                                     <DropdownMenuItem
                                                                         className="text-red-600 focus:text-red-600 focus:bg-red-50"

@@ -3539,6 +3539,7 @@
       },
       "members": {
         "promote": "Hacer administrador",
+        "demote": "Quitar administrador",
         "remove": {
           "title": "¿Eliminar miembro?",
           "description": "Este usuario será eliminado del grupo. ¿Estás seguro?"

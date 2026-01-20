@@ -22,6 +22,7 @@ interface UseChatGroupsReturn {
     updateGroup: (groupId: string, updates: Partial<Pick<ChatGroup, 'name' | 'description' | 'avatar_url'>>) => Promise<boolean>;
     addMember: (groupId: string, userId: string) => Promise<boolean>;
     promoteMember: (groupId: string, userId: string) => Promise<boolean>;
+    demoteMember: (groupId: string, userId: string) => Promise<boolean>;
     removeMember: (groupId: string, userId: string) => Promise<boolean>;
     leaveGroup: (groupId: string) => Promise<boolean>;
     getGroupMembers: (groupId: string) => Promise<ChatGroupMember[]>;
@@ -223,6 +224,27 @@ export function useChatGroups({ currentUserId }: UseChatGroupsOptions): UseChatG
         }
     }, [currentUserId, supabase]);
 
+    // Degradar admin a miembro
+    const demoteMember = useCallback(async (groupId: string, userId: string): Promise<boolean> => {
+        if (!currentUserId) return false;
+
+        try {
+            const { error: updateError } = await supabase
+                .from('chat_group_members')
+                .update({ role: 'member' })
+                .eq('group_id', groupId)
+                .eq('user_id', userId);
+
+            if (updateError) throw updateError;
+
+            return true;
+        } catch (err: any) {
+            console.error('[useChatGroups] Error demoting member:', err);
+            setError(err.message || 'Error al degradar miembro');
+            return false;
+        }
+    }, [currentUserId, supabase]);
+
     // Eliminar miembro
     const removeMember = useCallback(async (groupId: string, userId: string): Promise<boolean> => {
         if (!currentUserId) return false;
@@ -336,6 +358,7 @@ export function useChatGroups({ currentUserId }: UseChatGroupsOptions): UseChatG
         updateGroup,
         addMember,
         promoteMember,
+        demoteMember,
         removeMember,
         leaveGroup,
         getGroupMembers,
