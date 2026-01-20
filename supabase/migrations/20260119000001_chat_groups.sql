@@ -476,3 +476,33 @@ BEGIN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_group_members;
   END IF;
 END $$;
+
+-- ============================================
+-- 12. FUNCIÓN: Obtener detalles de usuarios por IDs
+-- ============================================
+
+CREATE OR REPLACE FUNCTION get_chat_users_by_ids(
+  user_ids UUID[]
+)
+RETURNS TABLE (
+  user_id UUID,
+  email TEXT,
+  name TEXT,
+  role TEXT,
+  avatar_url TEXT
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    au.id,
+    au.email::TEXT,
+    COALESCE(au.raw_user_meta_data->>'name', au.email)::TEXT as user_name,
+    COALESCE(ul.user_level, 'unknown')::TEXT as user_role,
+    (au.raw_user_meta_data->>'avatar_url')::TEXT as avatar
+  FROM auth.users au
+  LEFT JOIN userlevel ul ON ul.id = au.id
+  WHERE au.id = ANY(user_ids);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION get_chat_users_by_ids(UUID[]) TO authenticated;

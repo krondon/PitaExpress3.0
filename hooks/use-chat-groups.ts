@@ -259,17 +259,20 @@ export function useChatGroups({ currentUserId }: UseChatGroupsOptions): UseChatG
             const memberIds = (data || []).map(m => m.user_id);
             if (memberIds.length === 0) return [];
 
-            // Fetch user info from userlevel or auth
-            const { data: usersData } = await supabase
-                .from('userlevel')
-                .select('id, user_level')
-                .in('id', memberIds);
+            // Fetch user info using RPC to get real names
+            const { data: usersData, error: rpcError } = await supabase
+                .rpc('get_chat_users_by_ids', { user_ids: memberIds });
 
-            const userMap = new Map((usersData || []).map(u => [u.id, u]));
+            if (rpcError) throw rpcError;
+
+            // Map user details
+            const userMap = new Map<string, any>((usersData || []).map((u: any) => [u.user_id, u]));
 
             return (data || []).map(member => ({
                 ...member,
-                user_name: userMap.get(member.user_id)?.user_level || 'Usuario',
+                user_name: userMap.get(member.user_id)?.name || 'Usuario',
+                user_email: userMap.get(member.user_id)?.email,
+                user_avatar: userMap.get(member.user_id)?.avatar_url,
             }));
         } catch (err: any) {
             console.error('[useChatGroups] Error fetching members:', err);

@@ -14,13 +14,22 @@ import { useChatRealtime } from '@/hooks/use-chat-realtime';
 import { useChatTyping } from '@/hooks/use-chat-typing';
 import { useAdminContext } from '@/lib/AdminContext';
 import { useNotifications } from '@/hooks/use-notifications';
-import { MessageSquare, ArrowLeft, Users } from 'lucide-react';
+import { MessageSquare, ArrowLeft, Users, Info } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import type { ChatMessage } from '@/lib/types/chat';
+import type { ChatMessage, ChatGroupMember } from '@/lib/types/chat';
 import { useTheme } from 'next-themes';
 import { useTranslation } from '@/hooks/useTranslation';
+import { GroupInfoSheet } from '@/components/chat/GroupInfoSheet';
+import { useChatGroups } from '@/hooks/use-chat-groups';
+import React from 'react';
 
 export default function AdminChatPage() {
+    // 1. Estados de Navegación
+    const [view, setView] = useState<'list' | 'chat'>('list');
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+    const [selectedUserName, setSelectedUserName] = useState<string>('');
+
     const [sidebarExpanded, setSidebarExpanded] = useState(true);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { adminId } = useAdminContext();
@@ -33,11 +42,44 @@ export default function AdminChatPage() {
         setMounted(true);
     }, []);
 
-    // Estado de navegación: 'list' o 'chat'
-    const [view, setView] = useState<'list' | 'chat'>('list');
-    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-    const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-    const [selectedUserName, setSelectedUserName] = useState<string>('');
+    // Group Info State
+    const [showGroupInfo, setShowGroupInfo] = useState(false);
+    const [groupMembers, setGroupMembers] = useState<ChatGroupMember[]>([]);
+
+    const { groups, getGroupMembers } = useChatGroups({ currentUserId: adminId || '' });
+
+    // Cargar miembros del grupo cuando se selecciona
+    useEffect(() => {
+        if (selectedGroupId && view === 'chat') {
+            getGroupMembers(selectedGroupId).then(members => {
+                setGroupMembers(members);
+            });
+        } else {
+            setGroupMembers([]);
+        }
+    }, [selectedGroupId, view, getGroupMembers]);
+
+    // Calcular subtítulo del chat
+    const chatSubtitle = React.useMemo(() => {
+        if (selectedGroupId && groupMembers.length > 0) {
+            const names = groupMembers
+                .filter(m => m.user_id !== adminId)
+                // Usar user_name si existe, sino email
+                .map(m => m.user_name || (m.user_email?.split('@')[0] || 'Usuario'))
+                .slice(0, 5);
+
+            if (names.length === 0) return 'Solo tú';
+            // Si hay más de 5 mostrados, indicar cuántos faltan
+            const remaining = groupMembers.filter(m => m.user_id !== adminId).length - names.length;
+            const suffix = remaining > 0 ? ` y ${remaining} más...` : '';
+            return names.join(', ') + suffix;
+        } else if (selectedGroupId) {
+            return 'Cargando miembros...';
+        }
+        return t('chat.china.subtitle');
+    }, [selectedGroupId, groupMembers, adminId, t]);
+
+
 
     // Notificaciones
     const { uiItems: notificationsList, unreadCount, markAllAsRead } = useNotifications({
@@ -99,6 +141,8 @@ export default function AdminChatPage() {
         setView('chat');
     }, []);
 
+
+
     const handleBackToList = useCallback(() => {
         setView('list');
         setSelectedUserId(null);
@@ -139,6 +183,25 @@ export default function AdminChatPage() {
 
             <main className={`flex-1 transition-all duration-300 ${sidebarExpanded ? 'lg:ml-72 lg:w-[calc(100%-18rem)]' : 'lg:ml-24 lg:w-[calc(100%-6rem)]'
                 }`}>
+                {/* ... Header y Contenido ... */}
+
+                {/* Componente Group Info Sheet (fuera del flujo visual principal pero dentro del componente) */}
+                <GroupInfoSheet
+                    open={showGroupInfo}
+                    onOpenChange={setShowGroupInfo}
+                    groupId={selectedGroupId || ''}
+                    currentUserId={adminId || ''}
+                    groupName={groups.find(g => g.id === selectedGroupId)?.name || ''}
+                    onLeaveGroup={() => {
+                        setShowGroupInfo(false);
+                        handleBackToList();
+                    }}
+                    onDeleteGroup={() => {
+                        setShowGroupInfo(false);
+                        handleBackToList();
+                    }}
+                />
+
                 <Header
                     notifications={unreadCount}
                     onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -202,10 +265,25 @@ export default function AdminChatPage() {
                                         <div className="p-2 bg-blue-500 rounded-full">
                                             <MessageSquare className="h-5 w-5 text-white" />
                                         </div>
-                                        <div>
-                                            <CardTitle className={`text-base font-semibold ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{selectedUserName}</CardTitle>
-                                            <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('chat.china.subtitle')}</p>
+                                        <div className="flex-1 min-w-0">
+                                            <CardTitle className={`text-base font-semibold truncate ${mounted && theme === 'dark' ? 'text-white' : ''}`}>
+                                                {selectedGroupId ? (groups.find(g => g.id === selectedGroupId)?.name || selectedUserName) : selectedUserName}
+                                            </CardTitle>
+                                            <p className={`text-xs truncate ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
+                                                {chatSubtitle}
+                                            </p>
                                         </div>
+
+                                        {selectedGroupId && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => setShowGroupInfo(true)}
+                                                className={`ml-2 ${mounted && theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-blue-100 text-slate-600'}`}
+                                            >
+                                                <Info className="h-5 w-5" />
+                                            </Button>
+                                        )}
                                     </div>
                                 </CardHeader>
                                 <CardContent className="p-0">
