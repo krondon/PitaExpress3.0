@@ -203,9 +203,12 @@ export function GroupInfoSheet({
                 <SheetContent className={`w-80 sm:w-96 ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : ''}`}>
                     <SheetHeader>
                         <SheetTitle className={`flex items-center gap-2 ${mounted && theme === 'dark' ? 'text-white' : ''}`}>
-                            <div className="p-2 bg-purple-500 rounded-full">
-                                <Users className="h-4 w-4 text-white" />
-                            </div>
+                            <Avatar className="h-10 w-10">
+                                <AvatarImage src={groups.find(g => g.id === groupId)?.avatar_url || ''} />
+                                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-600 text-white flex items-center justify-center">
+                                    <Users className="h-5 w-5" />
+                                </AvatarFallback>
+                            </Avatar>
                             {groupName}
                         </SheetTitle>
                         <SheetDescription>

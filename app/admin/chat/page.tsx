@@ -21,6 +21,7 @@ import { useTheme } from 'next-themes';
 import { useTranslation } from '@/hooks/useTranslation';
 import { GroupInfoSheet } from '@/components/chat/GroupInfoSheet';
 import { useChatGroups } from '@/hooks/use-chat-groups';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import React from 'react';
 
 export default function AdminChatPage() {
@@ -263,9 +264,21 @@ export default function AdminChatPage() {
                                             <ArrowLeft className="h-4 w-4" />
                                         </Button>
 
-                                        <div className="p-2 bg-blue-500 rounded-full">
-                                            <MessageSquare className="h-5 w-5 text-white" />
-                                        </div>
+                                        {selectedGroupId ? (
+                                            <Avatar className="h-10 w-10">
+                                                <AvatarImage
+                                                    src={groups.find(g => g.id === selectedGroupId)?.avatar_url || ''}
+                                                    alt={groups.find(g => g.id === selectedGroupId)?.name}
+                                                />
+                                                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+                                                    <Users className="h-5 w-5 text-white" />
+                                                </AvatarFallback>
+                                            </Avatar>
+                                        ) : (
+                                            <div className="p-2 bg-blue-500 rounded-full">
+                                                <MessageSquare className="h-5 w-5 text-white" />
+                                            </div>
+                                        )}
                                         <div className="flex-1 min-w-0">
                                             <CardTitle className={`text-base font-semibold truncate ${mounted && theme === 'dark' ? 'text-white' : ''}`}>
                                                 {selectedGroupId ? (groups.find(g => g.id === selectedGroupId)?.name || selectedUserName) : selectedUserName}
