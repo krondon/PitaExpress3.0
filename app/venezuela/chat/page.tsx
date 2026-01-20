@@ -4,7 +4,6 @@ import { useState, useCallback, useEffect } from 'react';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ChatMessages } from '@/components/chat/ChatMessages';
 import { ChatInput } from '@/components/chat/ChatInput';
@@ -12,7 +11,8 @@ import { ChatList } from '@/components/chat/ChatList';
 import { useChatMessages } from '@/hooks/use-chat-messages';
 import { useChatRealtime } from '@/hooks/use-chat-realtime';
 import { useChatTyping } from '@/hooks/use-chat-typing';
-import { useAdminContext } from '@/lib/AdminContext';
+import { useVzlaContext } from '@/lib/VzlaContext';
+import { useVzlaLayoutContext } from '@/lib/VzlaLayoutContext';
 import { useNotifications } from '@/hooks/use-notifications';
 import { MessageSquare, ArrowLeft, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -20,10 +20,9 @@ import type { ChatMessage } from '@/lib/types/chat';
 import { useTheme } from 'next-themes';
 import { useTranslation } from '@/hooks/useTranslation';
 
-export default function AdminChatPage() {
-    const [sidebarExpanded, setSidebarExpanded] = useState(true);
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const { adminId } = useAdminContext();
+export default function VenezuelaChatPage() {
+    const { sidebarExpanded, setSidebarExpanded, isMobileMenuOpen, toggleMobileMenu } = useVzlaLayoutContext();
+    const { vzlaId } = useVzlaContext();
     const router = useRouter();
     const { theme } = useTheme();
     const { t } = useTranslation();
@@ -36,13 +35,13 @@ export default function AdminChatPage() {
     // Estado de navegación: 'list' o 'chat'
     const [view, setView] = useState<'list' | 'chat'>('list');
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-    const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
     const [selectedUserName, setSelectedUserName] = useState<string>('');
+    const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
     // Notificaciones
     const { uiItems: notificationsList, unreadCount, markAllAsRead } = useNotifications({
-        role: 'admin',
-        userId: adminId,
+        role: 'venezuela',
+        userId: vzlaId,
         limit: 10,
         enabled: true
     });
@@ -59,22 +58,22 @@ export default function AdminChatPage() {
     } = useChatMessages({
         conversationUserId: selectedUserId,
         groupId: selectedGroupId,
-        currentUserId: adminId ?? null,
-        currentUserRole: 'admin',
+        currentUserId: vzlaId ?? null,
+        currentUserRole: 'venezuela',
     });
 
     const { isOtherUserTyping, notifyTyping, stopTyping } = useChatTyping({
-        currentUserId: adminId ?? null,
+        currentUserId: vzlaId ?? null,
         conversationUserId: selectedUserId,
     });
 
     // Callback estable para nuevos mensajes
     const handleNewMessage = useCallback((message: ChatMessage) => {
-        // Mensajes individuales
+        // Si estamos en una conversación individual y el mensaje es de ese usuario
         if (selectedUserId && message.sender_id === selectedUserId && !message.group_id) {
             addMessage(message);
         }
-        // Mensajes de grupo
+        // Si estamos en un grupo y el mensaje es de ese grupo
         if (selectedGroupId && message.group_id === selectedGroupId) {
             addMessage(message);
         }
@@ -82,12 +81,12 @@ export default function AdminChatPage() {
 
     // Realtime: escuchar nuevos mensajes
     useChatRealtime({
-        currentUserId: adminId ?? null,
+        currentUserId: vzlaId ?? null,
         onNewMessage: handleNewMessage,
     });
 
     const handleSelectConversation = useCallback((conversationId: string, name: string) => {
-        // Parsear el formato: 'user_UUID' o 'group_UUID'
+        // Determinar si es grupo o usuario
         if (conversationId.startsWith('group_')) {
             setSelectedGroupId(conversationId.replace('group_', ''));
             setSelectedUserId(null);
@@ -133,23 +132,23 @@ export default function AdminChatPage() {
                 isExpanded={sidebarExpanded}
                 setIsExpanded={setSidebarExpanded}
                 isMobileMenuOpen={isMobileMenuOpen}
-                onMobileMenuClose={() => setIsMobileMenuOpen(false)}
-                userRole="admin"
+                onMobileMenuClose={() => toggleMobileMenu()}
+                userRole="venezuela"
             />
 
             <main className={`flex-1 transition-all duration-300 ${sidebarExpanded ? 'lg:ml-72 lg:w-[calc(100%-18rem)]' : 'lg:ml-24 lg:w-[calc(100%-6rem)]'
                 }`}>
                 <Header
                     notifications={unreadCount}
-                    onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    title={view === 'list' ? t('chat.list.title') : t('chat.china.title', { name: selectedUserName })}
-                    subtitle={view === 'list' ? t('chat.list.subtitle') : t('chat.china.subtitle')}
+                    onMenuToggle={toggleMobileMenu}
+                    title={view === 'list' ? t('chat.list.title') : (isGroupChat ? selectedUserName : t('chat.direct.title', { name: selectedUserName }))}
+                    subtitle={view === 'list' ? t('chat.list.subtitle') : (isGroupChat ? t('chat.group.subtitle') : t('chat.direct.subtitle'))}
                     notificationsItems={notificationsList}
                     onMarkAllAsRead={async () => {
                         await markAllAsRead();
                     }}
                     onOpenNotifications={() => {
-                        router.push('/admin/gestion');
+                        router.push('/venezuela/pedidos');
                     }}
                 />
 
@@ -174,8 +173,8 @@ export default function AdminChatPage() {
                                 <CardContent>
                                     <ChatList
                                         onSelectConversation={handleSelectConversation}
-                                        selectedUserId={selectedUserId ? `user_${selectedUserId}` : (selectedGroupId ? `group_${selectedGroupId}` : null)}
-                                        currentUserId={adminId ?? null}
+                                        selectedUserId={selectedUserId || selectedGroupId}
+                                        currentUserId={vzlaId ?? null}
                                     />
                                 </CardContent>
                             </Card>
@@ -199,12 +198,20 @@ export default function AdminChatPage() {
                                             <ArrowLeft className="h-4 w-4" />
                                         </Button>
 
-                                        <div className="p-2 bg-blue-500 rounded-full">
-                                            <MessageSquare className="h-5 w-5 text-white" />
+                                        <div className={`p-2 rounded-full ${isGroupChat ? 'bg-purple-500' : 'bg-blue-500'}`}>
+                                            {isGroupChat ? (
+                                                <Users className="h-5 w-5 text-white" />
+                                            ) : (
+                                                <MessageSquare className="h-5 w-5 text-white" />
+                                            )}
                                         </div>
                                         <div>
-                                            <CardTitle className={`text-base font-semibold ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{selectedUserName}</CardTitle>
-                                            <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('chat.china.subtitle')}</p>
+                                            <CardTitle className={`text-base font-semibold ${mounted && theme === 'dark' ? 'text-white' : ''}`}>
+                                                {selectedUserName}
+                                            </CardTitle>
+                                            <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
+                                                {isGroupChat ? t('chat.group.subtitle') : t('chat.direct.subtitle')}
+                                            </p>
                                         </div>
                                     </div>
                                 </CardHeader>
@@ -212,7 +219,7 @@ export default function AdminChatPage() {
                                     <div className="flex flex-col h-[calc(100vh-12rem)]">
                                         <ChatMessages
                                             messages={messages}
-                                            currentUserId={adminId || ''}
+                                            currentUserId={vzlaId || ''}
                                             isOtherUserTyping={isOtherUserTyping}
                                             otherUserName={selectedUserName}
                                             loading={loading}
