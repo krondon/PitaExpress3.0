@@ -56,11 +56,14 @@ export function useChatGroups({ currentUserId }: UseChatGroupsOptions): UseChatG
                 .eq('chat_group_members.user_id', currentUserId)
                 .order('updated_at', { ascending: false });
 
-            if (fetchError) throw fetchError;
+            if (fetchError) {
+                console.error('[useChatGroups] fetchError:', fetchError.message, fetchError.code, fetchError.details);
+                throw fetchError;
+            }
 
             setGroups(data || []);
         } catch (err: any) {
-            console.error('[useChatGroups] Error fetching groups:', err);
+            console.error('[useChatGroups] Error fetching groups:', err?.message || err, JSON.stringify(err));
             setError(err.message || 'Error al cargar grupos');
         } finally {
             setLoading(false);
@@ -274,22 +277,27 @@ export function useChatGroups({ currentUserId }: UseChatGroupsOptions): UseChatG
         }
     }, [supabase]);
 
-    // Buscar usuarios para añadir al chat
+    // Buscar usuarios para añadir al chat (query vacío = todos los usuarios)
     const searchUsers = useCallback(async (query: string): Promise<SearchUserResult[]> => {
-        if (!currentUserId || query.length < 2) return [];
+        if (!currentUserId) return [];
+        // Si query tiene menos de 2 caracteres y no está vacío, no buscar
+        if (query.length > 0 && query.length < 2) return [];
 
         try {
             const { data, error: searchError } = await supabase.rpc('search_chat_users', {
-                search_query: query,
+                search_query: query || '', // query vacío = todos
                 current_user_id: currentUserId,
-                result_limit: 20,
+                result_limit: query ? 20 : 50, // más resultados si es carga inicial
             });
 
-            if (searchError) throw searchError;
+            if (searchError) {
+                console.error('[useChatGroups] searchError:', searchError.message, searchError.code, searchError.details);
+                throw searchError;
+            }
 
             return (data || []) as SearchUserResult[];
         } catch (err: any) {
-            console.error('[useChatGroups] Error searching users:', err);
+            console.error('[useChatGroups] Error searching users:', err?.message || err, JSON.stringify(err));
             return [];
         }
     }, [currentUserId, supabase]);

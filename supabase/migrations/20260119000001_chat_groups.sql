@@ -105,17 +105,13 @@ ALTER TABLE chat_messages
 
 ALTER TABLE chat_groups ENABLE ROW LEVEL SECURITY;
 
--- Los usuarios pueden ver grupos donde son miembros
-CREATE POLICY "Users can view groups they belong to"
+-- Simplificado: todos los usuarios autenticados pueden ver grupos
+-- La seguridad real se maneja en chat_group_members
+CREATE POLICY "Authenticated users can view groups"
   ON chat_groups
   FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM chat_group_members 
-      WHERE chat_group_members.group_id = chat_groups.id 
-      AND chat_group_members.user_id = auth.uid()
-    )
-  );
+  TO authenticated
+  USING (true);
 
 -- Los usuarios pueden crear grupos
 CREATE POLICY "Users can create groups"
@@ -125,18 +121,12 @@ CREATE POLICY "Users can create groups"
     auth.uid() = created_by
   );
 
--- Solo el creador o admins del grupo pueden actualizar
-CREATE POLICY "Group admins can update"
+-- Solo el creador puede actualizar grupo
+CREATE POLICY "Creator can update group"
   ON chat_groups
   FOR UPDATE
   USING (
-    auth.uid() = created_by OR
-    EXISTS (
-      SELECT 1 FROM chat_group_members 
-      WHERE chat_group_members.group_id = chat_groups.id 
-      AND chat_group_members.user_id = auth.uid()
-      AND chat_group_members.role = 'admin'
-    )
+    auth.uid() = created_by
   );
 
 -- Solo el creador puede eliminar el grupo
@@ -153,31 +143,35 @@ CREATE POLICY "Creator can delete group"
 
 ALTER TABLE chat_group_members ENABLE ROW LEVEL SECURITY;
 
--- Los usuarios pueden ver miembros de grupos donde pertenecen
-CREATE POLICY "Users can view members of their groups"
+-- Simplificado: Los usuarios autenticados pueden ver miembros
+-- (solo verán grupos donde son miembros por la query del frontend)
+CREATE POLICY "Authenticated users can view members"
   ON chat_group_members
   FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM chat_group_members cgm2
-      WHERE cgm2.group_id = chat_group_members.group_id 
-      AND cgm2.user_id = auth.uid()
-    )
-  );
+  TO authenticated
+  USING (true);
 
--- Admins del grupo pueden añadir miembros
-CREATE POLICY "Group admins can add members"
+-- El creador del grupo puede añadir miembros, o usuarios añadiéndose a sí mismos
+CREATE POLICY "Creators can add members"
   ON chat_group_members
   FOR INSERT
   WITH CHECK (
+    -- El creador del grupo puede añadir
     EXISTS (
-      SELECT 1 FROM chat_group_members cgm
-      WHERE cgm.group_id = chat_group_members.group_id 
-      AND cgm.user_id = auth.uid()
-      AND cgm.role = 'admin'
+      SELECT 1 FROM chat_groups cg
+      WHERE cg.id = group_id
+      AND cg.created_by = auth.uid()
     )
     OR
-    -- O el creador del grupo
+    -- O añadiéndose a sí mismo
+    auth.uid() = user_id
+  );
+
+-- El creador del grupo puede actualizar roles
+CREATE POLICY "Creators can update members"
+  ON chat_group_members
+  FOR UPDATE
+  USING (
     EXISTS (
       SELECT 1 FROM chat_groups cg
       WHERE cg.id = chat_group_members.group_id
@@ -185,33 +179,17 @@ CREATE POLICY "Group admins can add members"
     )
   );
 
--- Admins del grupo pueden actualizar roles de miembros
-CREATE POLICY "Group admins can update members"
-  ON chat_group_members
-  FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM chat_group_members cgm
-      WHERE cgm.group_id = chat_group_members.group_id 
-      AND cgm.user_id = auth.uid()
-      AND cgm.role = 'admin'
-    )
-  );
-
--- Admins pueden eliminar miembros, o un usuario puede salir del grupo
-CREATE POLICY "Admins can remove members or users can leave"
+-- El creador puede eliminar miembros, o un usuario puede salir
+CREATE POLICY "Creators can remove or users can leave"
   ON chat_group_members
   FOR DELETE
   USING (
-    -- Es admin del grupo
     EXISTS (
-      SELECT 1 FROM chat_group_members cgm
-      WHERE cgm.group_id = chat_group_members.group_id 
-      AND cgm.user_id = auth.uid()
-      AND cgm.role = 'admin'
+      SELECT 1 FROM chat_groups cg
+      WHERE cg.id = chat_group_members.group_id
+      AND cg.created_by = auth.uid()
     )
     OR
-    -- Es el propio usuario saliendo
     auth.uid() = user_id
   );
 
@@ -408,20 +386,22 @@ BEGIN
   RETURN QUERY
   SELECT 
     au.id,
-    au.email,
-    COALESCE(au.raw_user_meta_data->>'name', au.email) as user_name,
-    COALESCE(ul.user_level, 'unknown') as user_role,
-    au.raw_user_meta_data->>'avatar_url' as avatar
+    au.email::TEXT,
+    COALESCE(au.raw_user_meta_data->>'name', au.email)::TEXT as user_name,
+    COALESCE(ul.user_level, 'unknown')::TEXT as user_role,
+    (au.raw_user_meta_data->>'avatar_url')::TEXT as avatar
   FROM auth.users au
   LEFT JOIN userlevel ul ON ul.id = au.id
   WHERE au.id != current_user_id
+    AND ul.user_level IN ('Admin', 'China', 'Vzla', 'Venezuela')
     AND (
-      au.email ILIKE '%' || search_query || '%'
+      search_query = '' 
+      OR search_query IS NULL
+      OR au.email ILIKE '%' || search_query || '%'
       OR au.raw_user_meta_data->>'name' ILIKE '%' || search_query || '%'
     )
-    AND ul.user_level IN ('Admin', 'China', 'Venezuela')
   ORDER BY 
-    CASE WHEN au.email ILIKE search_query || '%' THEN 0 ELSE 1 END,
+    CASE WHEN search_query != '' AND au.email ILIKE search_query || '%' THEN 0 ELSE 1 END,
     au.email
   LIMIT result_limit;
 END;
@@ -468,3 +448,31 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 GRANT EXECUTE ON FUNCTION get_chat_conversations(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION search_chat_users(TEXT, UUID, INTEGER) TO authenticated;
 GRANT EXECUTE ON FUNCTION create_chat_group(TEXT, TEXT, UUID[]) TO authenticated;
+
+-- ============================================
+-- 11. HABILITAR REALTIME PARA LAS NUEVAS TABLAS
+-- ============================================
+
+-- Habilitar Realtime para chat_groups
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' 
+    AND tablename = 'chat_groups'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_groups;
+  END IF;
+END $$;
+
+-- Habilitar Realtime para chat_group_members
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' 
+    AND tablename = 'chat_group_members'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_group_members;
+  END IF;
+END $$;

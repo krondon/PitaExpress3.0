@@ -16,7 +16,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, Users, X, Loader2, Plus, Check } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Search, Users, Loader2, Check } from 'lucide-react';
 import { useChatGroups } from '@/hooks/use-chat-groups';
 import type { SearchUserResult } from '@/lib/types/chat';
 import { useTheme } from 'next-themes';
@@ -29,6 +30,20 @@ interface CreateGroupModalProps {
     onGroupCreated?: (groupId: string, groupName: string) => void;
 }
 
+// Colores por rol para diferenciar visualmente
+const roleColors: Record<string, string> = {
+    'Admin': 'bg-purple-500',
+    'China': 'bg-red-500',
+    'Vzla': 'bg-yellow-500',
+    'Venezuela': 'bg-yellow-500',
+    'Pagos': 'bg-green-500',
+    'Client': 'bg-blue-500',
+};
+
+const getRoleBadgeColor = (role: string) => {
+    return roleColors[role] || 'bg-slate-500';
+};
+
 export function CreateGroupModal({
     open,
     onOpenChange,
@@ -38,9 +53,9 @@ export function CreateGroupModal({
     const [groupName, setGroupName] = useState('');
     const [groupDescription, setGroupDescription] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedMembers, setSelectedMembers] = useState<SearchUserResult[]>([]);
-    const [searchResults, setSearchResults] = useState<SearchUserResult[]>([]);
-    const [searching, setSearching] = useState(false);
+    const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set());
+    const [allUsers, setAllUsers] = useState<SearchUserResult[]>([]);
+    const [loading, setLoading] = useState(false);
     const [creating, setCreating] = useState(false);
 
     const { searchUsers, createGroup } = useChatGroups({ currentUserId });
@@ -52,57 +67,64 @@ export function CreateGroupModal({
         setMounted(true);
     }, []);
 
+    // Cargar todos los usuarios al abrir el modal
+    useEffect(() => {
+        const loadUsers = async () => {
+            if (open && currentUserId) {
+                setLoading(true);
+                // Buscar con query vacío para obtener todos los usuarios
+                const results = await searchUsers('');
+                // Filtrar el usuario actual
+                const filtered = results.filter(u => u.user_id !== currentUserId);
+                setAllUsers(filtered);
+                setLoading(false);
+            }
+        };
+        loadUsers();
+    }, [open, currentUserId, searchUsers]);
+
     // Reset state when modal closes
     useEffect(() => {
         if (!open) {
             setGroupName('');
             setGroupDescription('');
             setSearchQuery('');
-            setSelectedMembers([]);
-            setSearchResults([]);
+            setSelectedMemberIds(new Set());
         }
     }, [open]);
 
-    // Debounced search
-    useEffect(() => {
-        const timer = setTimeout(async () => {
-            if (searchQuery.length >= 2) {
-                setSearching(true);
-                const results = await searchUsers(searchQuery);
-                // Filter out already selected members and current user
-                const filtered = results.filter(
-                    (u) =>
-                        u.user_id !== currentUserId &&
-                        !selectedMembers.some((m) => m.user_id === u.user_id)
-                );
-                setSearchResults(filtered);
-                setSearching(false);
+    // Filtrar usuarios por búsqueda
+    const filteredUsers = allUsers.filter(user => {
+        if (!searchQuery) return true;
+        const query = searchQuery.toLowerCase();
+        return (
+            user.name.toLowerCase().includes(query) ||
+            user.role.toLowerCase().includes(query) ||
+            user.email.toLowerCase().includes(query)
+        );
+    });
+
+    const handleToggleMember = useCallback((userId: string) => {
+        setSelectedMemberIds(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(userId)) {
+                newSet.delete(userId);
             } else {
-                setSearchResults([]);
+                newSet.add(userId);
             }
-        }, 300);
-        return () => clearTimeout(timer);
-    }, [searchQuery, currentUserId, selectedMembers, searchUsers]);
-
-    const handleAddMember = useCallback((user: SearchUserResult) => {
-        setSelectedMembers((prev) => [...prev, user]);
-        setSearchQuery('');
-        setSearchResults([]);
-    }, []);
-
-    const handleRemoveMember = useCallback((userId: string) => {
-        setSelectedMembers((prev) => prev.filter((m) => m.user_id !== userId));
+            return newSet;
+        });
     }, []);
 
     const handleCreateGroup = async () => {
-        if (!groupName.trim() || selectedMembers.length === 0) return;
+        if (!groupName.trim() || selectedMemberIds.size === 0) return;
 
         setCreating(true);
         try {
             const groupId = await createGroup({
                 name: groupName.trim(),
                 description: groupDescription.trim() || undefined,
-                member_ids: selectedMembers.map((m) => m.user_id),
+                member_ids: Array.from(selectedMemberIds),
             });
 
             if (groupId) {
@@ -116,11 +138,12 @@ export function CreateGroupModal({
         }
     };
 
-    const isValid = groupName.trim().length > 0 && selectedMembers.length > 0;
+    const isValid = groupName.trim().length > 0 && selectedMemberIds.size > 0;
+    const selectedUsers = allUsers.filter(u => selectedMemberIds.has(u.user_id));
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className={`sm:max-w-md ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : ''}`}>
+            <DialogContent className={`sm:max-w-lg ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : ''}`}>
                 <DialogHeader>
                     <DialogTitle className={`flex items-center gap-2 ${mounted && theme === 'dark' ? 'text-white' : ''}`}>
                         <Users className="h-5 w-5 text-purple-500" />
@@ -163,82 +186,109 @@ export function CreateGroupModal({
                         />
                     </div>
 
-                    {/* Member Search */}
+                    {/* Members Selection */}
                     <div className="space-y-2">
-                        <Label className={mounted && theme === 'dark' ? 'text-slate-200' : ''}>
-                            {t('chat.groups.create.members') || 'Miembros'} * ({selectedMembers.length} {t('chat.groups.create.selected') || 'seleccionados'})
-                        </Label>
+                        <div className="flex items-center justify-between">
+                            <Label className={mounted && theme === 'dark' ? 'text-slate-200' : ''}>
+                                {t('chat.groups.create.members') || 'Seleccionar miembros'} *
+                            </Label>
+                            <Badge variant="secondary" className="text-xs">
+                                {selectedMemberIds.size} {t('chat.groups.create.selected') || 'seleccionados'}
+                            </Badge>
+                        </div>
 
-                        {/* Selected Members */}
-                        {selectedMembers.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-2">
-                                {selectedMembers.map((member) => (
-                                    <Badge
-                                        key={member.user_id}
-                                        variant="secondary"
-                                        className="flex items-center gap-1 py-1 px-2"
-                                    >
-                                        <span className="max-w-[100px] truncate">{member.name}</span>
-                                        <button
-                                            onClick={() => handleRemoveMember(member.user_id)}
-                                            className="ml-1 hover:text-red-500 transition-colors"
-                                        >
-                                            <X className="h-3 w-3" />
-                                        </button>
-                                    </Badge>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Search Input */}
+                        {/* Search/Filter Input */}
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
                             <Input
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder={t('chat.groups.create.searchMembers') || 'Buscar usuarios para añadir...'}
+                                placeholder={t('chat.groups.create.filterUsers') || 'Filtrar usuarios...'}
                                 className={`pl-10 ${mounted && theme === 'dark' ? 'bg-slate-700 border-slate-600' : ''}`}
                             />
                         </div>
 
-                        {/* Search Results */}
-                        {(searching || searchResults.length > 0) && (
-                            <ScrollArea className={`h-32 rounded-md border p-2 ${mounted && theme === 'dark' ? 'border-slate-600 bg-slate-700/50' : 'bg-slate-50'}`}>
-                                {searching ? (
-                                    <div className="flex items-center justify-center h-full">
-                                        <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
-                                    </div>
-                                ) : (
-                                    <div className="space-y-1">
-                                        {searchResults.map((user) => (
-                                            <button
+                        {/* Users List with Checkboxes */}
+                        <ScrollArea className={`h-48 rounded-md border p-2 ${mounted && theme === 'dark' ? 'border-slate-600 bg-slate-700/50' : 'bg-slate-50'}`}>
+                            {loading ? (
+                                <div className="flex items-center justify-center h-full">
+                                    <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+                                </div>
+                            ) : filteredUsers.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center h-full text-slate-500">
+                                    <Users className="w-8 h-8 mb-2 opacity-50" />
+                                    <p className="text-sm">
+                                        {searchQuery
+                                            ? (t('chat.groups.create.noUsersFound') || 'No se encontraron usuarios')
+                                            : (t('chat.groups.create.noUsersAvailable') || 'No hay usuarios disponibles')
+                                        }
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-1">
+                                    {filteredUsers.map((user) => {
+                                        const isSelected = selectedMemberIds.has(user.user_id);
+                                        return (
+                                            <label
                                                 key={user.user_id}
-                                                onClick={() => handleAddMember(user)}
-                                                className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${mounted && theme === 'dark' ? 'hover:bg-slate-600' : 'hover:bg-slate-100'}`}
+                                                className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-all
+                                                    ${isSelected
+                                                        ? (mounted && theme === 'dark'
+                                                            ? 'bg-purple-900/40 border border-purple-500/50'
+                                                            : 'bg-purple-50 border border-purple-200')
+                                                        : (mounted && theme === 'dark'
+                                                            ? 'hover:bg-slate-600'
+                                                            : 'hover:bg-slate-100')
+                                                    }
+                                                `}
                                             >
-                                                <Avatar className="w-8 h-8">
-                                                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-xs">
+                                                <Checkbox
+                                                    checked={isSelected}
+                                                    onCheckedChange={() => handleToggleMember(user.user_id)}
+                                                    className="data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
+                                                />
+                                                <Avatar className="w-9 h-9">
+                                                    <AvatarFallback className={`${getRoleBadgeColor(user.role)} text-white text-sm`}>
                                                         {user.name.charAt(0).toUpperCase()}
                                                     </AvatarFallback>
                                                 </Avatar>
-                                                <div className="text-left flex-1">
-                                                    <p className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className={`text-sm font-medium truncate ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-800'}`}>
                                                         {user.name}
                                                     </p>
-                                                    <p className="text-xs text-slate-500">{user.role}</p>
+                                                    <p className="text-xs text-slate-500 truncate">{user.email}</p>
                                                 </div>
-                                                <Plus className="h-4 w-4 text-blue-500" />
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </ScrollArea>
-                        )}
+                                                <Badge
+                                                    variant="outline"
+                                                    className={`text-[10px] shrink-0 ${mounted && theme === 'dark' ? 'border-slate-600 text-slate-300' : ''}`}
+                                                >
+                                                    {user.role}
+                                                </Badge>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </ScrollArea>
 
-                        {searchQuery.length >= 2 && !searching && searchResults.length === 0 && (
-                            <p className="text-sm text-slate-500 text-center py-2">
-                                {t('chat.groups.create.noUsersFound') || 'No se encontraron usuarios'}
-                            </p>
+                        {/* Selected members summary */}
+                        {selectedUsers.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 pt-1">
+                                {selectedUsers.slice(0, 5).map((user) => (
+                                    <Badge
+                                        key={user.user_id}
+                                        variant="secondary"
+                                        className="text-xs py-0.5"
+                                    >
+                                        {user.name.split(' ')[0]}
+                                    </Badge>
+                                ))}
+                                {selectedUsers.length > 5 && (
+                                    <Badge variant="secondary" className="text-xs py-0.5">
+                                        +{selectedUsers.length - 5} más
+                                    </Badge>
+                                )}
+                            </div>
                         )}
                     </div>
                 </div>
