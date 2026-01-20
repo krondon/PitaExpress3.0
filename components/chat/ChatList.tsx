@@ -4,7 +4,7 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import {
     DropdownMenu,
@@ -609,6 +609,7 @@ export function ChatList({ onSelectConversation, selectedUserId, currentUserId }
                                     <div className="flex items-start gap-3">
                                         <div className="relative">
                                             <Avatar className="w-12 h-12 border-2 border-white shadow-sm">
+                                                <AvatarImage src={conv.avatar || ''} />
                                                 <AvatarFallback className={`text-white font-semibold ${conv.isGroup ? 'bg-gradient-to-br from-purple-500 to-pink-600' : 'bg-gradient-to-br from-blue-500 to-indigo-600'}`}>
                                                     {conv.isGroup ? (
                                                         <Users className="w-5 h-5" />
@@ -676,22 +677,7 @@ export function ChatList({ onSelectConversation, selectedUserId, currentUserId }
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end" className="w-48">
                                             {/* Mostrar opción de info solo para grupos */}
-                                            {conv.isGroup && (
-                                                <DropdownMenuItem
-                                                    className="cursor-pointer"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setSelectedGroupForInfo({
-                                                            id: conv.id.replace('group_', ''),
-                                                            name: conv.name
-                                                        });
-                                                        setGroupInfoOpen(true);
-                                                    }}
-                                                >
-                                                    <Info className="mr-2 h-4 w-4" />
-                                                    {t('chat.groups.info.title') || 'Info del grupo'}
-                                                </DropdownMenuItem>
-                                            )}
+                                            {/* Opción de info eliminada por solicitud */}
                                             <DropdownMenuItem
                                                 className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
                                                 onClick={(e) => {

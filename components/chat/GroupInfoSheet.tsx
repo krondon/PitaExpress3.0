@@ -24,7 +24,13 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Search, Users, UserPlus, UserMinus, Crown, Loader2, LogOut, Trash2, FileText, Image as ImageIcon } from 'lucide-react';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Search, Users, UserPlus, UserMinus, Crown, Loader2, LogOut, Trash2, FileText, Image as ImageIcon, MoreVertical } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useChatGroups } from '@/hooks/use-chat-groups';
@@ -88,7 +94,7 @@ export function GroupInfoSheet({
         }
     }, [open, groupId]);
 
-    const { getGroupMembers, addMember, removeMember, leaveGroup, deleteGroup, searchUsers } = useChatGroups({ currentUserId });
+    const { getGroupMembers, addMember, removeMember, promoteMember, leaveGroup, deleteGroup, searchUsers } = useChatGroups({ currentUserId });
     const { theme } = useTheme();
     const { t } = useTranslation();
     const [mounted, setMounted] = useState(false);
@@ -143,6 +149,14 @@ export function GroupInfoSheet({
             setSearchResults([]);
         }
         setAdding(null);
+    };
+
+    const handlePromoteMember = async (userId: string) => {
+        const success = await promoteMember(groupId, userId);
+        if (success) {
+            const updatedMembers = await getGroupMembers(groupId);
+            setMembers(updatedMembers);
+        }
     };
 
     const confirmRemoveMember = async () => {
@@ -307,24 +321,33 @@ export function GroupInfoSheet({
                                                             </div>
                                                         </div>
 
-                                                        {/* Remove button (only for admins, can't remove yourself) */}
+                                                        {/* Actions menu (only for admins, can't act on yourself) */}
                                                         {isAdmin && member.user_id !== currentUserId && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                disabled={removing === member.user_id}
-                                                                onClick={() => {
-                                                                    setMemberToRemove(member.user_id);
-                                                                    setRemoveMemberDialogOpen(true);
-                                                                }}
-                                                                className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
-                                                            >
-                                                                {removing === member.user_id ? (
-                                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                                ) : (
-                                                                    <UserMinus className="h-4 w-4" />
-                                                                )}
-                                                            </Button>
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                                                        <MoreVertical className="h-4 w-4" />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    {member.role !== 'admin' && (
+                                                                        <DropdownMenuItem onClick={() => handlePromoteMember(member.user_id)}>
+                                                                            <Crown className="mr-2 h-4 w-4" />
+                                                                            {t('chat.groups.members.promote') || 'Hacer administrador'}
+                                                                        </DropdownMenuItem>
+                                                                    )}
+                                                                    <DropdownMenuItem
+                                                                        className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                                                                        onClick={() => {
+                                                                            setMemberToRemove(member.user_id);
+                                                                            setRemoveMemberDialogOpen(true);
+                                                                        }}
+                                                                    >
+                                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                                        {t('common.delete') || 'Eliminar'}
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
                                                         )}
                                                     </div>
                                                 ))}

@@ -21,6 +21,7 @@ interface UseChatGroupsReturn {
     deleteGroup: (groupId: string) => Promise<boolean>;
     updateGroup: (groupId: string, updates: Partial<Pick<ChatGroup, 'name' | 'description' | 'avatar_url'>>) => Promise<boolean>;
     addMember: (groupId: string, userId: string) => Promise<boolean>;
+    promoteMember: (groupId: string, userId: string) => Promise<boolean>;
     removeMember: (groupId: string, userId: string) => Promise<boolean>;
     leaveGroup: (groupId: string) => Promise<boolean>;
     getGroupMembers: (groupId: string) => Promise<ChatGroupMember[]>;
@@ -201,6 +202,27 @@ export function useChatGroups({ currentUserId }: UseChatGroupsOptions): UseChatG
         }
     }, [currentUserId, supabase]);
 
+    // Promover miembro a admin
+    const promoteMember = useCallback(async (groupId: string, userId: string): Promise<boolean> => {
+        if (!currentUserId) return false;
+
+        try {
+            const { error: updateError } = await supabase
+                .from('chat_group_members')
+                .update({ role: 'admin' })
+                .eq('group_id', groupId)
+                .eq('user_id', userId);
+
+            if (updateError) throw updateError;
+
+            return true;
+        } catch (err: any) {
+            console.error('[useChatGroups] Error promoting member:', err);
+            setError(err.message || 'Error al promover miembro');
+            return false;
+        }
+    }, [currentUserId, supabase]);
+
     // Eliminar miembro
     const removeMember = useCallback(async (groupId: string, userId: string): Promise<boolean> => {
         if (!currentUserId) return false;
@@ -313,6 +335,7 @@ export function useChatGroups({ currentUserId }: UseChatGroupsOptions): UseChatG
         deleteGroup,
         updateGroup,
         addMember,
+        promoteMember,
         removeMember,
         leaveGroup,
         getGroupMembers,

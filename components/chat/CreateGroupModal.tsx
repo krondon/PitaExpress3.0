@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -17,7 +17,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Search, Users, Loader2, Check } from 'lucide-react';
+import { Search, Users, Loader2, Check, Camera } from 'lucide-react';
+import { useChatUpload } from '@/hooks/use-chat-upload';
 import { useChatGroups } from '@/hooks/use-chat-groups';
 import type { SearchUserResult } from '@/lib/types/chat';
 import { useTheme } from 'next-themes';
@@ -58,7 +59,12 @@ export function CreateGroupModal({
     const [loading, setLoading] = useState(false);
     const [creating, setCreating] = useState(false);
 
-    const { searchUsers, createGroup } = useChatGroups({ currentUserId });
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const { searchUsers, createGroup, updateGroup } = useChatGroups({ currentUserId });
+    const { uploadFile } = useChatUpload();
     const { theme } = useTheme();
     const { t } = useTranslation();
     const [mounted, setMounted] = useState(false);
@@ -90,6 +96,8 @@ export function CreateGroupModal({
             setGroupDescription('');
             setSearchQuery('');
             setSelectedMemberIds(new Set());
+            setAvatarFile(null);
+            setAvatarPreview(null);
         }
     }, [open]);
 
@@ -116,11 +124,21 @@ export function CreateGroupModal({
         });
     }, []);
 
+    const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setAvatarFile(file);
+            const objectUrl = URL.createObjectURL(file);
+            setAvatarPreview(objectUrl);
+        }
+    };
+
     const handleCreateGroup = async () => {
         if (!groupName.trim() || selectedMemberIds.size === 0) return;
 
         setCreating(true);
         try {
+            // 1. Crear el grupo
             const groupId = await createGroup({
                 name: groupName.trim(),
                 description: groupDescription.trim() || undefined,
@@ -128,6 +146,14 @@ export function CreateGroupModal({
             });
 
             if (groupId) {
+                // 2. Si hay avatar, subirlo y actualizar
+                if (avatarFile) {
+                    const fileData = await uploadFile(avatarFile);
+                    if (fileData) {
+                        await updateGroup(groupId, { avatar_url: fileData.url });
+                    }
+                }
+
                 onOpenChange(false);
                 onGroupCreated?.(groupId, groupName.trim());
             }
@@ -155,6 +181,30 @@ export function CreateGroupModal({
                 </DialogHeader>
 
                 <div className="space-y-4 py-4">
+                    {/* Avatar Selection */}
+                    <div className="flex justify-center mb-2">
+                        <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                            <Avatar className="w-20 h-20 border-2 border-dashed border-slate-300 hover:border-purple-500 transition-colors">
+                                {avatarPreview ? (
+                                    <AvatarImage src={avatarPreview} className="object-cover" />
+                                ) : (
+                                    <AvatarFallback className={mounted && theme === 'dark' ? 'bg-slate-700' : 'bg-slate-100'}>
+                                        <Camera className="w-8 h-8 text-slate-400" />
+                                    </AvatarFallback>
+                                )}
+                            </Avatar>
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                <p className="text-white text-[10px] font-medium">Cambiar</p>
+                            </div>
+                        </div>
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleAvatarSelect}
+                        />
+                    </div>
                     {/* Group Name */}
                     <div className="space-y-2">
                         <div className="flex justify-between">

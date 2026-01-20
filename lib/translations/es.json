@@ -3495,6 +3495,15 @@
       "activeConversations": "Conversaciones Activas",
       "selectConversation": "Selecciona una conversación para comenzar a chatear",
       "deleteChat": "Eliminar chat",
+      "leaveGroup": "Salir del grupo",
+      "newChat": "Nuevo Chat",
+      "startNewChat": "Iniciar nueva conversación",
+      "searchUsers": "Buscar usuarios...",
+      "searchPlaceholder": "Buscar conversación...",
+      "noUsersFound": "No se encontraron usuarios",
+      "noResults": "No se encontraron conversaciones",
+      "noConversations": "No hay conversaciones aún",
+      "group": "Grupo",
       "pagination": {
         "page": "Página {{current}} de {{total}}",
         "previous": "Anterior",
@@ -3517,6 +3526,7 @@
         "searchUsers": "Buscar usuarios...",
         "leaveGroup": "Salir del grupo",
         "deleteGroup": "Eliminar grupo",
+        "group": "Grupo",
         "tabs": {
           "info": "Información",
           "media": "Multimedia"
@@ -3528,6 +3538,7 @@
         }
       },
       "members": {
+        "promote": "Hacer administrador",
         "remove": {
           "title": "¿Eliminar miembro?",
           "description": "Este usuario será eliminado del grupo. ¿Estás seguro?"
