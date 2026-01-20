@@ -24,7 +24,9 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Search, Users, UserPlus, UserMinus, Crown, Loader2, LogOut, Trash2 } from 'lucide-react';
+import { Search, Users, UserPlus, UserMinus, Crown, Loader2, LogOut, Trash2, FileText, Image as ImageIcon } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useChatGroups } from '@/hooks/use-chat-groups';
 import type { ChatGroupMember, SearchUserResult } from '@/lib/types/chat';
 import { useTheme } from 'next-themes';
@@ -59,6 +61,28 @@ export function GroupInfoSheet({
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [removing, setRemoving] = useState<string | null>(null);
     const [adding, setAdding] = useState<string | null>(null);
+
+    // Media State
+    const [media, setMedia] = useState<any[]>([]);
+    const [loadingMedia, setLoadingMedia] = useState(false);
+
+    useEffect(() => {
+        if (open && groupId) {
+            const loadMedia = async () => {
+                setLoadingMedia(true);
+                const supabase = getSupabaseBrowserClient();
+                const { data } = await supabase
+                    .from('chat_messages')
+                    .select('*')
+                    .eq('group_id', groupId)
+                    .not('file_url', 'is', null)
+                    .order('created_at', { ascending: false });
+                if (data) setMedia(data);
+                setLoadingMedia(false);
+            };
+            loadMedia();
+        }
+    }, [open, groupId]);
 
     const { getGroupMembers, addMember, removeMember, leaveGroup, deleteGroup, searchUsers } = useChatGroups({ currentUserId });
     const { theme } = useTheme();
@@ -160,159 +184,227 @@ export function GroupInfoSheet({
                         </SheetDescription>
                     </SheetHeader>
 
-                    <div className="mt-6 space-y-4">
-                        {/* Members Section */}
-                        <div className="flex items-center justify-between">
-                            <h3 className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`}>
-                                {t('chat.groups.info.members') || 'Miembros'} ({members.length})
-                            </h3>
-                            {isAdmin && (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setShowAddMembers(!showAddMembers)}
-                                    className="h-8"
-                                >
-                                    <UserPlus className="h-4 w-4 mr-1" />
-                                    {t('chat.groups.info.addMember') || 'Añadir'}
-                                </Button>
-                            )}
-                        </div>
+                    <Tabs defaultValue="info" className="flex flex-col h-full mt-6">
+                        <TabsList className="grid w-full grid-cols-2 mb-4">
+                            <TabsTrigger value="info">{t('chat.groups.info.tabs.info') || 'Info'}</TabsTrigger>
+                            <TabsTrigger value="media">{t('chat.groups.info.tabs.media') || 'Multimedia'}</TabsTrigger>
+                        </TabsList>
 
-                        {/* Add Members Search */}
-                        {showAddMembers && (
-                            <div className="space-y-2">
-                                <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                    <Input
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        placeholder={t('chat.groups.info.searchUsers') || 'Buscar usuarios...'}
-                                        className={`pl-10 ${mounted && theme === 'dark' ? 'bg-slate-700 border-slate-600' : ''}`}
-                                    />
-                                </div>
+                        <TabsContent value="info" className="flex-1 overflow-visible">
+                            <ScrollArea className="h-[calc(100vh-10rem)] pr-4">
+                                <div className="space-y-4">
+                                    {/* Members Section */}
+                                    <div className="flex items-center justify-between">
+                                        <h3 className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`}>
+                                            {t('chat.groups.info.members') || 'Miembros'} ({members.length})
+                                        </h3>
+                                        {isAdmin && (
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => setShowAddMembers(!showAddMembers)}
+                                                className="h-8"
+                                            >
+                                                <UserPlus className="h-4 w-4 mr-1" />
+                                                {t('chat.groups.info.addMember') || 'Añadir'}
+                                            </Button>
+                                        )}
+                                    </div>
 
-                                {(searching || searchResults.length > 0) && (
-                                    <div className={`rounded-md border p-2 max-h-32 overflow-y-auto ${mounted && theme === 'dark' ? 'border-slate-600 bg-slate-700/50' : 'bg-slate-50'}`}>
-                                        {searching ? (
-                                            <div className="flex items-center justify-center py-2">
-                                                <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                                    {/* Add Members Search */}
+                                    {showAddMembers && (
+                                        <div className="space-y-2">
+                                            <div className="relative">
+                                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                                <Input
+                                                    value={searchQuery}
+                                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                                    placeholder={t('chat.groups.info.searchUsers') || 'Buscar usuarios...'}
+                                                    className={`pl-10 ${mounted && theme === 'dark' ? 'bg-slate-700 border-slate-600' : ''}`}
+                                                />
+                                            </div>
+
+                                            {(searching || searchResults.length > 0) && (
+                                                <div className={`rounded-md border p-2 max-h-32 overflow-y-auto ${mounted && theme === 'dark' ? 'border-slate-600 bg-slate-700/50' : 'bg-slate-50'}`}>
+                                                    {searching ? (
+                                                        <div className="flex items-center justify-center py-2">
+                                                            <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                                                        </div>
+                                                    ) : (
+                                                        <div className="space-y-1">
+                                                            {searchResults.map((user) => (
+                                                                <button
+                                                                    key={user.user_id}
+                                                                    onClick={() => handleAddMember(user.user_id)}
+                                                                    disabled={adding === user.user_id}
+                                                                    className={`w-full flex items-center gap-2 p-2 rounded transition-colors ${mounted && theme === 'dark' ? 'hover:bg-slate-600' : 'hover:bg-slate-100'}`}
+                                                                >
+                                                                    <Avatar className="w-6 h-6">
+                                                                        <AvatarFallback className="bg-blue-500 text-white text-xs">
+                                                                            {user.name.charAt(0)}
+                                                                        </AvatarFallback>
+                                                                    </Avatar>
+                                                                    <span className={`text-sm flex-1 text-left ${mounted && theme === 'dark' ? 'text-white' : ''}`}>
+                                                                        {user.name}
+                                                                    </span>
+                                                                    {adding === user.user_id ? (
+                                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                                    ) : (
+                                                                        <UserPlus className="h-4 w-4 text-green-500" />
+                                                                    )}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <Separator />
+
+                                    {/* Members List */}
+                                    <ScrollArea className="h-[300px] pr-2">
+                                        {loading ? (
+                                            <div className="flex items-center justify-center py-8">
+                                                <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
                                             </div>
                                         ) : (
-                                            <div className="space-y-1">
-                                                {searchResults.map((user) => (
-                                                    <button
-                                                        key={user.user_id}
-                                                        onClick={() => handleAddMember(user.user_id)}
-                                                        disabled={adding === user.user_id}
-                                                        className={`w-full flex items-center gap-2 p-2 rounded transition-colors ${mounted && theme === 'dark' ? 'hover:bg-slate-600' : 'hover:bg-slate-100'}`}
+                                            <div className="space-y-2">
+                                                {members.map((member) => (
+                                                    <div
+                                                        key={member.user_id}
+                                                        className={`flex items-center gap-3 p-2 rounded-lg ${mounted && theme === 'dark' ? 'bg-slate-700/50' : 'bg-slate-50'}`}
                                                     >
-                                                        <Avatar className="w-6 h-6">
-                                                            <AvatarFallback className="bg-blue-500 text-white text-xs">
-                                                                {user.name.charAt(0)}
+                                                        <Avatar className="w-10 h-10">
+                                                            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
+                                                                {(member.user_name || 'U').charAt(0).toUpperCase()}
                                                             </AvatarFallback>
                                                         </Avatar>
-                                                        <span className={`text-sm flex-1 text-left ${mounted && theme === 'dark' ? 'text-white' : ''}`}>
-                                                            {user.name}
-                                                        </span>
-                                                        {adding === user.user_id ? (
-                                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                                        ) : (
-                                                            <UserPlus className="h-4 w-4 text-green-500" />
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className={`text-sm font-medium truncate ${mounted && theme === 'dark' ? 'text-white' : ''}`}>
+                                                                    {member.user_name || 'Usuario'}
+                                                                    {member.user_id === currentUserId && (
+                                                                        <span className="text-slate-500"> (tú)</span>
+                                                                    )}
+                                                                </span>
+                                                                {member.role === 'admin' && (
+                                                                    <Badge variant="secondary" className="text-[10px] px-1 py-0">
+                                                                        <Crown className="h-2.5 w-2.5 mr-0.5" />
+                                                                        Admin
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Remove button (only for admins, can't remove yourself) */}
+                                                        {isAdmin && member.user_id !== currentUserId && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => handleRemoveMember(member.user_id)}
+                                                                disabled={removing === member.user_id}
+                                                                className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                            >
+                                                                {removing === member.user_id ? (
+                                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                                ) : (
+                                                                    <UserMinus className="h-4 w-4" />
+                                                                )}
+                                                            </Button>
                                                         )}
-                                                    </button>
+                                                    </div>
                                                 ))}
+                                            </div>
+                                        )}
+                                    </ScrollArea>
+
+                                    <Separator />
+
+                                    {/* Actions */}
+                                    <div className="space-y-2">
+                                        <Button
+                                            variant="outline"
+                                            className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
+                                            onClick={() => setLeaveDialogOpen(true)}
+                                        >
+                                            <LogOut className="h-4 w-4 mr-2" />
+                                            {t('chat.groups.info.leaveGroup') || 'Salir del grupo'}
+                                        </Button>
+
+                                        {isAdmin && (
+                                            <Button
+                                                variant="outline"
+                                                className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                onClick={() => setDeleteDialogOpen(true)}
+                                            >
+                                                <Trash2 className="h-4 w-4 mr-2" />
+                                                {t('chat.groups.info.deleteGroup') || 'Eliminar grupo'}
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            </ScrollArea>
+                        </TabsContent>
+
+                        <TabsContent value="media" className="flex-1 h-full overflow-hidden">
+                            <ScrollArea className="h-[calc(100vh-10rem)] pr-4">
+                                {loadingMedia ? (
+                                    <div className="flex justify-center py-8">
+                                        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                                    </div>
+                                ) : media.length === 0 ? (
+                                    <div className="text-center py-8 text-slate-500">
+                                        <ImageIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                                        <p>{t('chat.groups.info.media.empty') || 'No hay archivos'}</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-6 pb-6">
+                                        {/* Photos Grid */}
+                                        {media.filter(m => m.file_type?.startsWith('image')).length > 0 && (
+                                            <div>
+                                                <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                                                    <ImageIcon className="w-4 h-4" />
+                                                    {t('chat.groups.info.media.photos') || 'Fotos'}
+                                                </h4>
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    {media.filter(m => m.file_type?.startsWith('image')).map((m) => (
+                                                        <a key={m.id} href={m.file_url} target="_blank" rel="noopener noreferrer" className="aspect-square relative rounded overflow-hidden border bg-slate-100 hover:opacity-90 transition-opacity group">
+                                                            <img src={m.file_url} alt="Shared" className="w-full h-full object-cover" />
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Documents List */}
+                                        {media.filter(m => !m.file_type?.startsWith('image')).length > 0 && (
+                                            <div>
+                                                <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                                                    <FileText className="w-4 h-4" />
+                                                    {t('chat.groups.info.media.documents') || 'Documentos'}
+                                                </h4>
+                                                <div className="space-y-2">
+                                                    {media.filter(m => !m.file_type?.startsWith('image')).map((m) => (
+                                                        <a key={m.id} href={m.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 rounded-lg border bg-slate-50 hover:bg-slate-100 transition-colors">
+                                                            <div className="p-2 bg-white rounded border">
+                                                                <FileText className="w-5 h-5 text-blue-500" />
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-sm font-medium truncate">{m.file_name || 'Documento'}</p>
+                                                                <p className="text-xs text-slate-500">{new Date(m.created_at).toLocaleDateString()}</p>
+                                                            </div>
+                                                        </a>
+                                                    ))}
+                                                </div>
                                             </div>
                                         )}
                                     </div>
                                 )}
-                            </div>
-                        )}
-
-                        <Separator />
-
-                        {/* Members List */}
-                        <ScrollArea className="h-[300px] pr-2">
-                            {loading ? (
-                                <div className="flex items-center justify-center py-8">
-                                    <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
-                                </div>
-                            ) : (
-                                <div className="space-y-2">
-                                    {members.map((member) => (
-                                        <div
-                                            key={member.user_id}
-                                            className={`flex items-center gap-3 p-2 rounded-lg ${mounted && theme === 'dark' ? 'bg-slate-700/50' : 'bg-slate-50'}`}
-                                        >
-                                            <Avatar className="w-10 h-10">
-                                                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
-                                                    {(member.user_name || 'U').charAt(0).toUpperCase()}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2">
-                                                    <span className={`text-sm font-medium truncate ${mounted && theme === 'dark' ? 'text-white' : ''}`}>
-                                                        {member.user_name || 'Usuario'}
-                                                        {member.user_id === currentUserId && (
-                                                            <span className="text-slate-500"> (tú)</span>
-                                                        )}
-                                                    </span>
-                                                    {member.role === 'admin' && (
-                                                        <Badge variant="secondary" className="text-[10px] px-1 py-0">
-                                                            <Crown className="h-2.5 w-2.5 mr-0.5" />
-                                                            Admin
-                                                        </Badge>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* Remove button (only for admins, can't remove yourself) */}
-                                            {isAdmin && member.user_id !== currentUserId && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => handleRemoveMember(member.user_id)}
-                                                    disabled={removing === member.user_id}
-                                                    className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
-                                                >
-                                                    {removing === member.user_id ? (
-                                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                                    ) : (
-                                                        <UserMinus className="h-4 w-4" />
-                                                    )}
-                                                </Button>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </ScrollArea>
-
-                        <Separator />
-
-                        {/* Actions */}
-                        <div className="space-y-2">
-                            <Button
-                                variant="outline"
-                                className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
-                                onClick={() => setLeaveDialogOpen(true)}
-                            >
-                                <LogOut className="h-4 w-4 mr-2" />
-                                {t('chat.groups.info.leaveGroup') || 'Salir del grupo'}
-                            </Button>
-
-                            {isAdmin && (
-                                <Button
-                                    variant="outline"
-                                    className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-                                    onClick={() => setDeleteDialogOpen(true)}
-                                >
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    {t('chat.groups.info.deleteGroup') || 'Eliminar grupo'}
-                                </Button>
-                            )}
-                        </div>
-                    </div>
+                            </ScrollArea>
+                        </TabsContent>
+                    </Tabs>
                 </SheetContent>
             </Sheet>
 

@@ -3508,6 +3508,26 @@
         "deleting": "Eliminando..."
       }
     },
+    "groups": {
+      "info": {
+        "title": "Info de Grupo",
+        "description": "Descripción",
+        "members": "Miembros [{{count}}]",
+        "addMember": "Añadir Miembro",
+        "searchUsers": "Buscar usuarios...",
+        "leaveGroup": "Salir del grupo",
+        "deleteGroup": "Eliminar grupo",
+        "tabs": {
+          "info": "Información",
+          "media": "Multimedia"
+        },
+        "media": {
+          "photos": "Fotos",
+          "documents": "Documentos",
+          "empty": "No hay archivos compartidos"
+        }
+      }
+    },
     "notFound": {
       "title": "No se encontró el administrador",
       "message": "No se pudo conectar con el administrador"
