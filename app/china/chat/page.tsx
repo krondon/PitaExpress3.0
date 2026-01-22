@@ -18,6 +18,10 @@ import { useRouter } from 'next/navigation';
 import type { ChatMessage } from '@/lib/types/chat';
 import { useTheme } from 'next-themes';
 import { useTranslation } from '@/hooks/useTranslation';
+import { GroupInfoSheet } from '@/components/chat/GroupInfoSheet';
+import { useChatGroups } from '@/hooks/use-chat-groups';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Info } from 'lucide-react';
 
 export default function ChinaChatPage() {
     const [sidebarExpanded, setSidebarExpanded] = useState(true);
@@ -37,6 +41,8 @@ export default function ChinaChatPage() {
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
     const [selectedUserName, setSelectedUserName] = useState<string>('');
+    const [showGroupInfo, setShowGroupInfo] = useState(false);
+    const { groups } = useChatGroups({ currentUserId: chinaId || '' });
 
     // Notificaciones
     const { uiItems: notificationsList, unreadCount, markAllAsRead } = useNotifications({
@@ -138,6 +144,24 @@ export default function ChinaChatPage() {
 
             <main className={`flex-1 transition-all duration-300 ${sidebarExpanded ? 'lg:ml-72 lg:w-[calc(100%-18rem)]' : 'lg:ml-24 lg:w-[calc(100%-6rem)]'
                 }`}>
+
+                <GroupInfoSheet
+                    open={showGroupInfo}
+                    onOpenChange={setShowGroupInfo}
+                    groupId={selectedGroupId || ''}
+                    currentUserId={chinaId || ''}
+                    groupName={groups.find(g => g.id === selectedGroupId)?.name || ''}
+                    isOwner={groups.find(g => g.id === selectedGroupId)?.created_by === chinaId}
+                    onLeaveGroup={() => {
+                        setShowGroupInfo(false);
+                        handleBackToList();
+                    }}
+                    onDeleteGroup={() => {
+                        setShowGroupInfo(false);
+                        handleBackToList();
+                    }}
+                />
+
                 <Header
                     notifications={unreadCount}
                     onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -198,21 +222,40 @@ export default function ChinaChatPage() {
                                             <ArrowLeft className="h-4 w-4" />
                                         </Button>
 
-                                        <div className={`p-2 rounded-full ${isGroupChat ? 'bg-purple-500' : 'bg-blue-500'}`}>
-                                            {isGroupChat ? (
-                                                <Users className="h-5 w-5 text-white" />
-                                            ) : (
+                                        {selectedGroupId ? (
+                                            <Avatar className="h-10 w-10">
+                                                <AvatarImage
+                                                    src={groups.find(g => g.id === selectedGroupId)?.avatar_url || ''}
+                                                    alt={groups.find(g => g.id === selectedGroupId)?.name}
+                                                />
+                                                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+                                                    <Users className="h-5 w-5 text-white" />
+                                                </AvatarFallback>
+                                            </Avatar>
+                                        ) : (
+                                            <div className="p-2 bg-blue-500 rounded-full">
                                                 <MessageSquare className="h-5 w-5 text-white" />
-                                            )}
-                                        </div>
-                                        <div>
-                                            <CardTitle className={`text-base font-semibold ${mounted && theme === 'dark' ? 'text-white' : ''}`}>
-                                                {selectedUserName}
+                                            </div>
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                            <CardTitle className={`text-base font-semibold truncate ${mounted && theme === 'dark' ? 'text-white' : ''}`}>
+                                                {selectedGroupId ? (groups.find(g => g.id === selectedGroupId)?.name || selectedUserName) : selectedUserName}
                                             </CardTitle>
-                                            <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
+                                            <p className={`text-xs truncate ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
                                                 {isGroupChat ? t('chat.group.subtitle') : t('chat.direct.subtitle')}
                                             </p>
                                         </div>
+
+                                        {selectedGroupId && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => setShowGroupInfo(true)}
+                                                className={`ml-2 ${mounted && theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-blue-100 text-slate-600'}`}
+                                            >
+                                                <Info className="h-5 w-5" />
+                                            </Button>
+                                        )}
                                     </div>
                                 </CardHeader>
                                 <CardContent className="p-0">
