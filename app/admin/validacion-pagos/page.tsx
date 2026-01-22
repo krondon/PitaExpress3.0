@@ -108,26 +108,6 @@ const AnimatedIcon: React.FC<{
   );
 };
 
-// Helper para formatear números grandes de forma compacta (ej. 38.7B, 1.5M)
-const formatCompactMoney = (amount: number) => {
-  // Si es menor a 1 millón, usar formato estándar con 2 decimales
-  if (amount < 1_000_000) {
-    return `$${amount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  }
-
-  // Si es billón (Billion) o más (1,000,000,000)
-  if (amount >= 1_000_000_000) {
-    return `$${(amount / 1_000_000_000).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}B`;
-  }
-
-  // Si es millón (Million) o más
-  if (amount >= 1_000_000) {
-    return `$${(amount / 1_000_000).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}M`;
-  }
-
-  return `$${amount.toLocaleString('es-ES')}`;
-};
-
 // ================================
 // COMPONENTE: TARJETAS DE ESTADÍSTICAS
 // ================================
@@ -140,12 +120,7 @@ const StatsCards: React.FC<{ stats: PaymentStats }> = ({ stats }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-700 dark:text-blue-300 text-xs md:text-sm font-medium mb-1">{t('venezuela.pagos.stats.totalSpent')}</p>
-              <p
-                className="text-xl md:text-2xl lg:text-3xl font-bold text-blue-800 dark:text-blue-200"
-                title={`$${stats.totalGastado.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-              >
-                {formatCompactMoney(stats.totalGastado)}
-              </p>
+              <p className="text-xl md:text-2xl lg:text-3xl font-bold text-blue-800 dark:text-blue-200">${stats.totalGastado.toLocaleString()}</p>
             </div>
             <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 dark:bg-blue-800/30 rounded-lg flex items-center justify-center">
               <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400" />
@@ -210,24 +185,24 @@ const StatusBadge: React.FC<{ status: string; sendChina?: boolean }> = ({ status
       return {
         className: 'bg-indigo-100 text-indigo-800 border-indigo-200',
         text: t('venezuela.pagos.status.sentChina') || 'Enviado a China',
-        icon: <AnimatedIcon animation={["pulse", "float"]}><Send size={12} /></AnimatedIcon>
+        icon: <AnimatedIcon animation={["pulse","float"]}><Send size={12} /></AnimatedIcon>
       };
     }
     const configs = {
       completado: {
         className: 'bg-green-100 text-green-800 border-green-200',
         text: t('venezuela.pagos.status.completado'),
-        icon: <AnimatedIcon animation={["pulse", "bounce"]}><CheckCircle size={12} /></AnimatedIcon>
+        icon: <AnimatedIcon animation={["pulse","bounce"]}><CheckCircle size={12} /></AnimatedIcon>
       },
       pendiente: {
         className: 'bg-orange-100 text-orange-800 border-orange-200',
         text: t('venezuela.pagos.status.pendiente'),
-        icon: <AnimatedIcon animation={["pulse", "spin"]}><Clock size={12} /></AnimatedIcon>
+        icon: <AnimatedIcon animation={["pulse","spin"]}><Clock size={12} /></AnimatedIcon>
       },
       rechazado: {
         className: 'bg-red-100 text-red-800 border-red-200',
         text: t('venezuela.pagos.status.rechazado'),
-        icon: <AnimatedIcon animation={["pulse", "shake"]}><X size={12} /></AnimatedIcon>
+        icon: <AnimatedIcon animation={["pulse","shake"]}><X size={12} /></AnimatedIcon>
       }
     };
     return configs[estado as keyof typeof configs] || configs.pendiente;
@@ -284,13 +259,15 @@ const PaymentDetailsModal: React.FC<{
   if (!isOpen || !payment) return null;
 
   return (
-    <div
-      className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-all duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'
-        }`}
+    <div 
+      className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-all duration-300 ${
+        isClosing ? 'opacity-0' : 'opacity-100'
+      }`}
       onClick={handleBackdropClick}
     >
-      <div className={`bg-white rounded-lg p-6 max-w-2xl w-full shadow-xl transition-all duration-300 transform ${isClosing ? 'scale-95 opacity-0' : (isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0')
-        }`}>
+      <div className={`bg-white rounded-lg p-6 max-w-2xl w-full shadow-xl transition-all duration-300 transform ${
+        isClosing ? 'scale-95 opacity-0' : (isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0')
+      }`}>
         <div className="flex justify-between items-start">
           <div>
             <h3 className="text-xl font-bold text-gray-900">{t('venezuela.pagos.modal.details.title')}</h3>
@@ -310,8 +287,8 @@ const PaymentDetailsModal: React.FC<{
             <h4 className="font-semibold text-gray-800 mb-2">{t('venezuela.pagos.modal.details.paymentInfo')}</h4>
             <div className="flex items-center gap-2">
               <span className="font-medium">{t('venezuela.pagos.modal.details.fields.amount')}</span>
-              <PriceDisplay
-                amount={payment.monto}
+              <PriceDisplay 
+                amount={payment.monto} 
                 currency="USD"
                 variant="inline"
                 size="md"
@@ -349,7 +326,7 @@ const PaymentCard: React.FC<{ payment: Payment; onApprove: (id: string) => void;
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const formatCurrency = (amount: number) => {
-    return `$${amount.toLocaleString('es-ES', {
+    return `$${amount.toLocaleString('es-ES', { 
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     })}`;
@@ -376,7 +353,7 @@ const PaymentCard: React.FC<{ payment: Payment; onApprove: (id: string) => void;
             <p className="text-xs text-gray-500">{payment.idProducto}</p>
           </div>
         </div>
-        <StatusBadge status={payment.estado} sendChina={payment.sendChina} />
+  <StatusBadge status={payment.estado} sendChina={payment.sendChina} />
       </div>
 
       {/* Detalles */}
@@ -387,12 +364,14 @@ const PaymentCard: React.FC<{ payment: Payment; onApprove: (id: string) => void;
         </div>
         <div className="flex justify-between items-center">
           <span className="text-gray-600">{t('venezuela.pagos.mobile.amount')}</span>
-          <div
-            className="font-semibold text-green-600 truncate"
-            title={`$${payment.monto.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-          >
-            {formatCompactMoney(payment.monto)}
-          </div>
+          <PriceDisplay 
+            amount={payment.monto} 
+            currency="USD"
+            variant="inline"
+            size="sm"
+            emphasizeBolivars={true}
+            className="font-semibold text-green-600"
+          />
         </div>
         <div className="flex justify-between">
           <span className="text-gray-600">{t('venezuela.pagos.mobile.method')}</span>
@@ -484,10 +463,11 @@ const ConfirmationDialog: React.FC<{
         <div className="mt-6 flex justify-end space-x-2">
           <button
             onClick={onClose}
-            className={`px-4 py-2 rounded-md transition-colors ${isDark
-              ? 'bg-slate-700 text-slate-200 hover:bg-slate-600'
-              : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-              }`}
+            className={`px-4 py-2 rounded-md transition-colors ${
+              isDark 
+                ? 'bg-slate-700 text-slate-200 hover:bg-slate-600' 
+                : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+            }`}
           >
             {t('venezuela.pagos.modal.reject.cancel')}
           </button>
@@ -517,12 +497,6 @@ const PaymentValidationDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('todos');
-
-  // NEW STATE VIEW MODE & PAGINATION
-  const [viewMode, setViewMode] = useState<'current' | 'history'>('current');
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const PAGE_SIZE = 50;
   // Eliminadas pestañas: siempre se muestra la lista completa con filtros por estado
   const [rejectionConfirmation, setRejectionConfirmation] = useState<{ isOpen: boolean; paymentId: string | null }>({ isOpen: false, paymentId: null });
   const [detailsModal, setDetailsModal] = useState<{ isOpen: boolean; payment: Payment | null }>({ isOpen: false, payment: null });
@@ -552,8 +526,8 @@ const PaymentValidationDashboard: React.FC = () => {
 
   useRealtimeAdmin(
     () => { scheduleRefresh(); },
-    () => { },
-    () => { }
+    () => {},
+    () => {}
   );
 
   // Realtime para clientes: refresh cuando cambian nombres/datos
@@ -577,16 +551,12 @@ const PaymentValidationDashboard: React.FC = () => {
   }, [scheduleRefresh]);
 
   useEffect(() => {
-    // Reset page and payments when refreshing or changing mode
-    if (page === 0) setPayments([]);
-
     const load = async () => {
-      if (fetchInFlight.current) return;
+      if (fetchInFlight.current) return; // evitar solapamiento
       fetchInFlight.current = true;
       setLoading(true);
       setError(null);
-
-      const timeoutMs = 15000;
+      const timeoutMs = 15000; // 15s
       let timeoutHandle: any;
       const startTimeout = () => {
         timeoutHandle = setTimeout(() => {
@@ -595,48 +565,19 @@ const PaymentValidationDashboard: React.FC = () => {
           fetchInFlight.current = false;
         }, timeoutMs);
       };
-
       const clearTimeoutSafe = () => {
         if (timeoutHandle) clearTimeout(timeoutHandle);
       };
-
       startTimeout();
-
       try {
         const selectCols = 'id, client_id, productName, description, totalQuote, estimatedBudget, created_at, state, sendChina';
-        let query = supabase
+        // Incluir estados 4 (pendiente), 5 (completado) y -1 (rechazado)
+        const { data, error } = await supabase
           .from('orders')
-          .select(selectCols);
-
-        if (viewMode === 'current') {
-          // Current: pending (4), processing/completed (5), rejected (-1)
-          query = query.or('state.eq.4,state.eq.5,state.eq.-1');
-        } else {
-          // History: All validated payments (state >= 4) AND rejected (-1)
-          // Using raw SQL filter for complex OR condition with GTE
-          // Note: .or() with .gte() can be tricky in Supabase JS client
-          // Simplified approach: fetch state >= 4 OR state == -1
-          // Since we can't easily mix GTE and EQ in a single OR string easily without raw filter:
-          // We will use .or('state.gte.4,state.eq.-1')
-          query = query.or('state.gte.4,state.eq.-1');
-        }
-
-        // Pagination
-        const from = page * PAGE_SIZE;
-        const to = from + PAGE_SIZE - 1;
-
-        const { data, error } = await query
-          .order('created_at', { ascending: false })
-          .range(from, to);
-
+          .select(selectCols)
+          .or('state.eq.4,state.eq.5,state.eq.-1')
+          .order('created_at', { ascending: false });
         if (error) throw error;
-
-        if (!data || data.length < PAGE_SIZE) {
-          setHasMore(false);
-        } else {
-          setHasMore(true);
-        }
-
         const clientIds = (data || []).map((o: any) => o.client_id);
         let clientMap = new Map<string, string>();
         if (clientIds.length) {
@@ -647,7 +588,6 @@ const PaymentValidationDashboard: React.FC = () => {
           if (cErr) throw cErr;
           clientMap = new Map((clients || []).map((c: any) => [c.user_id, c.name || 'Cliente']));
         }
-
         const mapped: Payment[] = (data as DbOrder[] | null)?.map((o) => {
           let estado: Payment['estado'];
           if (o.state === 4) estado = 'pendiente';
@@ -667,16 +607,7 @@ const PaymentValidationDashboard: React.FC = () => {
             sendChina: Boolean((o as any).sendChina)
           };
         }) || [];
-
-        setPayments(prev => {
-          // If page 0, replace. If > 0, append unique.
-          if (page === 0) return mapped;
-          // Deduplicate just in case
-          const existingIds = new Set(prev.map(p => p.id));
-          const newItems = mapped.filter(p => !existingIds.has(p.id));
-          return [...prev, ...newItems];
-        });
-
+        setPayments(mapped);
       } catch (e: any) {
         setError(e?.message || t('venezuela.pagos.error.loadErrorTitle'));
       } finally {
@@ -686,13 +617,13 @@ const PaymentValidationDashboard: React.FC = () => {
       }
     };
     load();
-  }, [refreshIndex, supabase, t, viewMode, page]); // Add viewMode and page to dependency array
+  }, [refreshIndex, supabase, t]);
 
   // Calcular estadísticas
   const stats = useMemo((): PaymentStats => {
     const completados = payments.filter(p => p.estado === 'completado');
     const pendientes = payments.filter(p => p.estado === 'pendiente');
-
+    
     return {
       totalGastado: completados.reduce((sum, p) => sum + p.monto, 0),
       pagosTotales: payments.length,
@@ -819,7 +750,7 @@ const PaymentValidationDashboard: React.FC = () => {
         body: JSON.stringify({ state: 5 }),
       });
       if (!resp.ok) {
-        const msg = await resp.json().catch(() => ({ error: 'Error al actualizar estado' }));
+        const msg = await resp.json().catch(()=>({ error: 'Error al actualizar estado' }));
         throw new Error(msg?.error || 'Error al actualizar el estado del pedido');
       }
     } catch (e: any) {
@@ -968,7 +899,7 @@ const PaymentValidationDashboard: React.FC = () => {
   };
 
   const formatCurrency = (amount: number) => {
-    return `$${amount.toLocaleString('es-ES', {
+    return `$${amount.toLocaleString('es-ES', { 
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     })}`;
@@ -994,7 +925,7 @@ const PaymentValidationDashboard: React.FC = () => {
       if (v === null || v === undefined) return '';
       return typeof v === 'object' ? JSON.stringify(v) : v;
     }));
-    await (writeXlsx as any)([headerRow, ...bodyRows], {
+  await (writeXlsx as any)([headerRow, ...bodyRows], {
       fileName: (t('venezuela.pagos.export.fileName') as string) || 'export.xlsx',
       sheet: (t('venezuela.pagos.export.sheetName') as string) || 'Hoja 1'
     });
@@ -1026,16 +957,17 @@ const PaymentValidationDashboard: React.FC = () => {
             : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50')
         }
       >
-        <Sidebar
-          isExpanded={sidebarExpanded}
+        <Sidebar 
+          isExpanded={sidebarExpanded} 
           setIsExpanded={setSidebarExpanded}
           isMobileMenuOpen={isMobileMenuOpen}
           onMobileMenuClose={() => setIsMobileMenuOpen(false)}
-          userRole="admin"
+          userRole="admin" 
         />
-        <main className={`flex-1 transition-all duration-300 ${sidebarExpanded ? 'lg:ml-72 lg:w-[calc(100%-18rem)]' : 'lg:ml-24 lg:w-[calc(100%-6rem)]'
-          } w-full`}>
-          <Header
+        <main className={`flex-1 transition-all duration-300 ${
+          sidebarExpanded ? 'lg:ml-72 lg:w-[calc(100%-18rem)]' : 'lg:ml-24 lg:w-[calc(100%-6rem)]'
+        } w-full`}>
+          <Header 
             notifications={3}
             onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             title={t('venezuela.pagos.title')}
@@ -1068,45 +1000,7 @@ const PaymentValidationDashboard: React.FC = () => {
             <Card className={mounted && theme === 'dark' ? 'mb-4 md:mb-6 bg-slate-800/70 border border-slate-700 backdrop-blur-sm shadow-lg hover:shadow-xl transition-shadow' : 'mb-4 md:mb-6 bg-white/80 border border-slate-200 backdrop-blur-sm shadow-lg hover:shadow-xl transition-shadow'}>
               <CardHeader className="py-3">
                 <div className="flex flex-col gap-3 sm:gap-4">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg font-semibold tracking-tight">{t('venezuela.pagos.listCardTitle')}</CardTitle>
-                    {/* View Mode Toggle */}
-                    <div className="flex bg-slate-100 dark:bg-slate-900/50 p-1 rounded-lg">
-                      <button
-                        onClick={() => {
-                          if (viewMode === 'current') return;
-                          setViewMode('current');
-                          setPage(0);
-                        }}
-                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${viewMode === 'current'
-                          ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-                          : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
-                          }`}
-                      >
-                        {t('venezuela.pagos.filters.toValidate') || 'Por Validar'}
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (viewMode === 'history') return;
-                          setViewMode('history');
-                          setPage(0);
-                        }}
-                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${viewMode === 'history'
-                          ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-                          : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
-                          }`}
-                      >
-                        {t('venezuela.pagos.filters.history') || 'Historial'}
-                      </button>
-                    </div>
-                  </div>
-                  {/* Global loading indicator for top */}
-                  {(loading && page === 0) && (
-                    <div className="h-1 w-full bg-blue-100 overflow-hidden mb-2 rounded-full">
-                      <div className="animate-progress w-full h-full bg-blue-500 origin-left-right"></div>
-                    </div>
-                  )}
-
+                  <CardTitle className="text-lg font-semibold tracking-tight">{t('venezuela.pagos.listCardTitle')}</CardTitle>
                   {/* Controles Responsivos */}
                   <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                     {/* Buscador */}
@@ -1179,18 +1073,18 @@ const PaymentValidationDashboard: React.FC = () => {
 
               {/* Vista Desktop - Tabla */}
               <div className="hidden lg:block overflow-x-auto">
-                <table className={`w-full table-fixed ${mounted && theme === 'dark' ? 'bg-slate-800' : ''}`}>
+                <table className={`w-full table-fixed ${mounted && theme === 'dark' ? 'bg-slate-800' : ''}`}> 
                   <thead className={mounted && theme === 'dark' ? 'bg-slate-900' : 'bg-gray-50'}>
                     <tr>
                       {[
-                        { label: t('venezuela.pagos.table.headers.id'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><Hash size={14} /></AnimatedIcon>, width: 'w-44' },
-                        { label: t('venezuela.pagos.table.headers.client'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><User size={14} /></AnimatedIcon>, width: 'w-36' },
-                        { label: t('venezuela.pagos.table.headers.status'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><CheckCircle size={14} /></AnimatedIcon>, width: 'w-32' },
-                        { label: t('venezuela.pagos.table.headers.date'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><Calendar size={14} /></AnimatedIcon>, width: 'w-24' },
-                        { label: t('venezuela.pagos.table.headers.amount'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><DollarSign size={14} /></AnimatedIcon>, width: 'w-28' },
-                        { label: t('venezuela.pagos.table.headers.reference'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><Hash size={14} /></AnimatedIcon>, width: 'w-36' },
-                        { label: t('venezuela.pagos.table.headers.destination'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><MapPin size={14} /></AnimatedIcon>, width: 'w-28' },
-                        { label: t('venezuela.pagos.table.headers.actions'), icon: <AnimatedIcon animation={["pulse", "shake"]}><MoreHorizontal size={14} /></AnimatedIcon>, width: 'w-28' }
+                        { label: t('venezuela.pagos.table.headers.id'), icon: <AnimatedIcon animation={["pulse","bounce"]}><Hash size={14} /></AnimatedIcon>, width: 'w-44' },
+                        { label: t('venezuela.pagos.table.headers.client'), icon: <AnimatedIcon animation={["pulse","bounce"]}><User size={14} /></AnimatedIcon>, width: 'w-36' },
+                        { label: t('venezuela.pagos.table.headers.status'), icon: <AnimatedIcon animation={["pulse","bounce"]}><CheckCircle size={14} /></AnimatedIcon>, width: 'w-32' },
+                        { label: t('venezuela.pagos.table.headers.date'), icon: <AnimatedIcon animation={["pulse","bounce"]}><Calendar size={14} /></AnimatedIcon>, width: 'w-24' },
+                        { label: t('venezuela.pagos.table.headers.amount'), icon: <AnimatedIcon animation={["pulse","bounce"]}><DollarSign size={14} /></AnimatedIcon>, width: 'w-28' },
+                        { label: t('venezuela.pagos.table.headers.reference'), icon: <AnimatedIcon animation={["pulse","bounce"]}><Hash size={14} /></AnimatedIcon>, width: 'w-36' },
+                        { label: t('venezuela.pagos.table.headers.destination'), icon: <AnimatedIcon animation={["pulse","bounce"]}><MapPin size={14} /></AnimatedIcon>, width: 'w-28' },
+                        { label: t('venezuela.pagos.table.headers.actions'), icon: <AnimatedIcon animation={["pulse","shake"]}><MoreHorizontal size={14} /></AnimatedIcon>, width: 'w-28' }
                       ].map((header, index) => (
                         <th key={index} className={`px-2 py-3 text-left ${header.width}`}>
                           <div className={`flex items-center gap-1 text-xs font-semibold uppercase tracking-wider ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>
@@ -1205,8 +1099,8 @@ const PaymentValidationDashboard: React.FC = () => {
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {filteredPayments.map((payment) => (
-                      <tr
-                        key={payment.id}
+                      <tr 
+                        key={payment.id} 
                         className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-transparent transition-all duration-200 group"
                       >
                         <td className="px-2 py-3">
@@ -1237,15 +1131,18 @@ const PaymentValidationDashboard: React.FC = () => {
                           <span className="truncate block">{formatDate(payment.fecha)}</span>
                         </td>
                         <td className="px-2 py-3">
-                          <div
-                            className={`text-sm font-bold truncate transition-colors duration-200 ${mounted && theme === 'dark' ? 'text-green-300 group-hover:text-green-400' : 'text-gray-900 group-hover:text-green-600'}`}
-                            title={`$${payment.monto.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                          >
-                            {formatCompactMoney(payment.monto)}
+                          <div className={`text-sm font-bold truncate transition-colors duration-200 ${mounted && theme === 'dark' ? 'text-green-300 group-hover:text-green-400' : 'text-gray-900 group-hover:text-green-600'}`}>
+                            <PriceDisplay 
+                              amount={payment.monto} 
+                              currency="USD"
+                              variant="inline"
+                              size="sm"
+                              emphasizeBolivars={true}
+                            />
                           </div>
                         </td>
                         <td className="px-2 py-3">
-                          <span className={`text-xs font-mono px-2 py-1 rounded truncate block ${mounted && theme === 'dark' ? 'text-slate-300 bg-slate-900' : 'text-gray-600 bg-gray-50'}`}>
+                          <span className={`text-xs font-mono px-2 py-1 rounded truncate block ${mounted && theme === 'dark' ? 'text-slate-300 bg-slate-900' : 'text-gray-600 bg-gray-50'}`}> 
                             {payment.referencia}
                           </span>
                         </td>
@@ -1256,17 +1153,18 @@ const PaymentValidationDashboard: React.FC = () => {
                                 <AlertTriangle size={10} className="text-orange-500 flex-shrink-0" />
                               </AnimatedIcon>
                             )}
-                            <span className={`text-xs px-2 py-1 rounded-full truncate ${payment.destino === 'China'
-                              ? mounted && theme === 'dark' ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-800'
-                              : mounted && theme === 'dark' ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-800'
-                              }`}>
+                            <span className={`text-xs px-2 py-1 rounded-full truncate ${
+                              payment.destino === 'China'
+                                ? mounted && theme === 'dark' ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-800'
+                                : mounted && theme === 'dark' ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-800'
+                            }`}>
                               {payment.destino}
                             </span>
                           </div>
                         </td>
                         <td className="px-2 py-3">
-                          <PaymentActions
-                            payment={payment}
+                          <PaymentActions 
+                            payment={payment} 
                             onApprove={handleApprove}
                             onReject={openRejectionConfirmation}
                             onViewDetails={openDetailsModal}
@@ -1291,25 +1189,6 @@ const PaymentValidationDashboard: React.FC = () => {
               )}
             </div>
 
-
-            {/* Load More Button */}
-            {hasMore && !searchTerm && (
-              <div className="mt-4 flex justify-center">
-                <Button
-                  onClick={() => setPage(p => p + 1)}
-                  disabled={loading}
-                  variant="outline"
-                  className="min-w-[200px]"
-                >
-                  {loading ? (
-                    <><AnimatedIcon animation="spin"><Clock size={16} className="mr-2" /></AnimatedIcon> {t('venezuela.pagos.actions.loading') || 'Cargando...'}</>
-                  ) : (
-                    <>{t('venezuela.pagos.actions.loadMore') || 'Cargar más'}</>
-                  )}
-                </Button>
-              </div>
-            )}
-
             {/* Footer */}
             <div className={`mt-4 md:mt-6 text-center text-xs md:text-sm text-gray-500`}>
               {t('venezuela.pagos.footer.showing', { shown: filteredPayments.length, total: payments.length })}
@@ -1325,62 +1204,62 @@ const PaymentValidationDashboard: React.FC = () => {
 // ================================
 // COMPONENTE: ACCIONES DE PAGO PENDIENTE
 // ================================
-const PaymentActions: React.FC<{
-  payment: Payment;
-  onApprove: (id: string) => void;
+const PaymentActions: React.FC<{ 
+  payment: Payment; 
+  onApprove: (id: string) => void; 
   onReject: (id: string) => void;
   onViewDetails: (payment: Payment) => void;
   onSend: (id: string) => void;
   isSending?: boolean;
-}> = ({
-  payment,
-  onApprove,
+}> = ({ 
+  payment, 
+  onApprove, 
   onReject,
   onViewDetails,
   onSend,
   isSending
 }) => {
-    const { t } = useTranslation();
-    return (
-      <div className="flex items-center gap-2">
-        {payment.estado === 'pendiente' && (
-          <>
-            <button
-              onClick={() => onApprove(payment.id)}
-              className="flex items-center p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
-            >
-              <Check size={14} />
-            </button>
-            <button
-              onClick={() => onReject(payment.id)}
-              className="flex items-center p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
-            >
-              <X size={14} />
-            </button>
-          </>
-        )}
-
-        {payment.estado === 'completado' && (
-          <button
-            onClick={() => onSend(payment.id)}
-            disabled={payment.sendChina || isSending}
-            className={`flex items-center p-2 rounded-lg transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md ${payment.sendChina || isSending ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
-            title={payment.sendChina ? (t('venezuela.pagos.status.sentChina') || 'Enviado a China') : (t('venezuela.pagos.actions.send') || 'Enviar')}
+  const { t } = useTranslation();
+  return (
+    <div className="flex items-center gap-2">
+      {payment.estado === 'pendiente' && (
+        <>
+          <button 
+            onClick={() => onApprove(payment.id)}
+            className="flex items-center p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
           >
-            <Send size={14} />
+            <Check size={14} />
           </button>
-        )}
+          <button 
+            onClick={() => onReject(payment.id)}
+            className="flex items-center p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
+          >
+            <X size={14} />
+          </button>
+        </>
+      )}
 
-        <button
-          onClick={() => onViewDetails(payment)}
-          className="flex items-center p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
-          title={t('venezuela.pagos.actions.view')}
+      {payment.estado === 'completado' && (
+        <button 
+          onClick={() => onSend(payment.id)}
+          disabled={payment.sendChina || isSending}
+          className={`flex items-center p-2 rounded-lg transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md ${payment.sendChina || isSending ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+          title={payment.sendChina ? (t('venezuela.pagos.status.sentChina') || 'Enviado a China') : (t('venezuela.pagos.actions.send') || 'Enviar')}
         >
-          <Eye size={14} />
+          <Send size={14} />
         </button>
-      </div>
-    );
-  };
+      )}
+
+      <button 
+        onClick={() => onViewDetails(payment)}
+        className="flex items-center p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
+        title={t('venezuela.pagos.actions.view')}
+      >
+        <Eye size={14} />
+      </button>
+    </div>
+  );
+};
 
 // ================================
 // COMPONENTE: AVATAR DE USUARIO

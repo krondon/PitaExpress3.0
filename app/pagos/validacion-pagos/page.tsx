@@ -120,26 +120,6 @@ const AnimatedIcon: React.FC<{
   );
 };
 
-// Helper para formatear números grandes de forma compacta (ej. 38.7B, 1.5M)
-const formatCompactMoney = (amount: number) => {
-  // Si es menor a 1 millón, usar formato estándar con 2 decimales
-  if (amount < 1_000_000) {
-    return `$${amount.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  }
-
-  // Si es billón (Billion) o más (1,000,000,000)
-  if (amount >= 1_000_000_000) {
-    return `$${(amount / 1_000_000_000).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}B`;
-  }
-
-  // Si es millón (Million) o más
-  if (amount >= 1_000_000) {
-    return `$${(amount / 1_000_000).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}M`;
-  }
-
-  return `$${amount.toLocaleString('es-ES')}`;
-};
-
 // ================================
 // COMPONENTE: TARJETAS DE ESTADÍSTICAS
 // ================================
@@ -150,7 +130,7 @@ const StatsCards: React.FC<{ stats: PaymentStats }> = ({ stats }) => {
   const cardsData = [
     {
       title: t('venezuela.pagos.stats.totalSpent'),
-      value: formatCompactMoney(stats.totalGastado),
+      value: `$${stats.totalGastado.toLocaleString()}`,
       icon: <TrendingUp size={24} />,
       bgColor: 'bg-blue-500',
       textColor: 'text-white'
@@ -425,9 +405,11 @@ const PaymentCard: React.FC<{ payment: Payment; onApprove: (id: string) => void;
   onViewDetails
 }) => {
   const { t } = useTranslation();
-  /* Helper formatCurrency original eliminado en favor de formatCompactMoney */
   const formatCurrency = (amount: number) => {
-    return formatCompactMoney(amount);
+    return `$${amount.toLocaleString('es-ES', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
   };
 
   const formatDate = (dateString: string) => {
@@ -463,12 +445,7 @@ const PaymentCard: React.FC<{ payment: Payment; onApprove: (id: string) => void;
         </div>
         <div className="flex justify-between">
           <span className="text-gray-600">{t('venezuela.pagos.mobile.amount')}</span>
-          <span
-            className="font-semibold text-green-600 truncate"
-            title={`$${payment.monto.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-          >
-            {formatCompactMoney(payment.monto)}
-          </span>
+          <span className="font-semibold text-green-600">{formatCurrency(payment.monto)}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-gray-600">{t('venezuela.pagos.mobile.method')}</span>
@@ -550,8 +527,8 @@ const ConfirmationDialog: React.FC<{
           <button
             onClick={onClose}
             className={`px-4 py-2 rounded-md transition-colors ${isDark
-              ? 'bg-slate-700 text-slate-200 hover:bg-slate-600'
-              : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                ? 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+                : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
               }`}
           >
             {t('venezuela.pagos.modal.reject.cancel')}
@@ -675,7 +652,7 @@ const PaymentValidationDashboard: React.FC = () => {
         else if (filterStatus === 'completado') query = query.eq('state', 5);
         else if (filterStatus === 'rechazado') query = query.eq('state', -1);
         const { data, error, count } = await query
-          .order('created_at', { ascending: false })
+          .order('id', { ascending: true })
           .range(from, to);
 
         if (error) throw error;
@@ -714,8 +691,13 @@ const PaymentValidationDashboard: React.FC = () => {
           };
         }) || [];
 
-        // Ordenamiento manejado por la base de datos (más reciente primero)
-        // mapped = mapped.sort(...) eliminado para respetar el orden cronológico inverso
+        // Fallback: asegurar orden ascendente numérico por si Supabase devuelve algo fuera de orden
+        mapped = mapped.sort((a, b) => {
+          const na = parseInt(a.id, 10);
+          const nb = parseInt(b.id, 10);
+          if (isNaN(na) || isNaN(nb)) return a.id.localeCompare(b.id);
+          return na - nb;
+        });
 
         setPayments(mapped);
         if (typeof count === 'number') setTotalCount(count);
@@ -1263,13 +1245,9 @@ const PaymentValidationDashboard: React.FC = () => {
                       <td className={`px-2 py-3 text-sm ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-gray-900'}`}>
                         <span className="truncate block">{formatDate(payment.fecha)}</span>
                       </td>
-
                       <td className="px-2 py-3">
-                        <span
-                          className={`text-sm font-bold truncate block transition-colors duration-200 ${mounted && theme === 'dark' ? 'text-green-300 group-hover:text-green-400' : 'text-gray-900 group-hover:text-green-600'}`}
-                          title={`$${payment.monto.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                        >
-                          {formatCompactMoney(payment.monto)}
+                        <span className={`text-sm font-bold truncate block transition-colors duration-200 ${mounted && theme === 'dark' ? 'text-green-300 group-hover:text-green-400' : 'text-gray-900 group-hover:text-green-600'}`}>
+                          {formatCurrency(payment.monto)}
                         </span>
                       </td>
                       <td className="px-2 py-3">
@@ -1363,7 +1341,7 @@ const PaymentValidationDashboard: React.FC = () => {
             </div>
           </div>
         </div>
-      </div >
+      </div>
       <Toaster />
     </>
   );

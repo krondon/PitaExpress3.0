@@ -330,6 +330,7 @@ export default function DashboardPage() {
                 <div
                   className={`text-xl md:text-2xl lg:text-3xl font-bold ${mounted && theme === 'dark' ? 'text-blue-300' : 'text-blue-900'}`}
                   title={`$${totalGastado.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                  suppressHydrationWarning
                 >
                   {formatCompactMoney(totalGastado)}
                 </div>
