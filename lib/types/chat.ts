@@ -3,7 +3,7 @@
 // ============================================
 
 // Roles válidos para el chat
-export type ChatRole = 'admin' | 'china' | 'venezuela';
+export type ChatRole = 'admin' | 'china' | 'venezuela' | 'pagos';
 
 export interface ChatMessage {
   id: string;
