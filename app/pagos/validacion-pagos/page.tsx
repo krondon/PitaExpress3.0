@@ -637,12 +637,10 @@ const PaymentValidationDashboard: React.FC = () => {
         // Rango de paginación
         const from = (page - 1) * PAGE_SIZE;
         const to = from + PAGE_SIZE - 1;
-        // Pagos ve: estado 4 (pendiente validación), estado 5 (validado), estado -1 (rechazado) 
-        // Rechazados: solo si max_state_reached >= 4 (llegaron hasta pagos)
         let query = supabase
           .from('orders')
           .select(selectCols, { count: 'exact' })
-          .or('state.eq.4,state.eq.5,and(state.eq.-1,max_state_reached.gte.4)')
+          .or('state.gte.4,and(state.eq.-1,max_state_reached.gte.4)')
           .eq('archived_by_pagos', false);
         const { data, error, count } = await query
           .order('created_at', { ascending: false })
@@ -665,7 +663,8 @@ const PaymentValidationDashboard: React.FC = () => {
           let estado: Payment['estado'];
           if (o.state === 4) estado = 'pendiente';
           else if (o.state === -1) estado = 'rechazado';
-          else estado = 'completado';
+          else if (o.state >= 5) estado = 'completado'; // Cualquier estado avanzado cuenta como pagado
+          else estado = 'completado'; // Fallback default
           // El monto debe venir SOLO de la cotización de China (totalQuote en USD)
           // Si no hay cotización, usamos 0 y se mostrará como pendiente de cotización
           const monto = o.totalQuote !== null && o.totalQuote !== undefined ? Number(o.totalQuote) : 0;

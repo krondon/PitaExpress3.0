@@ -1747,7 +1747,8 @@ export default function PedidosChina() {
             </div>
           )}
           <div className="flex w-full sm:w-auto flex-wrap items-center gap-1.5 sm:gap-2 justify-start sm:justify-end">
-            {p.estado === 'enviado' && (p.numericState ?? 0) < 6 && (
+            {/* Botón Empaquetar: Para enviados no procesados Y para estado 5 (listo para empaquetar) */}
+            {((p.estado === 'enviado' && (p.numericState ?? 0) < 6) || (p.numericState === 5)) && (
               <Button
                 size="sm"
                 className="h-7 sm:h-8 px-2 sm:px-3 flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-[10px] sm:text-xs"
@@ -1792,7 +1793,7 @@ export default function PedidosChina() {
               <span className="hidden sm:inline">{t('chinese.ordersPage.orders.view', { defaultValue: 'Ver' })}</span>
             </Button>
 
-            {p.estado === 'pendiente' && (() => {
+            {p.estado === 'pendiente' && p.numericState !== 5 && (() => {
               // Ocultar botones si hay una alternativa pendiente
               if (p.alternativeStatus === 'pending') return null;
 
