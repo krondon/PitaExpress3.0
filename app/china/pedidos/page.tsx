@@ -215,11 +215,13 @@ export default function PedidosChina() {
     // 1-2: pendiente (pedidos nuevos y recibidos)
     // 3: cotizado
     // 4: procesando
+    // 5-8: enviado (AHORA 6-8, 5 se mueve a pendiente)
     // 5-8: enviado
-    if (state >= 5 && state <= 8) return 'enviado';
-    if (state === 4) return 'procesando';
+    // AHORA: 6 y 8 enviado. 7 procesando. 5 pendiente.
+    if (state === 6 || state === 8) return 'enviado';
+    if (state === 4 || state === 7) return 'procesando';
     if (state === 3) return 'cotizado';
-    if (state === 1 || state === 2) return 'pendiente';
+    if (state === 1 || state === 2 || state === 5) return 'pendiente';
     // Fallback
     return 'pendiente';
   }
