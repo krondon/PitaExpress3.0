@@ -45,6 +45,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { NotificationsFactory } from '@/lib/notifications';
 import { useNotifications } from '@/hooks/use-notifications';
 import { ArchiveHistoryButton } from '@/components/shared/ArchiveHistoryButton';
+import { formatCompactMoney } from '@/lib/utils';
+
 
 // =============================================
 // SIEMPRE datos reales: lógica unificada con admin
@@ -130,7 +132,7 @@ const StatsCards: React.FC<{ stats: PaymentStats }> = ({ stats }) => {
   const cardsData = [
     {
       title: t('venezuela.pagos.stats.totalSpent'),
-      value: `$${stats.totalGastado.toLocaleString()}`,
+      value: formatCompactMoney(stats.totalGastado),
       icon: <TrendingUp size={24} />,
       bgColor: 'bg-blue-500',
       textColor: 'text-white'
@@ -405,12 +407,7 @@ const PaymentCard: React.FC<{ payment: Payment; onApprove: (id: string) => void;
   onViewDetails
 }) => {
   const { t } = useTranslation();
-  const formatCurrency = (amount: number) => {
-    return `$${amount.toLocaleString('es-ES', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    })}`;
-  };
+
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
@@ -445,7 +442,7 @@ const PaymentCard: React.FC<{ payment: Payment; onApprove: (id: string) => void;
         </div>
         <div className="flex justify-between">
           <span className="text-gray-600">{t('venezuela.pagos.mobile.amount')}</span>
-          <span className="font-semibold text-green-600">{formatCurrency(payment.monto)}</span>
+          <span className="font-semibold text-green-600" suppressHydrationWarning>{formatCompactMoney(payment.monto)}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-gray-600">{t('venezuela.pagos.mobile.method')}</span>
@@ -527,8 +524,8 @@ const ConfirmationDialog: React.FC<{
           <button
             onClick={onClose}
             className={`px-4 py-2 rounded-md transition-colors ${isDark
-                ? 'bg-slate-700 text-slate-200 hover:bg-slate-600'
-                : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+              ? 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+              : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
               }`}
           >
             {t('venezuela.pagos.modal.reject.cancel')}
@@ -647,12 +644,8 @@ const PaymentValidationDashboard: React.FC = () => {
           .select(selectCols, { count: 'exact' })
           .or('state.eq.4,state.eq.5,and(state.eq.-1,max_state_reached.gte.4)')
           .eq('archived_by_pagos', false);
-        // Filtro server-side por estado (pendiente = state 4, completado >4)
-        if (filterStatus === 'pendiente') query = query.eq('state', 4);
-        else if (filterStatus === 'completado') query = query.eq('state', 5);
-        else if (filterStatus === 'rechazado') query = query.eq('state', -1);
         const { data, error, count } = await query
-          .order('id', { ascending: true })
+          .order('created_at', { ascending: false })
           .range(from, to);
 
         if (error) throw error;
@@ -691,12 +684,9 @@ const PaymentValidationDashboard: React.FC = () => {
           };
         }) || [];
 
-        // Fallback: asegurar orden ascendente numérico por si Supabase devuelve algo fuera de orden
+        // Fallback: asegurar orden descendente por fecha
         mapped = mapped.sort((a, b) => {
-          const na = parseInt(a.id, 10);
-          const nb = parseInt(b.id, 10);
-          if (isNaN(na) || isNaN(nb)) return a.id.localeCompare(b.id);
-          return na - nb;
+          return new Date(b.fecha).getTime() - new Date(a.fecha).getTime();
         });
 
         setPayments(mapped);
@@ -1024,12 +1014,7 @@ const PaymentValidationDashboard: React.FC = () => {
     });
   };
 
-  const formatCurrency = (amount: number) => {
-    return `$${amount.toLocaleString('es-ES', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    })}`;
-  };
+
 
   const exportarGeneral = async () => {
     const data = filteredPayments.map(payment => ({
@@ -1247,7 +1232,7 @@ const PaymentValidationDashboard: React.FC = () => {
                       </td>
                       <td className="px-2 py-3">
                         <span className={`text-sm font-bold truncate block transition-colors duration-200 ${mounted && theme === 'dark' ? 'text-green-300 group-hover:text-green-400' : 'text-gray-900 group-hover:text-green-600'}`}>
-                          {formatCurrency(payment.monto)}
+                          {formatCompactMoney(payment.monto)}
                         </span>
                       </td>
                       <td className="px-2 py-3">
