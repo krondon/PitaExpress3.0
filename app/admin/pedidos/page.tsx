@@ -133,9 +133,9 @@ const NUMERIC_STATE_TO_UI: Record<number, Order['status']> = {
   2: 'pendiente-china',     // Recibido, pendiente gestión China
   3: 'pendiente-china',     // Cotizado (seguimos tratándolo como pendiente-china hasta asignación Vzla)
   4: 'pendiente-vzla',      // Asignado / pendiente Venezuela
-  5: 'en-transito',         // Procesando / logística
-  6: 'en-transito',
-  7: 'en-transito',
+  5: 'pendiente-china',     // Listo para empaquetar (movido a pendiente para facilitar gestión en China)
+  6: 'en-transito',         // En caja
+  7: 'en-transito',         // En contenedor (China lo ve como Procesando, Admin general 'en-transito' está bien, pero revisemos si quieren procesando)
   8: 'en-transito',         // Enviado a Vzla
   9: 'en-transito',         // Llegando a Vzla
   10: 'en-transito',        // Aduana

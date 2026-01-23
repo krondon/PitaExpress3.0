@@ -571,12 +571,13 @@ const PaymentValidationDashboard: React.FC = () => {
       startTimeout();
       try {
         const selectCols = 'id, client_id, productName, description, totalQuote, estimatedBudget, created_at, state, sendChina';
-        // Incluir estados 4 (pendiente), 5 (completado) y -1 (rechazado)
-        const { data, error } = await supabase
+        // Incluir estados >= 4 (pendiente, completado, avanzado) y rechazos (-1) si alcanzaron pagos
+        let query = supabase
           .from('orders')
           .select(selectCols)
-          .or('state.eq.4,state.eq.5,state.eq.-1')
+          .or('state.gte.4,and(state.eq.-1,max_state_reached.gte.4)')
           .order('created_at', { ascending: false });
+        const { data, error } = await query;
         if (error) throw error;
         const clientIds = (data || []).map((o: any) => o.client_id);
         let clientMap = new Map<string, string>();
@@ -592,6 +593,7 @@ const PaymentValidationDashboard: React.FC = () => {
           let estado: Payment['estado'];
           if (o.state === 4) estado = 'pendiente';
           else if (o.state === -1) estado = 'rechazado';
+          else if (o.state >= 5) estado = 'completado';
           else estado = 'completado';
           return {
             id: String(o.id),
