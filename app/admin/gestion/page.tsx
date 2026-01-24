@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import Sidebar from '@/components/layout/Sidebar';
+import { useAdminLayoutContext } from '@/lib/AdminLayoutContext';
 import Header from '@/components/layout/Header';
 import {
   Save,
@@ -110,8 +110,7 @@ export default function ConfiguracionPage() {
 
   const { t } = useTranslation();
   const { getTimeAgo, translateSource } = useTimeTranslations();
-  const [sidebarExpanded, setSidebarExpanded] = useState(true);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { toggleMobileMenu } = useAdminLayoutContext();
   const { theme } = useTheme();
   const [config, setConfig] = useState<BusinessConfig>({
     airShippingRate: 8.50,
@@ -601,13 +600,7 @@ export default function ConfiguracionPage() {
     };
   }, []);
 
-  const handleMobileMenuToggle = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
 
-  const handleMobileMenuClose = () => {
-    setIsMobileMenuOpen(false);
-  };
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -955,769 +948,753 @@ export default function ConfiguracionPage() {
   }
 
   return (
-    <div
-      className={
-        `min-h-screen flex overflow-x-hidden ` +
-        (mounted && theme === 'dark'
-          ? 'bg-slate-900'
-          : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50')
-      }
-    >
+    <>
       {/* ExchangeRateManager independiente */}
       <ExchangeRateManager
         onRateUpdate={handleExchangeRateUpdate}
         autoUpdate={config.auto_update_exchange_rate_cny}
       />
 
-      <Sidebar
-        isExpanded={sidebarExpanded}
-        setIsExpanded={setSidebarExpanded}
-        isMobileMenuOpen={isMobileMenuOpen}
-        onMobileMenuClose={handleMobileMenuClose}
-        userRole="admin"
-      />
 
-      <main className={`flex-1 transition-all duration-300 ${sidebarExpanded ? 'lg:ml-72 lg:w-[calc(100%-18rem)]' : 'lg:ml-24 lg:w-[calc(100%-6rem)]'}`}>
-        {/* Header personalizado con botón de guardar */}
-        <header className={mounted && theme === 'dark' ? 'bg-slate-800/80 backdrop-blur-sm border-b border-slate-700 sticky top-0 z-40' : 'bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-40'}>
-          <div className="px-4 md:px-5 lg:px-6 py-4">
-            <div className="flex flex-col md:flex-row items-starts md:items-center justify-between gap-4 md:gap-6">
-              <div className="flex items-center gap-4">
-                {/* Mobile Menu Button */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleMobileMenuToggle}
-                  className={`lg:hidden p-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors`}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                </Button>
+      {/* Header personalizado con botón de guardar */}
+      <header className={mounted && theme === 'dark' ? 'bg-slate-800/80 backdrop-blur-sm border-b border-slate-700 sticky top-0 z-40' : 'bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-40'}>
+        <div className="px-4 md:px-5 lg:px-6 py-4">
+          <div className="flex flex-col md:flex-row items-starts md:items-center justify-between gap-4 md:gap-6">
+            <div className="flex items-center gap-4">
+              {/* Mobile Menu Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleMobileMenu}
+                className={`lg:hidden p-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </Button>
 
-                <div>
-                  <h1 className={`text-xl md:text-2xl lg:text-3xl font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('admin.management.header.title')}</h1>
-                  <p className={`text-sm md:text-base ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('admin.management.header.subtitle')}</p>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-                {(lastSaved || lastAdmin) && (
-                  <div className={`text-xs md:text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
-                    <Clock className="w-4 h-4 inline mr-1" />
-                    {lastSaved && (
-                      <>{t('admin.management.financial.lastSaved', { date: lastSaved.toLocaleString('es-VE') })}</>
-                    )}
-                    {lastAdmin && lastAdmin.id && lastAdmin.updated_at && (
-                      <>
-                        <span className="mx-1">|</span>
-                        <span>
-                          {t('admin.management.financial.changeMadeBy', {
-                            userName: lastAdminName || lastAdmin.id,
-                            date: new Date(lastAdmin.updated_at).toLocaleString('es-VE')
-                          })}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                )}
-                <Button
-                  onClick={() => {
-
-                    handleSave();
-                  }}
-                  disabled={isLoading || !hasChanges}
-                  className={`w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg transition-all duration-300 ${(!hasChanges || isLoading) ? 'opacity-50 cursor-not-allowed hover:shadow-lg' : 'hover:shadow-xl'}`}
-                >
-                  {isLoading ? (
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4 mr-2" />
-                  )}
-                  {isLoading ? t('admin.management.actions.saving') : (hasChanges ? t('admin.management.actions.save') : t('admin.management.actions.save'))}
-                </Button>
+              <div>
+                <h1 className={`text-xl md:text-2xl lg:text-3xl font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('admin.management.header.title')}</h1>
+                <p className={`text-sm md:text-base ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('admin.management.header.subtitle')}</p>
               </div>
             </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+              {(lastSaved || lastAdmin) && (
+                <div className={`text-xs md:text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
+                  <Clock className="w-4 h-4 inline mr-1" />
+                  {lastSaved && (
+                    <>{t('admin.management.financial.lastSaved', { date: lastSaved.toLocaleString('es-VE') })}</>
+                  )}
+                  {lastAdmin && lastAdmin.id && lastAdmin.updated_at && (
+                    <>
+                      <span className="mx-1">|</span>
+                      <span>
+                        {t('admin.management.financial.changeMadeBy', {
+                          userName: lastAdminName || lastAdmin.id,
+                          date: new Date(lastAdmin.updated_at).toLocaleString('es-VE')
+                        })}
+                      </span>
+                    </>
+                  )}
+                </div>
+              )}
+              <Button
+                onClick={() => {
+
+                  handleSave();
+                }}
+                disabled={isLoading || !hasChanges}
+                className={`w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg transition-all duration-300 ${(!hasChanges || isLoading) ? 'opacity-50 cursor-not-allowed hover:shadow-lg' : 'hover:shadow-xl'}`}
+              >
+                {isLoading ? (
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4 mr-2" />
+                )}
+                {isLoading ? t('admin.management.actions.saving') : (hasChanges ? t('admin.management.actions.save') : t('admin.management.actions.save'))}
+              </Button>
+            </div>
           </div>
-        </header>
-
-        <div className={`w-full max-w-none space-y-6 md:space-y-8 ${mounted && theme === 'dark' ? 'bg-slate-900' : ''}`}>
-          {/* Alert de advertencia */}
-          <Alert className={`border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-900/30`}>
-            <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-            <AlertDescription className={`text-orange-800 dark:text-orange-200`}>
-              <strong>{t('admin.management.warning.title')}</strong> {t('admin.management.warning.description')}
-            </AlertDescription>
-          </Alert>
-
-          <Tabs defaultValue="shipping" className="space-y-6 md:space-y-8">
-            <TabsList className={`grid w-full grid-cols-3 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm place-items-center`}>
-              <TabsTrigger value="shipping" className="flex items-center space-x-2 text-xs md:text-sm">
-                <Package className="w-4 h-4" />
-                <span>{t('admin.management.tabs.shipping')}</span>
-              </TabsTrigger>
-              <TabsTrigger value="financial" className="flex items-center space-x-2 text-xs md:text-sm">
-                <DollarSign className="w-4 h-4" />
-                <span>{t('admin.management.tabs.financial')}</span>
-              </TabsTrigger>
-              <TabsTrigger value="monitoring" className="flex items-center space-x-2 text-xs md:text-sm">
-                <Activity className="w-4 h-4" />
-                <span>{t('admin.management.tabs.monitoring', { fallback: 'Monitoreo' })}</span>
-              </TabsTrigger>
-            </TabsList>
-
-            {/* TAB: Configuración de Envíos */}
-            <TabsContent value="shipping" className="space-y-6 md:space-y-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-                {/* Envío Aéreo */}
-                <Card className={`shadow-lg border-0 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm`}>
-                  <CardHeader>
-                    <CardTitle className={`flex items-center text-black dark:text-white text-base md:text-lg`}>
-                      <Plane className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
-                      {t('admin.management.shipping.airExpress')}
-                    </CardTitle>
-                    <CardDescription className={`text-black dark:text-slate-300 text-sm`}>
-                      {t('admin.management.shipping.airDescription')}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="airRate" className="text-sm md:text-base">{t('admin.management.shipping.ratePerKg')}</Label>
-                      <div className="relative">
-                        <DollarSign className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-slate-500 w-4 h-4`} />
-                        <Input
-                          id="airRate"
-                          type="number"
-                          step="0.01"
-                          min={0}
-                          value={config.airShippingRate}
-                          onChange={(e) => applyCost('airShippingRate', e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-                      <p className={`text-xs text-slate-500 dark:text-slate-400`}>{t('admin.management.shipping.costPerKg')}</p>
-                    </div>
-
-                    <Separator />
-
-                    {/* Eliminados campos de días de entrega para envío aéreo */}
-                  </CardContent>
-                </Card>
-
-                {/* Envío Marítimo */}
-                <Card className={`shadow-lg border-0 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm`}>
-                  <CardHeader>
-                    <CardTitle className={`flex items-center text-black dark:text-white text-base md:text-lg`}>
-                      <Ship className="w-5 h-5 mr-2 text-teal-600 dark:text-teal-400" />
-                      {t('admin.management.shipping.seaEconomic')}
-                    </CardTitle>
-                    <CardDescription className={`text-black dark:text-slate-300 text-sm`}>
-                      {t('admin.management.shipping.seaDescription')}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="seaRate" className="text-sm md:text-base">{t('admin.management.shipping.ratePerCubicMeter')}</Label>
-                      <div className="relative">
-                        <DollarSign className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-slate-500 w-4 h-4`} />
-                        <Input
-                          id="seaRate"
-                          type="number"
-                          step="0.01"
-                          min={0}
-                          value={config.seaShippingRate}
-                          onChange={(e) => applyCost('seaShippingRate', e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-                      <p className={`text-xs text-slate-500 dark:text-slate-400`}>{t('admin.management.shipping.costPerCubicMeter')}</p>
-                    </div>
-
-                    <Separator />
-
-                    {/* Eliminados campos de días de entrega para envío marítimo */}
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            {/* TAB: Configuración Financiera */}
-            <TabsContent value="financial" className="space-y-6 md:space-y-8">
-              {/* Margen de Ganancia - Primero */}
-              <div className="w-full flex justify-center">
-                <Card className={`shadow-lg border-0 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm max-w-md w-full`}>
-                  <CardHeader>
-                    <CardTitle className={`flex items-center text-black dark:text-white text-base md:text-lg`}>
-                      <Percent className="w-5 h-5 mr-2 text-purple-600 dark:text-purple-400" />
-                      {t('admin.management.financial.profitMarginTitle')}
-                    </CardTitle>
-                    <CardDescription className={`text-black dark:text-slate-300 text-sm`}>
-                      {t('admin.management.financial.profitabilityConfig')}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="profit" className="text-sm md:text-base">{t('admin.management.financial.profitMargin')}</Label>
-                      <Input
-                        id="profit"
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={config.profitMargin}
-                        onChange={(e) => {
-                          let value = parseFloat(e.target.value);
-                          if (e.target.value === "") {
-                            updateConfig('profitMargin', 0);
-                            return;
-                          }
-                          if (isNaN(value)) value = 0;
-                          if (value < 0) value = 0;
-                          if (value > 100) value = 100;
-                          updateConfig('profitMargin', value);
-                        }}
-                        className={config.profitMargin < 0 || config.profitMargin > 100 ? 'border-red-400' : ''}
-                        disabled={isLoading}
-                      />
-                      {(config.profitMargin < 0 || config.profitMargin > 100) && (
-                        <p className={`text-xs text-red-600 dark:text-red-400`}>El margen debe estar entre 0% y 100%.</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Primera fila: Tasa Venezuela y Tasa China */}
-              <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                {/* Tarjeta Venezuela */}
-                <Card className={`shadow-lg border-0 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm`}>
-                  <CardHeader>
-                    <CardTitle className={`flex items-center text-black dark:text-white text-base md:text-lg`}>
-                      <Globe className="w-5 h-5 mr-2 text-green-600 dark:text-green-400" />
-                      {t('admin.management.financial.venezuelaRateTitle') !== 'admin.management.financial.venezuelaRateTitle' ? t('admin.management.financial.venezuelaRateTitle') : 'Tasa Venezuela'}
-                    </CardTitle>
-                    <CardDescription className={`text-black dark:text-slate-300 text-sm`}>
-                      {t('admin.management.financial.venezuelaRateDesc') !== 'admin.management.financial.venezuelaRateDesc' ? t('admin.management.financial.venezuelaRateDesc') : 'Valor de cambio USD → Bs'}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className={`space-y-3 p-4 border border-green-200 dark:border-green-800 rounded-lg bg-green-50/50 dark:bg-green-900/20`}>
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">🇻🇪</span>
-                        <Label className={`text-sm font-semibold text-green-800 dark:text-green-300`}>{t('admin.management.financial.veRateLabel')}</Label>
-                      </div>
-                      <div className="relative">
-                        <Input
-                          id="usdRate"
-                          type="number"
-                          value={config.usdRate}
-                          onChange={e => updateConfig('usdRate', Number(e.target.value))}
-                          className="pr-12"
-                          title={config.auto_update_exchange_rate ? "Campo bloqueado: Auto-actualización activada" : "Editar tasa manualmente"}
-                          disabled={isLoading || exchangeRateLoading || config.auto_update_exchange_rate}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => refreshRate(true)}
-                          disabled={isLoading || exchangeRateLoading}
-                          className={`absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-slate-700`}
-                          title="Actualizar tasa desde BCV"
-                        >
-                          {exchangeRateLoading ? (
-                            <RefreshCw className={`h-4 w-4 animate-spin text-black dark:text-white`} />
-                          ) : (
-                            <RefreshCw className={`h-4 w-4 text-black dark:text-white`} />
-                          )}
-                        </Button>
-                      </div>
-                      <div className="flex items-center justify-between space-x-2 mt-2">
-                        <div className="flex items-center space-x-2">
-                          {isAutoUpdating ? (
-                            <Wifi className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <WifiOff className="h-4 w-4 text-gray-400" />
-                          )}
-                          <Label htmlFor="autoUpdate" className="text-xs cursor-pointer">
-                            {t('admin.management.financial.autoUpdateBCV')}
-                          </Label>
-                        </div>
-                        <Switch
-                          id="autoUpdate"
-                          checked={config.auto_update_exchange_rate}
-                          disabled={isLoading}
-                          onCheckedChange={(checked) => {
-                            if (isLoading) return;
-                            setConfig(prev => ({ ...prev, auto_update_exchange_rate: checked }));
-                            setBaselineVersion(v => v + 1);
-                          }}
-                        />
-                      </div>
-                      {exchangeRateLastUpdated && (
-                        <div className={`text-xs text-gray-600 dark:text-slate-400 mt-2`}>
-                          <div className="flex items-center justify-between">
-                            <span>{t('admin.management.financial.updated')}</span>
-                            <Badge variant="secondary" className="text-xs">
-                              {getTimeAgo(exchangeRateLastUpdated)}
-                            </Badge>
-                          </div>
-                          {exchangeRateSource && (
-                            <div className="flex items-center justify-between mt-1">
-                              <span>{t('admin.management.financial.source')}</span>
-                              <span className="font-medium">{translateSource(exchangeRateSource)}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-                {/* Tarjeta China */}
-                <Card className={`shadow-lg border-0 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm`}>
-                  <CardHeader>
-                    <CardTitle className={`flex items-center text-black dark:text-white text-base md:text-lg`}>
-                      <Globe className="w-5 h-5 mr-2 text-green-600 dark:text-green-400" />
-                      {t('admin.management.financial.chinaRateTitle') !== 'admin.management.financial.chinaRateTitle' ? t('admin.management.financial.chinaRateTitle') : 'Tasa China'}
-                    </CardTitle>
-                    <CardDescription className={`text-black dark:text-slate-300 text-sm`}>
-                      {t('admin.management.financial.chinaRateDesc') !== 'admin.management.financial.chinaRateDesc' ? t('admin.management.financial.chinaRateDesc') : 'Valor de cambio USD → CNY'}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className={`space-y-3 p-4 border border-red-200 dark:border-red-800 rounded-lg bg-red-50/50 dark:bg-red-900/20`}>
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">🇨🇳</span>
-                        <Label className={`text-sm font-semibold text-red-800 dark:text-red-300`}>{t('admin.management.financial.cnRateLabel')}</Label>
-                      </div>
-                      <div className="relative">
-                        <Input
-                          id="cnyRate"
-                          type="number"
-                          step="0.0001"
-                          min={0}
-                          value={config.auto_update_exchange_rate_cny ?
-                            (currentExchangeRateCNY !== null ? currentExchangeRateCNY : '') :
-                            config.cnyRate}
-                          onChange={(e) => applyCost('cnyRate', e.target.value)}
-                          className={exchangeRateErrorCNY ? 'border-red-300 pr-12' : 'pr-12'}
-                          disabled={isLoading || exchangeRateLoadingCNY || config.auto_update_exchange_rate_cny}
-                          placeholder="7.2500"
-                          title={config.auto_update_exchange_rate_cny ? "Campo bloqueado: Auto-actualización activada" : "Editar tasa manualmente"}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={refreshRateCNY}
-                          disabled={isLoading || exchangeRateLoadingCNY}
-                          className={`absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-slate-700`}
-                          title="Actualizar tasa desde API"
-                        >
-                          {exchangeRateLoadingCNY ? (
-                            <RefreshCw className={`h-4 w-4 animate-spin text-black dark:text-white`} />
-                          ) : (
-                            <RefreshCw className={`h-4 w-4 text-black dark:text-white`} />
-                          )}
-                        </Button>
-                      </div>
-                      <div className="flex items-center justify-between space-x-2 mt-2">
-                        <div className="flex items-center space-x-2">
-                          {isAutoUpdatingCNY ? (
-                            <Wifi className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <WifiOff className="h-4 w-4 text-gray-400" />
-                          )}
-                          <Label htmlFor="autoUpdateCNY" className="text-xs cursor-pointer">
-                            {t('admin.management.financial.autoUpdateAPI')}
-                          </Label>
-                        </div>
-                        <Switch
-                          id="autoUpdateCNY"
-                          checked={config.auto_update_exchange_rate_cny}
-                          disabled={isLoading}
-                          onCheckedChange={(checked) => {
-                            if (isLoading) return;
-                            setConfig(prev => ({ ...prev, auto_update_exchange_rate_cny: checked }));
-                            setBaselineVersion(v => v + 1);
-                          }}
-                        />
-                      </div>
-                      {exchangeRateLastUpdatedCNY && (
-                        <div className={`text-xs text-gray-600 dark:text-slate-400 mt-2`}>
-                          <div className="flex items-center justify-between">
-                            <span>{t('admin.management.financial.updated')}</span>
-                            <Badge variant="secondary" className="text-xs">
-                              {getTimeAgo(exchangeRateLastUpdatedCNY)}
-                            </Badge>
-                          </div>
-                          {exchangeRateSourceCNY && (
-                            <div className="flex items-center justify-between mt-1">
-                              <span>{t('admin.management.financial.source')}</span>
-                              <span className="font-medium">{translateSource(exchangeRateSourceCNY)}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Segunda fila: Tasa Binance y Margen de Ganancia */}
-              <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-6">
-                {/* Tarjeta Binance */}
-                <Card className={`shadow-lg border-0 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm`}>
-                  <CardHeader>
-                    <CardTitle className={`flex items-center text-black dark:text-white text-base md:text-lg`}>
-                      <Globe className="w-5 h-5 mr-2 text-green-600 dark:text-green-400" />
-                      {t('admin.management.financial.binanceRateTitle')} (Compra)
-                    </CardTitle>
-                    <CardDescription className={`text-black dark:text-slate-300 text-sm`}>
-                      {t('admin.management.financial.binanceRateBuyDesc') !== 'admin.management.financial.binanceRateBuyDesc'
-                        ? t('admin.management.financial.binanceRateBuyDesc')
-                        : 'Tasa de compra VES → USDT (5 ofertas más altas)'}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className={`space-y-3 p-4 border border-orange-200 dark:border-orange-800 rounded-lg bg-orange-50/50 dark:bg-orange-900/20`}>
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">🪙</span>
-                        <Label className={`text-sm font-semibold text-orange-800 dark:text-orange-300`}>Tasa STABLECOIN</Label>
-                      </div>
-                      <div className="relative">
-                        <Input
-                          id="binanceRate"
-                          type="number"
-                          step="0.01"
-                          min={0}
-                          value={config.auto_update_binance_rate ?
-                            (currentExchangeRateBinance !== null ? parseFloat(currentExchangeRateBinance.toFixed(2)) : '') :
-                            config.binanceRate}
-                          onChange={(e) => {
-                            const val = parseFloat(e.target.value) || 0;
-                            setConfig(prev => ({ ...prev, binanceRate: val }));
-                            setBaselineVersion(v => v + 1);
-                          }}
-                          className={exchangeRateErrorBinance ? 'border-red-300 pr-12' : 'pr-12'}
-                          disabled={isLoading || exchangeRateLoadingBinance || config.auto_update_binance_rate}
-                          placeholder="299.51"
-                          title={config.auto_update_binance_rate ? "Campo bloqueado: Auto-actualización activada" : "Editar tasa manualmente"}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => refreshRateBinance()}
-                          disabled={isLoading || exchangeRateLoadingBinance}
-                          className={`absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-slate-700`}
-                          title="Actualizar tasa desde STABLECOIN"
-                        >
-                          {exchangeRateLoadingBinance ? (
-                            <RefreshCw className={`h-4 w-4 animate-spin text-black dark:text-white`} />
-                          ) : (
-                            <RefreshCw className={`h-4 w-4 text-black dark:text-white`} />
-                          )}
-                        </Button>
-                      </div>
-                      <div className="flex items-center justify-between space-x-2 mt-2">
-                        <div className="flex items-center space-x-2">
-                          {isAutoUpdatingBinance ? (
-                            <Wifi className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <WifiOff className="h-4 w-4 text-gray-400" />
-                          )}
-                          <Label htmlFor="autoUpdateBinance" className="text-xs cursor-pointer">
-                            {t('admin.management.financial.autoUpdateBinance') !== 'admin.management.financial.autoUpdateBinance'
-                              ? t('admin.management.financial.autoUpdateBinance')
-                              : 'Actualización automática Binance'}
-                          </Label>
-                        </div>
-                        <Switch
-                          id="autoUpdateBinance"
-                          checked={config.auto_update_binance_rate}
-                          disabled={isLoading}
-                          onCheckedChange={(checked) => {
-                            if (isLoading) return;
-                            setConfig(prev => ({ ...prev, auto_update_binance_rate: checked }));
-                            setBaselineVersion(v => v + 1);
-                          }}
-                        />
-                      </div>
-                      {exchangeRateLastUpdatedBinance && (
-                        <div className={`text-xs text-gray-600 dark:text-slate-400 mt-2`}>
-                          <div className="flex items-center justify-between">
-                            <span>{t('admin.management.financial.updated')}</span>
-                            <Badge variant="secondary" className="text-xs">
-                              {getTimeAgo(exchangeRateLastUpdatedBinance)}
-                            </Badge>
-                          </div>
-                          {exchangeRateSourceBinance && (
-                            <div className="flex items-center justify-between mt-1">
-                              <span>{t('admin.management.financial.source')}</span>
-                              <span className="font-medium">{translateSource(exchangeRateSourceBinance)}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Calculadora de Conversión USDT → VES */}
-                      <div className={`mt-4 p-4 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 border border-orange-200 dark:border-orange-800 rounded-lg`}>
-                        <div className="flex items-center gap-2 mb-3">
-                          <Calculator className={`w-5 h-5 text-orange-600 dark:text-orange-400`} />
-                          <h4 className={`text-sm font-semibold text-orange-900 dark:text-orange-200`}>{t('admin.management.financial.calculadoraTitle')}</h4>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {/* Input USDT */}
-                          <div className="space-y-2">
-                            <Label htmlFor="usdtCalc" className={`text-xs text-orange-800 dark:text-orange-300`}>{t('admin.management.financial.calculadoraCantidadUSDT')}</Label>
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-600 font-semibold">₮</span>
-                              <Input
-                                id="usdtCalc"
-                                type="number"
-                                step="0.01"
-                                min={0}
-                                value={usdtAmount}
-                                onChange={(e) => setUsdtAmount(parseFloat(e.target.value) || 0)}
-                                className="pl-8 border-orange-300 focus:border-orange-500 focus:ring-orange-500"
-                              />
-                            </div>
-                          </div>
-
-                          {/* Output VES */}
-                          <div className="space-y-2">
-                            <Label className={`text-xs text-orange-800 dark:text-orange-300`}>{t('admin.management.financial.calculadoraEquivalenteVES')}</Label>
-                            <div className="relative">
-                              <div className={`flex items-center h-10 px-3 bg-white dark:bg-slate-700 border border-orange-300 dark:border-orange-700 rounded-md`}>
-                                <span className={`text-lg font-bold text-orange-600 dark:text-orange-400`}>
-                                  {(usdtAmount * (config.auto_update_binance_rate ? (currentExchangeRateBinance || config.binanceRate) : config.binanceRate)).toLocaleString('es-VE', {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2
-                                  })} Bs
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Info adicional */}
-                        <div className={`mt-3 pt-3 border-t border-orange-200 dark:border-orange-800`}>
-                          <p className={`text-xs text-orange-700 dark:text-orange-300`}>
-                            📊 {t('admin.management.financial.calculadoraUsandoTasa')} <span className="font-semibold">{config.auto_update_binance_rate ? (currentExchangeRateBinance !== null ? currentExchangeRateBinance.toFixed(2) : config.binanceRate.toFixed(2)) : config.binanceRate.toFixed(2)} Bs/USDT</span>
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Tarjeta Binance VENTA */}
-                <Card className={`shadow-lg border-0 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm`}>
-                  <CardHeader>
-                    <CardTitle className={`flex items-center text-black dark:text-white text-base md:text-lg`}>
-                      <Globe className="w-5 h-5 mr-2 text-green-600 dark:text-green-400" />
-                      {t('admin.management.financial.binanceRateTitle')} (Venta)
-                    </CardTitle>
-                    <CardDescription className={`text-black dark:text-slate-300 text-sm`}>
-                      {t('admin.management.financial.binanceRateSellDesc') !== 'admin.management.financial.binanceRateSellDesc'
-                        ? t('admin.management.financial.binanceRateSellDesc')
-                        : 'Tasa de venta USDT → VES (5 ofertas más altas)'}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className={`space-y-3 p-4 border border-orange-200 dark:border-orange-800 rounded-lg bg-orange-50/50 dark:bg-orange-900/20`}>
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">🪙</span>
-                        <Label className={`text-sm font-semibold text-orange-800 dark:text-orange-300`}>Tasa STABLECOIN</Label>
-                      </div>
-                      <div className="relative">
-                        <Input
-                          id="binanceRateSell"
-                          type="number"
-                          step="0.01"
-                          min={0}
-                          value={config.auto_update_binance_rate_sell ?
-                            (currentExchangeRateBinanceSell !== null ? parseFloat(currentExchangeRateBinanceSell.toFixed(2)) : '') :
-                            config.binanceRateSell}
-                          onChange={(e) => {
-                            const val = parseFloat(e.target.value) || 0;
-                            setConfig(prev => ({ ...prev, binanceRateSell: val }));
-                            setBaselineVersion(v => v + 1);
-                          }}
-                          className={exchangeRateErrorBinanceSell ? 'border-red-300 pr-12' : 'pr-12'}
-                          disabled={isLoading || exchangeRateLoadingBinanceSell || config.auto_update_binance_rate_sell}
-                          placeholder="299.51"
-                          title={config.auto_update_binance_rate_sell ? "Campo bloqueado: Auto-actualización activada" : "Editar tasa manualmente"}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => refreshRateBinanceSell()}
-                          disabled={isLoading || exchangeRateLoadingBinanceSell}
-                          className={`absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-slate-700`}
-                          title="Actualizar tasa de venta desde STABLECOIN"
-                        >
-                          {exchangeRateLoadingBinanceSell ? (
-                            <RefreshCw className={`h-4 w-4 animate-spin text-black dark:text-white`} />
-                          ) : (
-                            <RefreshCw className={`h-4 w-4 text-black dark:text-white`} />
-                          )}
-                        </Button>
-                      </div>
-                      <div className="flex items-center justify-between space-x-2 mt-2">
-                        <div className="flex items-center space-x-2">
-                          {isAutoUpdatingBinanceSell ? (
-                            <Wifi className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <WifiOff className="h-4 w-4 text-gray-400" />
-                          )}
-                          <Label htmlFor="autoUpdateBinanceSell" className="text-xs cursor-pointer">
-                            {t('admin.management.financial.autoUpdateBinanceSell') !== 'admin.management.financial.autoUpdateBinanceSell'
-                              ? t('admin.management.financial.autoUpdateBinanceSell')
-                              : 'Actualización automática Binance [Venta]'}
-                          </Label>
-                        </div>
-                        <Switch
-                          id="autoUpdateBinanceSell"
-                          checked={config.auto_update_binance_rate_sell}
-                          disabled={isLoading}
-                          onCheckedChange={(checked) => {
-                            if (isLoading) return;
-                            setConfig(prev => ({ ...prev, auto_update_binance_rate_sell: checked }));
-                            setBaselineVersion(v => v + 1);
-                          }}
-                        />
-                      </div>
-                      {exchangeRateLastUpdatedBinanceSell && (
-                        <div className={`text-xs text-gray-600 dark:text-slate-400 mt-2`}>
-                          <div className="flex items-center justify-between">
-                            <span>{t('admin.management.financial.updated')}</span>
-                            <Badge variant="secondary" className="text-xs">
-                              {getTimeAgo(exchangeRateLastUpdatedBinanceSell)}
-                            </Badge>
-                          </div>
-                          {exchangeRateSourceBinanceSell && (
-                            <div className="flex items-center justify-between mt-1">
-                              <span>{t('admin.management.financial.source')}</span>
-                              <span className="font-medium">{translateSource(exchangeRateSourceBinanceSell)}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Calculadora de Conversión USDT → VES (Venta) */}
-                      <div className={`mt-4 p-4 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 border border-orange-200 dark:border-orange-800 rounded-lg`}>
-                        <div className="flex items-center gap-2 mb-3">
-                          <Calculator className={`w-5 h-5 text-orange-600 dark:text-orange-400`} />
-                          <h4 className={`text-sm font-semibold text-orange-900 dark:text-orange-200`}>{t('admin.management.financial.calculadoraTitle')}</h4>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {/* Input USDT */}
-                          <div className="space-y-2">
-                            <Label htmlFor="usdtCalcSell" className={`text-xs text-orange-800 dark:text-orange-300`}>{t('admin.management.financial.calculadoraCantidadUSDT')}</Label>
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-600 font-semibold">₮</span>
-                              <Input
-                                id="usdtCalcSell"
-                                type="number"
-                                step="0.01"
-                                min={0}
-                                value={usdtAmountSell}
-                                onChange={(e) => setUsdtAmountSell(parseFloat(e.target.value) || 0)}
-                                className="pl-8 border-orange-300 focus:border-orange-500 focus:ring-orange-500"
-                              />
-                            </div>
-                          </div>
-
-                          {/* Output VES */}
-                          <div className="space-y-2">
-                            <Label className={`text-xs text-orange-800 dark:text-orange-300`}>{t('admin.management.financial.calculadoraEquivalenteVES')}</Label>
-                            <div className="relative">
-                              <div className={`flex items-center h-10 px-3 bg-white dark:bg-slate-700 border border-orange-300 dark:border-orange-700 rounded-md`}>
-                                <span className={`text-lg font-bold text-orange-600 dark:text-orange-400`}>
-                                  {(usdtAmountSell * (config.auto_update_binance_rate_sell ? (currentExchangeRateBinanceSell || config.binanceRateSell) : config.binanceRateSell)).toLocaleString('es-VE', {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2
-                                  })} Bs
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Info adicional */}
-                        <div className={`mt-3 pt-3 border-t border-orange-200 dark:border-orange-800`}>
-                          <p className={`text-xs text-orange-700 dark:text-orange-300`}>
-                            📊 {t('admin.management.financial.calculadoraUsandoTasa')} <span className="font-semibold">{config.auto_update_binance_rate_sell ? (currentExchangeRateBinanceSell !== null ? currentExchangeRateBinanceSell.toFixed(2) : config.binanceRateSell.toFixed(2)) : config.binanceRateSell.toFixed(2)} Bs/USDT</span>
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Alert azul debajo de las tasas */}
-              <div className="mt-4">
-                <Alert className={`border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30`}>
-                  <CheckCircle className={`h-4 w-4 text-blue-600 dark:text-blue-400`} />
-                  <AlertDescription className={`text-blue-700 dark:text-blue-200`}>
-                    <div dangerouslySetInnerHTML={{ __html: t('admin.management.financial.configurationAlert') }} />
-                  </AlertDescription>
-                </Alert>
-              </div>
-            </TabsContent>
-
-            {/* TAB: Monitoreo de APIs */}
-            <TabsContent value="monitoring" className="space-y-6 md:space-y-8">
-              <ApiHealthMonitor />
-            </TabsContent>
-
-            {/* Opción Seguridad eliminada */}
-          </Tabs>
-
-          {/* Panel de Resumen */}
-          <Card className={`shadow-lg border-0 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm`}>
-            <CardHeader>
-              <CardTitle className={`flex items-center text-black dark:text-white text-base md:text-lg`}>
-                <Calculator className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
-                {t('admin.management.summary.title')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-sm">
-                <div className={`text-center p-3 bg-white dark:bg-slate-700 rounded-lg`}>
-                  <p className={`text-slate-600 dark:text-slate-300`}>{t('admin.management.summary.airShipping')}</p>
-                  <p className={`font-bold text-blue-600 dark:text-blue-400`}>{formatCurrency(config.airShippingRate)}/kg</p>
-                </div>
-                <div className={`text-center p-3 bg-white dark:bg-slate-700 rounded-lg`}>
-                  <p className={`text-slate-600 dark:text-slate-300`}>{t('admin.management.summary.seaShipping')}</p>
-                  <p className={`font-bold text-teal-600 dark:text-teal-400`}>{formatCurrency(config.seaShippingRate)}/m³</p>
-                </div>
-                <div className={`text-center p-3 bg-white dark:bg-slate-700 rounded-lg`}>
-                  <p className={`text-slate-600 dark:text-slate-300`}>🇻🇪 USD → Bs</p>
-                  <p className={`font-bold text-green-600 dark:text-green-400`}>{config.auto_update_exchange_rate ? (currentExchangeRate || config.usdRate) : config.usdRate} Bs</p>
-                </div>
-                <div className={`text-center p-3 bg-white dark:bg-slate-700 rounded-lg`}>
-                  <p className={`text-slate-600 dark:text-slate-300`}>🇨🇳 USD → CNY</p>
-                  <p className={`font-bold text-red-600 dark:text-red-400`}>{config.auto_update_exchange_rate_cny ? (currentExchangeRateCNY || config.cnyRate) : config.cnyRate} CNY</p>
-                </div>
-                <div className={`text-center p-3 bg-white dark:bg-slate-700 rounded-lg`}>
-                  <p className={`text-slate-600 dark:text-slate-300`}>🪙 VES → USDT</p>
-                  <p className={`font-bold text-orange-600 dark:text-orange-400`}>{config.auto_update_binance_rate ? (currentExchangeRateBinance !== null ? currentExchangeRateBinance.toFixed(2) : config.binanceRate.toFixed(2)) : config.binanceRate.toFixed(2)} Bs</p>
-                </div>
-                <div className={`text-center p-3 bg-white dark:bg-slate-700 rounded-lg`}>
-                  <p className={`text-slate-600 dark:text-slate-300`}>{t('admin.management.summary.margin')}</p>
-                  <p className={`font-bold text-purple-600 dark:text-purple-400`}>{config.profitMargin}%</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
-      </main>
-    </div>
+      </header>
+
+      <div className={`w-full max-w-none space-y-6 md:space-y-8 ${mounted && theme === 'dark' ? 'bg-slate-900' : ''}`}>
+        {/* Alert de advertencia */}
+        <Alert className={`border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-900/30`}>
+          <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+          <AlertDescription className={`text-orange-800 dark:text-orange-200`}>
+            <strong>{t('admin.management.warning.title')}</strong> {t('admin.management.warning.description')}
+          </AlertDescription>
+        </Alert>
+
+        <Tabs defaultValue="shipping" className="space-y-6 md:space-y-8">
+          <TabsList className={`grid w-full grid-cols-3 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm place-items-center`}>
+            <TabsTrigger value="shipping" className="flex items-center space-x-2 text-xs md:text-sm">
+              <Package className="w-4 h-4" />
+              <span>{t('admin.management.tabs.shipping')}</span>
+            </TabsTrigger>
+            <TabsTrigger value="financial" className="flex items-center space-x-2 text-xs md:text-sm">
+              <DollarSign className="w-4 h-4" />
+              <span>{t('admin.management.tabs.financial')}</span>
+            </TabsTrigger>
+            <TabsTrigger value="monitoring" className="flex items-center space-x-2 text-xs md:text-sm">
+              <Activity className="w-4 h-4" />
+              <span>{t('admin.management.tabs.monitoring', { fallback: 'Monitoreo' })}</span>
+            </TabsTrigger>
+          </TabsList>
+
+          {/* TAB: Configuración de Envíos */}
+          <TabsContent value="shipping" className="space-y-6 md:space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+              {/* Envío Aéreo */}
+              <Card className={`shadow-lg border-0 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm`}>
+                <CardHeader>
+                  <CardTitle className={`flex items-center text-black dark:text-white text-base md:text-lg`}>
+                    <Plane className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
+                    {t('admin.management.shipping.airExpress')}
+                  </CardTitle>
+                  <CardDescription className={`text-black dark:text-slate-300 text-sm`}>
+                    {t('admin.management.shipping.airDescription')}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="airRate" className="text-sm md:text-base">{t('admin.management.shipping.ratePerKg')}</Label>
+                    <div className="relative">
+                      <DollarSign className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-slate-500 w-4 h-4`} />
+                      <Input
+                        id="airRate"
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        value={config.airShippingRate}
+                        onChange={(e) => applyCost('airShippingRate', e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    <p className={`text-xs text-slate-500 dark:text-slate-400`}>{t('admin.management.shipping.costPerKg')}</p>
+                  </div>
+
+                  <Separator />
+
+                  {/* Eliminados campos de días de entrega para envío aéreo */}
+                </CardContent>
+              </Card>
+
+              {/* Envío Marítimo */}
+              <Card className={`shadow-lg border-0 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm`}>
+                <CardHeader>
+                  <CardTitle className={`flex items-center text-black dark:text-white text-base md:text-lg`}>
+                    <Ship className="w-5 h-5 mr-2 text-teal-600 dark:text-teal-400" />
+                    {t('admin.management.shipping.seaEconomic')}
+                  </CardTitle>
+                  <CardDescription className={`text-black dark:text-slate-300 text-sm`}>
+                    {t('admin.management.shipping.seaDescription')}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="seaRate" className="text-sm md:text-base">{t('admin.management.shipping.ratePerCubicMeter')}</Label>
+                    <div className="relative">
+                      <DollarSign className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-slate-500 w-4 h-4`} />
+                      <Input
+                        id="seaRate"
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        value={config.seaShippingRate}
+                        onChange={(e) => applyCost('seaShippingRate', e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    <p className={`text-xs text-slate-500 dark:text-slate-400`}>{t('admin.management.shipping.costPerCubicMeter')}</p>
+                  </div>
+
+                  <Separator />
+
+                  {/* Eliminados campos de días de entrega para envío marítimo */}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* TAB: Configuración Financiera */}
+          <TabsContent value="financial" className="space-y-6 md:space-y-8">
+            {/* Margen de Ganancia - Primero */}
+            <div className="w-full flex justify-center">
+              <Card className={`shadow-lg border-0 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm max-w-md w-full`}>
+                <CardHeader>
+                  <CardTitle className={`flex items-center text-black dark:text-white text-base md:text-lg`}>
+                    <Percent className="w-5 h-5 mr-2 text-purple-600 dark:text-purple-400" />
+                    {t('admin.management.financial.profitMarginTitle')}
+                  </CardTitle>
+                  <CardDescription className={`text-black dark:text-slate-300 text-sm`}>
+                    {t('admin.management.financial.profitabilityConfig')}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="profit" className="text-sm md:text-base">{t('admin.management.financial.profitMargin')}</Label>
+                    <Input
+                      id="profit"
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={config.profitMargin}
+                      onChange={(e) => {
+                        let value = parseFloat(e.target.value);
+                        if (e.target.value === "") {
+                          updateConfig('profitMargin', 0);
+                          return;
+                        }
+                        if (isNaN(value)) value = 0;
+                        if (value < 0) value = 0;
+                        if (value > 100) value = 100;
+                        updateConfig('profitMargin', value);
+                      }}
+                      className={config.profitMargin < 0 || config.profitMargin > 100 ? 'border-red-400' : ''}
+                      disabled={isLoading}
+                    />
+                    {(config.profitMargin < 0 || config.profitMargin > 100) && (
+                      <p className={`text-xs text-red-600 dark:text-red-400`}>El margen debe estar entre 0% y 100%.</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Primera fila: Tasa Venezuela y Tasa China */}
+            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              {/* Tarjeta Venezuela */}
+              <Card className={`shadow-lg border-0 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm`}>
+                <CardHeader>
+                  <CardTitle className={`flex items-center text-black dark:text-white text-base md:text-lg`}>
+                    <Globe className="w-5 h-5 mr-2 text-green-600 dark:text-green-400" />
+                    {t('admin.management.financial.venezuelaRateTitle') !== 'admin.management.financial.venezuelaRateTitle' ? t('admin.management.financial.venezuelaRateTitle') : 'Tasa Venezuela'}
+                  </CardTitle>
+                  <CardDescription className={`text-black dark:text-slate-300 text-sm`}>
+                    {t('admin.management.financial.venezuelaRateDesc') !== 'admin.management.financial.venezuelaRateDesc' ? t('admin.management.financial.venezuelaRateDesc') : 'Valor de cambio USD → Bs'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className={`space-y-3 p-4 border border-green-200 dark:border-green-800 rounded-lg bg-green-50/50 dark:bg-green-900/20`}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">🇻🇪</span>
+                      <Label className={`text-sm font-semibold text-green-800 dark:text-green-300`}>{t('admin.management.financial.veRateLabel')}</Label>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="usdRate"
+                        type="number"
+                        value={config.usdRate}
+                        onChange={e => updateConfig('usdRate', Number(e.target.value))}
+                        className="pr-12"
+                        title={config.auto_update_exchange_rate ? "Campo bloqueado: Auto-actualización activada" : "Editar tasa manualmente"}
+                        disabled={isLoading || exchangeRateLoading || config.auto_update_exchange_rate}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => refreshRate(true)}
+                        disabled={isLoading || exchangeRateLoading}
+                        className={`absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-slate-700`}
+                        title="Actualizar tasa desde BCV"
+                      >
+                        {exchangeRateLoading ? (
+                          <RefreshCw className={`h-4 w-4 animate-spin text-black dark:text-white`} />
+                        ) : (
+                          <RefreshCw className={`h-4 w-4 text-black dark:text-white`} />
+                        )}
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between space-x-2 mt-2">
+                      <div className="flex items-center space-x-2">
+                        {isAutoUpdating ? (
+                          <Wifi className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <WifiOff className="h-4 w-4 text-gray-400" />
+                        )}
+                        <Label htmlFor="autoUpdate" className="text-xs cursor-pointer">
+                          {t('admin.management.financial.autoUpdateBCV')}
+                        </Label>
+                      </div>
+                      <Switch
+                        id="autoUpdate"
+                        checked={config.auto_update_exchange_rate}
+                        disabled={isLoading}
+                        onCheckedChange={(checked) => {
+                          if (isLoading) return;
+                          setConfig(prev => ({ ...prev, auto_update_exchange_rate: checked }));
+                          setBaselineVersion(v => v + 1);
+                        }}
+                      />
+                    </div>
+                    {exchangeRateLastUpdated && (
+                      <div className={`text-xs text-gray-600 dark:text-slate-400 mt-2`}>
+                        <div className="flex items-center justify-between">
+                          <span>{t('admin.management.financial.updated')}</span>
+                          <Badge variant="secondary" className="text-xs">
+                            {getTimeAgo(exchangeRateLastUpdated)}
+                          </Badge>
+                        </div>
+                        {exchangeRateSource && (
+                          <div className="flex items-center justify-between mt-1">
+                            <span>{t('admin.management.financial.source')}</span>
+                            <span className="font-medium">{translateSource(exchangeRateSource)}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+              {/* Tarjeta China */}
+              <Card className={`shadow-lg border-0 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm`}>
+                <CardHeader>
+                  <CardTitle className={`flex items-center text-black dark:text-white text-base md:text-lg`}>
+                    <Globe className="w-5 h-5 mr-2 text-green-600 dark:text-green-400" />
+                    {t('admin.management.financial.chinaRateTitle') !== 'admin.management.financial.chinaRateTitle' ? t('admin.management.financial.chinaRateTitle') : 'Tasa China'}
+                  </CardTitle>
+                  <CardDescription className={`text-black dark:text-slate-300 text-sm`}>
+                    {t('admin.management.financial.chinaRateDesc') !== 'admin.management.financial.chinaRateDesc' ? t('admin.management.financial.chinaRateDesc') : 'Valor de cambio USD → CNY'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className={`space-y-3 p-4 border border-red-200 dark:border-red-800 rounded-lg bg-red-50/50 dark:bg-red-900/20`}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">🇨🇳</span>
+                      <Label className={`text-sm font-semibold text-red-800 dark:text-red-300`}>{t('admin.management.financial.cnRateLabel')}</Label>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="cnyRate"
+                        type="number"
+                        step="0.0001"
+                        min={0}
+                        value={config.auto_update_exchange_rate_cny ?
+                          (currentExchangeRateCNY !== null ? currentExchangeRateCNY : '') :
+                          config.cnyRate}
+                        onChange={(e) => applyCost('cnyRate', e.target.value)}
+                        className={exchangeRateErrorCNY ? 'border-red-300 pr-12' : 'pr-12'}
+                        disabled={isLoading || exchangeRateLoadingCNY || config.auto_update_exchange_rate_cny}
+                        placeholder="7.2500"
+                        title={config.auto_update_exchange_rate_cny ? "Campo bloqueado: Auto-actualización activada" : "Editar tasa manualmente"}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={refreshRateCNY}
+                        disabled={isLoading || exchangeRateLoadingCNY}
+                        className={`absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-slate-700`}
+                        title="Actualizar tasa desde API"
+                      >
+                        {exchangeRateLoadingCNY ? (
+                          <RefreshCw className={`h-4 w-4 animate-spin text-black dark:text-white`} />
+                        ) : (
+                          <RefreshCw className={`h-4 w-4 text-black dark:text-white`} />
+                        )}
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between space-x-2 mt-2">
+                      <div className="flex items-center space-x-2">
+                        {isAutoUpdatingCNY ? (
+                          <Wifi className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <WifiOff className="h-4 w-4 text-gray-400" />
+                        )}
+                        <Label htmlFor="autoUpdateCNY" className="text-xs cursor-pointer">
+                          {t('admin.management.financial.autoUpdateAPI')}
+                        </Label>
+                      </div>
+                      <Switch
+                        id="autoUpdateCNY"
+                        checked={config.auto_update_exchange_rate_cny}
+                        disabled={isLoading}
+                        onCheckedChange={(checked) => {
+                          if (isLoading) return;
+                          setConfig(prev => ({ ...prev, auto_update_exchange_rate_cny: checked }));
+                          setBaselineVersion(v => v + 1);
+                        }}
+                      />
+                    </div>
+                    {exchangeRateLastUpdatedCNY && (
+                      <div className={`text-xs text-gray-600 dark:text-slate-400 mt-2`}>
+                        <div className="flex items-center justify-between">
+                          <span>{t('admin.management.financial.updated')}</span>
+                          <Badge variant="secondary" className="text-xs">
+                            {getTimeAgo(exchangeRateLastUpdatedCNY)}
+                          </Badge>
+                        </div>
+                        {exchangeRateSourceCNY && (
+                          <div className="flex items-center justify-between mt-1">
+                            <span>{t('admin.management.financial.source')}</span>
+                            <span className="font-medium">{translateSource(exchangeRateSourceCNY)}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Segunda fila: Tasa Binance y Margen de Ganancia */}
+            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-6">
+              {/* Tarjeta Binance */}
+              <Card className={`shadow-lg border-0 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm`}>
+                <CardHeader>
+                  <CardTitle className={`flex items-center text-black dark:text-white text-base md:text-lg`}>
+                    <Globe className="w-5 h-5 mr-2 text-green-600 dark:text-green-400" />
+                    {t('admin.management.financial.binanceRateTitle')} (Compra)
+                  </CardTitle>
+                  <CardDescription className={`text-black dark:text-slate-300 text-sm`}>
+                    {t('admin.management.financial.binanceRateBuyDesc') !== 'admin.management.financial.binanceRateBuyDesc'
+                      ? t('admin.management.financial.binanceRateBuyDesc')
+                      : 'Tasa de compra VES → USDT (5 ofertas más altas)'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className={`space-y-3 p-4 border border-orange-200 dark:border-orange-800 rounded-lg bg-orange-50/50 dark:bg-orange-900/20`}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">🪙</span>
+                      <Label className={`text-sm font-semibold text-orange-800 dark:text-orange-300`}>Tasa STABLECOIN</Label>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="binanceRate"
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        value={config.auto_update_binance_rate ?
+                          (currentExchangeRateBinance !== null ? parseFloat(currentExchangeRateBinance.toFixed(2)) : '') :
+                          config.binanceRate}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value) || 0;
+                          setConfig(prev => ({ ...prev, binanceRate: val }));
+                          setBaselineVersion(v => v + 1);
+                        }}
+                        className={exchangeRateErrorBinance ? 'border-red-300 pr-12' : 'pr-12'}
+                        disabled={isLoading || exchangeRateLoadingBinance || config.auto_update_binance_rate}
+                        placeholder="299.51"
+                        title={config.auto_update_binance_rate ? "Campo bloqueado: Auto-actualización activada" : "Editar tasa manualmente"}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => refreshRateBinance()}
+                        disabled={isLoading || exchangeRateLoadingBinance}
+                        className={`absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-slate-700`}
+                        title="Actualizar tasa desde STABLECOIN"
+                      >
+                        {exchangeRateLoadingBinance ? (
+                          <RefreshCw className={`h-4 w-4 animate-spin text-black dark:text-white`} />
+                        ) : (
+                          <RefreshCw className={`h-4 w-4 text-black dark:text-white`} />
+                        )}
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between space-x-2 mt-2">
+                      <div className="flex items-center space-x-2">
+                        {isAutoUpdatingBinance ? (
+                          <Wifi className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <WifiOff className="h-4 w-4 text-gray-400" />
+                        )}
+                        <Label htmlFor="autoUpdateBinance" className="text-xs cursor-pointer">
+                          {t('admin.management.financial.autoUpdateBinance') !== 'admin.management.financial.autoUpdateBinance'
+                            ? t('admin.management.financial.autoUpdateBinance')
+                            : 'Actualización automática Binance'}
+                        </Label>
+                      </div>
+                      <Switch
+                        id="autoUpdateBinance"
+                        checked={config.auto_update_binance_rate}
+                        disabled={isLoading}
+                        onCheckedChange={(checked) => {
+                          if (isLoading) return;
+                          setConfig(prev => ({ ...prev, auto_update_binance_rate: checked }));
+                          setBaselineVersion(v => v + 1);
+                        }}
+                      />
+                    </div>
+                    {exchangeRateLastUpdatedBinance && (
+                      <div className={`text-xs text-gray-600 dark:text-slate-400 mt-2`}>
+                        <div className="flex items-center justify-between">
+                          <span>{t('admin.management.financial.updated')}</span>
+                          <Badge variant="secondary" className="text-xs">
+                            {getTimeAgo(exchangeRateLastUpdatedBinance)}
+                          </Badge>
+                        </div>
+                        {exchangeRateSourceBinance && (
+                          <div className="flex items-center justify-between mt-1">
+                            <span>{t('admin.management.financial.source')}</span>
+                            <span className="font-medium">{translateSource(exchangeRateSourceBinance)}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Calculadora de Conversión USDT → VES */}
+                    <div className={`mt-4 p-4 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 border border-orange-200 dark:border-orange-800 rounded-lg`}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Calculator className={`w-5 h-5 text-orange-600 dark:text-orange-400`} />
+                        <h4 className={`text-sm font-semibold text-orange-900 dark:text-orange-200`}>{t('admin.management.financial.calculadoraTitle')}</h4>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Input USDT */}
+                        <div className="space-y-2">
+                          <Label htmlFor="usdtCalc" className={`text-xs text-orange-800 dark:text-orange-300`}>{t('admin.management.financial.calculadoraCantidadUSDT')}</Label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-600 font-semibold">₮</span>
+                            <Input
+                              id="usdtCalc"
+                              type="number"
+                              step="0.01"
+                              min={0}
+                              value={usdtAmount}
+                              onChange={(e) => setUsdtAmount(parseFloat(e.target.value) || 0)}
+                              className="pl-8 border-orange-300 focus:border-orange-500 focus:ring-orange-500"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Output VES */}
+                        <div className="space-y-2">
+                          <Label className={`text-xs text-orange-800 dark:text-orange-300`}>{t('admin.management.financial.calculadoraEquivalenteVES')}</Label>
+                          <div className="relative">
+                            <div className={`flex items-center h-10 px-3 bg-white dark:bg-slate-700 border border-orange-300 dark:border-orange-700 rounded-md`}>
+                              <span className={`text-lg font-bold text-orange-600 dark:text-orange-400`}>
+                                {(usdtAmount * (config.auto_update_binance_rate ? (currentExchangeRateBinance || config.binanceRate) : config.binanceRate)).toLocaleString('es-VE', {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2
+                                })} Bs
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Info adicional */}
+                      <div className={`mt-3 pt-3 border-t border-orange-200 dark:border-orange-800`}>
+                        <p className={`text-xs text-orange-700 dark:text-orange-300`}>
+                          📊 {t('admin.management.financial.calculadoraUsandoTasa')} <span className="font-semibold">{config.auto_update_binance_rate ? (currentExchangeRateBinance !== null ? currentExchangeRateBinance.toFixed(2) : config.binanceRate.toFixed(2)) : config.binanceRate.toFixed(2)} Bs/USDT</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Tarjeta Binance VENTA */}
+              <Card className={`shadow-lg border-0 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm`}>
+                <CardHeader>
+                  <CardTitle className={`flex items-center text-black dark:text-white text-base md:text-lg`}>
+                    <Globe className="w-5 h-5 mr-2 text-green-600 dark:text-green-400" />
+                    {t('admin.management.financial.binanceRateTitle')} (Venta)
+                  </CardTitle>
+                  <CardDescription className={`text-black dark:text-slate-300 text-sm`}>
+                    {t('admin.management.financial.binanceRateSellDesc') !== 'admin.management.financial.binanceRateSellDesc'
+                      ? t('admin.management.financial.binanceRateSellDesc')
+                      : 'Tasa de venta USDT → VES (5 ofertas más altas)'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className={`space-y-3 p-4 border border-orange-200 dark:border-orange-800 rounded-lg bg-orange-50/50 dark:bg-orange-900/20`}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">🪙</span>
+                      <Label className={`text-sm font-semibold text-orange-800 dark:text-orange-300`}>Tasa STABLECOIN</Label>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="binanceRateSell"
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        value={config.auto_update_binance_rate_sell ?
+                          (currentExchangeRateBinanceSell !== null ? parseFloat(currentExchangeRateBinanceSell.toFixed(2)) : '') :
+                          config.binanceRateSell}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value) || 0;
+                          setConfig(prev => ({ ...prev, binanceRateSell: val }));
+                          setBaselineVersion(v => v + 1);
+                        }}
+                        className={exchangeRateErrorBinanceSell ? 'border-red-300 pr-12' : 'pr-12'}
+                        disabled={isLoading || exchangeRateLoadingBinanceSell || config.auto_update_binance_rate_sell}
+                        placeholder="299.51"
+                        title={config.auto_update_binance_rate_sell ? "Campo bloqueado: Auto-actualización activada" : "Editar tasa manualmente"}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => refreshRateBinanceSell()}
+                        disabled={isLoading || exchangeRateLoadingBinanceSell}
+                        className={`absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-slate-700`}
+                        title="Actualizar tasa de venta desde STABLECOIN"
+                      >
+                        {exchangeRateLoadingBinanceSell ? (
+                          <RefreshCw className={`h-4 w-4 animate-spin text-black dark:text-white`} />
+                        ) : (
+                          <RefreshCw className={`h-4 w-4 text-black dark:text-white`} />
+                        )}
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between space-x-2 mt-2">
+                      <div className="flex items-center space-x-2">
+                        {isAutoUpdatingBinanceSell ? (
+                          <Wifi className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <WifiOff className="h-4 w-4 text-gray-400" />
+                        )}
+                        <Label htmlFor="autoUpdateBinanceSell" className="text-xs cursor-pointer">
+                          {t('admin.management.financial.autoUpdateBinanceSell') !== 'admin.management.financial.autoUpdateBinanceSell'
+                            ? t('admin.management.financial.autoUpdateBinanceSell')
+                            : 'Actualización automática Binance [Venta]'}
+                        </Label>
+                      </div>
+                      <Switch
+                        id="autoUpdateBinanceSell"
+                        checked={config.auto_update_binance_rate_sell}
+                        disabled={isLoading}
+                        onCheckedChange={(checked) => {
+                          if (isLoading) return;
+                          setConfig(prev => ({ ...prev, auto_update_binance_rate_sell: checked }));
+                          setBaselineVersion(v => v + 1);
+                        }}
+                      />
+                    </div>
+                    {exchangeRateLastUpdatedBinanceSell && (
+                      <div className={`text-xs text-gray-600 dark:text-slate-400 mt-2`}>
+                        <div className="flex items-center justify-between">
+                          <span>{t('admin.management.financial.updated')}</span>
+                          <Badge variant="secondary" className="text-xs">
+                            {getTimeAgo(exchangeRateLastUpdatedBinanceSell)}
+                          </Badge>
+                        </div>
+                        {exchangeRateSourceBinanceSell && (
+                          <div className="flex items-center justify-between mt-1">
+                            <span>{t('admin.management.financial.source')}</span>
+                            <span className="font-medium">{translateSource(exchangeRateSourceBinanceSell)}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Calculadora de Conversión USDT → VES (Venta) */}
+                    <div className={`mt-4 p-4 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 border border-orange-200 dark:border-orange-800 rounded-lg`}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Calculator className={`w-5 h-5 text-orange-600 dark:text-orange-400`} />
+                        <h4 className={`text-sm font-semibold text-orange-900 dark:text-orange-200`}>{t('admin.management.financial.calculadoraTitle')}</h4>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Input USDT */}
+                        <div className="space-y-2">
+                          <Label htmlFor="usdtCalcSell" className={`text-xs text-orange-800 dark:text-orange-300`}>{t('admin.management.financial.calculadoraCantidadUSDT')}</Label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-600 font-semibold">₮</span>
+                            <Input
+                              id="usdtCalcSell"
+                              type="number"
+                              step="0.01"
+                              min={0}
+                              value={usdtAmountSell}
+                              onChange={(e) => setUsdtAmountSell(parseFloat(e.target.value) || 0)}
+                              className="pl-8 border-orange-300 focus:border-orange-500 focus:ring-orange-500"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Output VES */}
+                        <div className="space-y-2">
+                          <Label className={`text-xs text-orange-800 dark:text-orange-300`}>{t('admin.management.financial.calculadoraEquivalenteVES')}</Label>
+                          <div className="relative">
+                            <div className={`flex items-center h-10 px-3 bg-white dark:bg-slate-700 border border-orange-300 dark:border-orange-700 rounded-md`}>
+                              <span className={`text-lg font-bold text-orange-600 dark:text-orange-400`}>
+                                {(usdtAmountSell * (config.auto_update_binance_rate_sell ? (currentExchangeRateBinanceSell || config.binanceRateSell) : config.binanceRateSell)).toLocaleString('es-VE', {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2
+                                })} Bs
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Info adicional */}
+                      <div className={`mt-3 pt-3 border-t border-orange-200 dark:border-orange-800`}>
+                        <p className={`text-xs text-orange-700 dark:text-orange-300`}>
+                          📊 {t('admin.management.financial.calculadoraUsandoTasa')} <span className="font-semibold">{config.auto_update_binance_rate_sell ? (currentExchangeRateBinanceSell !== null ? currentExchangeRateBinanceSell.toFixed(2) : config.binanceRateSell.toFixed(2)) : config.binanceRateSell.toFixed(2)} Bs/USDT</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Alert azul debajo de las tasas */}
+            <div className="mt-4">
+              <Alert className={`border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30`}>
+                <CheckCircle className={`h-4 w-4 text-blue-600 dark:text-blue-400`} />
+                <AlertDescription className={`text-blue-700 dark:text-blue-200`}>
+                  <div dangerouslySetInnerHTML={{ __html: t('admin.management.financial.configurationAlert') }} />
+                </AlertDescription>
+              </Alert>
+            </div>
+          </TabsContent>
+
+          {/* TAB: Monitoreo de APIs */}
+          <TabsContent value="monitoring" className="space-y-6 md:space-y-8">
+            <ApiHealthMonitor />
+          </TabsContent>
+
+          {/* Opción Seguridad eliminada */}
+        </Tabs>
+
+        {/* Panel de Resumen */}
+        <Card className={`shadow-lg border-0 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm`}>
+          <CardHeader>
+            <CardTitle className={`flex items-center text-black dark:text-white text-base md:text-lg`}>
+              <Calculator className="w-5 h-5 mr-2 text-blue-600 dark:text-blue-400" />
+              {t('admin.management.summary.title')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-sm">
+              <div className={`text-center p-3 bg-white dark:bg-slate-700 rounded-lg`}>
+                <p className={`text-slate-600 dark:text-slate-300`}>{t('admin.management.summary.airShipping')}</p>
+                <p className={`font-bold text-blue-600 dark:text-blue-400`}>{formatCurrency(config.airShippingRate)}/kg</p>
+              </div>
+              <div className={`text-center p-3 bg-white dark:bg-slate-700 rounded-lg`}>
+                <p className={`text-slate-600 dark:text-slate-300`}>{t('admin.management.summary.seaShipping')}</p>
+                <p className={`font-bold text-teal-600 dark:text-teal-400`}>{formatCurrency(config.seaShippingRate)}/m³</p>
+              </div>
+              <div className={`text-center p-3 bg-white dark:bg-slate-700 rounded-lg`}>
+                <p className={`text-slate-600 dark:text-slate-300`}>🇻🇪 USD → Bs</p>
+                <p className={`font-bold text-green-600 dark:text-green-400`}>{config.auto_update_exchange_rate ? (currentExchangeRate || config.usdRate) : config.usdRate} Bs</p>
+              </div>
+              <div className={`text-center p-3 bg-white dark:bg-slate-700 rounded-lg`}>
+                <p className={`text-slate-600 dark:text-slate-300`}>🇨🇳 USD → CNY</p>
+                <p className={`font-bold text-red-600 dark:text-red-400`}>{config.auto_update_exchange_rate_cny ? (currentExchangeRateCNY || config.cnyRate) : config.cnyRate} CNY</p>
+              </div>
+              <div className={`text-center p-3 bg-white dark:bg-slate-700 rounded-lg`}>
+                <p className={`text-slate-600 dark:text-slate-300`}>🪙 VES → USDT</p>
+                <p className={`font-bold text-orange-600 dark:text-orange-400`}>{config.auto_update_binance_rate ? (currentExchangeRateBinance !== null ? currentExchangeRateBinance.toFixed(2) : config.binanceRate.toFixed(2)) : config.binanceRate.toFixed(2)} Bs</p>
+              </div>
+              <div className={`text-center p-3 bg-white dark:bg-slate-700 rounded-lg`}>
+                <p className={`text-slate-600 dark:text-slate-300`}>{t('admin.management.summary.margin')}</p>
+                <p className={`font-bold text-purple-600 dark:text-purple-400`}>{config.profitMargin}%</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
 }

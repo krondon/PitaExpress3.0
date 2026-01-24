@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useTheme } from 'next-themes';
 import { useToast } from '@/hooks/use-toast';
-import Sidebar from '@/components/layout/Sidebar';
+import { useAdminLayoutContext } from '@/lib/AdminLayoutContext';
 import Header from '@/components/layout/Header';
 import { Toaster } from '@/components/ui/toaster';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -490,8 +490,7 @@ const PaymentValidationDashboard: React.FC = () => {
   const { theme } = useTheme();
   const { t } = useTranslation();
   const { toast } = useToast();
-  const [sidebarExpanded, setSidebarExpanded] = useState(true);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { toggleMobileMenu } = useAdminLayoutContext();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -951,244 +950,226 @@ const PaymentValidationDashboard: React.FC = () => {
         title={t('venezuela.pagos.modal.reject.title')}
         message={t('venezuela.pagos.modal.reject.message')}
       />
-      <div
-        className={
-          `min-h-screen flex overflow-x-hidden ` +
-          (mounted && theme === 'dark'
-            ? 'bg-slate-900'
-            : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50')
-        }
-      >
-        <Sidebar
-          isExpanded={sidebarExpanded}
-          setIsExpanded={setSidebarExpanded}
-          isMobileMenuOpen={isMobileMenuOpen}
-          onMobileMenuClose={() => setIsMobileMenuOpen(false)}
-          userRole="admin"
-        />
-        <main className={`flex-1 transition-all duration-300 ${sidebarExpanded ? 'lg:ml-72 lg:w-[calc(100%-18rem)]' : 'lg:ml-24 lg:w-[calc(100%-6rem)]'
-          } w-full`}>
-          <Header
-            notifications={3}
-            onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            title={t('venezuela.pagos.title')}
-            subtitle={t('venezuela.pagos.subtitle')}
-          />
-          <div className="p-4 md:p-5 lg:p-6">
-            {/* Error visible */}
-            {error && (
-              <div className={`mb-4 md:mb-6 flex items-start justify-between gap-3 rounded-lg border ${mounted && theme === 'dark' ? 'border-red-800 bg-red-900/30' : 'border-red-300 bg-red-50'} p-3 ${mounted && theme === 'dark' ? 'text-red-200' : 'text-red-800'}`}>
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="mt-0.5" size={18} />
-                  <div>
-                    <p className="font-semibold">{t('venezuela.pagos.error.loadErrorTitle')}</p>
-                    <p className="text-sm break-all">{error}</p>
-                  </div>
-                </div>
+
+      <Header
+        notifications={3}
+        onMenuToggle={toggleMobileMenu}
+        title={t('venezuela.pagos.title')}
+        subtitle={t('venezuela.pagos.subtitle')}
+      />
+      <div className="p-4 md:p-5 lg:p-6">
+        {/* Error visible */}
+        {error && (
+          <div className={`mb-4 md:mb-6 flex items-start justify-between gap-3 rounded-lg border ${mounted && theme === 'dark' ? 'border-red-800 bg-red-900/30' : 'border-red-300 bg-red-50'} p-3 ${mounted && theme === 'dark' ? 'text-red-200' : 'text-red-800'}`}>
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="mt-0.5" size={18} />
+              <div>
+                <p className="font-semibold">{t('venezuela.pagos.error.loadErrorTitle')}</p>
+                <p className="text-sm break-all">{error}</p>
               </div>
-            )}
-
-            {/* ================================ */}
-            {/* TARJETAS DE ESTADÍSTICAS */}
-            {/* ================================ */}
-            <StatsCards stats={stats} />
-
-            {/* Pestañas removidas: vista simplificada */}
-
-            {/* ================================ */}
-            {/* BARRA COMPACTA DERECHA */}
-            {/* ================================ */}
-            <Card className={mounted && theme === 'dark' ? 'mb-4 md:mb-6 bg-slate-800/70 border border-slate-700 backdrop-blur-sm shadow-lg hover:shadow-xl transition-shadow' : 'mb-4 md:mb-6 bg-white/80 border border-slate-200 backdrop-blur-sm shadow-lg hover:shadow-xl transition-shadow'}>
-              <CardHeader className="py-3">
-                <div className="flex flex-col gap-3 sm:gap-4">
-                  <CardTitle className="text-lg font-semibold tracking-tight">{t('venezuela.pagos.listCardTitle')}</CardTitle>
-                  {/* Controles Responsivos */}
-                  <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-                    {/* Buscador */}
-                    <div className="w-full sm:flex-1 min-w-[12rem]">
-                      <Input
-                        placeholder={t('venezuela.pagos.searchPlaceholder')}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="h-10 w-full px-3"
-                      />
-                    </div>
-                    {/* Fila Filtro + Botón en mobile */}
-                    <div className="flex flex-col xs:flex-row w-full sm:w-auto gap-2 sm:gap-3">
-                      <Select value={filterStatus} onValueChange={setFilterStatus}>
-                        <SelectTrigger className="h-10 w-full xs:min-w-[9rem] sm:w-44 md:w-48 px-3 whitespace-nowrap truncate">
-                          <SelectValue placeholder={t('venezuela.pagos.filters.allStatuses')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="todos">{t('venezuela.pagos.filters.allStatuses')}</SelectItem>
-                          <SelectItem value="completado">{t('venezuela.pagos.filters.completed')}</SelectItem>
-                          <SelectItem value="enviadoChina">{t('venezuela.pagos.status.sendChina')}</SelectItem>
-                          <SelectItem value="pendiente">{t('venezuela.pagos.filters.pending')}</SelectItem>
-                          <SelectItem value="rechazado">{t('venezuela.pagos.filters.rejected')}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        className="h-10 w-full xs:w-auto bg-[#202841] text-white hover:bg-opacity-90 flex items-center justify-center"
-                        onClick={exportarGeneral}
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        <span className="hidden sm:inline">{t('venezuela.pagos.actions.export')}</span>
-                        <span className="sm:hidden">{t('venezuela.pagos.actions.exportShort')}</span>
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
-
-            {/* ================================ */}
-            {/* TABLA DE PAGOS */}
-            {/* ================================ */}
-            <div className={mounted && theme === 'dark' ? 'rounded-xl shadow-lg overflow-hidden border border-slate-700 bg-slate-800/70 backdrop-blur-sm transition-shadow hover:shadow-xl' : 'rounded-xl shadow-lg overflow-hidden border border-slate-200 bg-white/80 backdrop-blur-sm transition-shadow hover:shadow-xl'}>
-              <div className={mounted && theme === 'dark' ? 'px-4 md:px-6 py-3 md:py-4 border-b border-slate-700/60' : 'px-4 md:px-6 py-3 md:py-4 border-b border-slate-200/70'}>
-                <h2 className={`text-lg md:text-xl font-semibold flex items-center gap-2 ${mounted && theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                  <AnimatedIcon animation="float">
-                    <Package className="md:w-6 md:h-6 text-blue-500" />
-                  </AnimatedIcon>
-                  {t('venezuela.pagos.table.ordersListTitle')}
-                </h2>
-                <p className={mounted && theme === 'dark' ? 'text-slate-300 text-xs md:text-sm mt-1' : 'text-gray-600 text-xs md:text-sm mt-1'}>
-                  {t('venezuela.pagos.table.resultsFound', { count: filteredPayments.length })}
-                </p>
-              </div>
-
-              {/* Vista Mobile - Cards */}
-              <div className="block lg:hidden p-4 space-y-4">
-                {!loading && filteredPayments.map((payment) => (
-                  <PaymentCard
-                    key={payment.id}
-                    payment={payment}
-                    onApprove={handleApprove}
-                    onReject={openRejectionConfirmation}
-                    onViewDetails={openDetailsModal}
-                    onSend={handleSend}
-                    isSending={!!sendingChina[payment.id]}
-                  />
-                ))}
-              </div>
-
-              {/* Vista Desktop - Tabla */}
-              <div className="hidden lg:block overflow-x-auto">
-                <table className={`w-full table-fixed ${mounted && theme === 'dark' ? 'bg-slate-800' : ''}`}>
-                  <thead className={mounted && theme === 'dark' ? 'bg-slate-900' : 'bg-gray-50'}>
-                    <tr>
-                      {[
-                        { label: t('venezuela.pagos.table.headers.id'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><Hash size={14} /></AnimatedIcon>, width: 'w-44' },
-                        { label: t('venezuela.pagos.table.headers.client'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><User size={14} /></AnimatedIcon>, width: 'w-36' },
-                        { label: t('venezuela.pagos.table.headers.status'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><CheckCircle size={14} /></AnimatedIcon>, width: 'w-32' },
-                        { label: t('venezuela.pagos.table.headers.date'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><Calendar size={14} /></AnimatedIcon>, width: 'w-24' },
-                        { label: t('venezuela.pagos.table.headers.amount'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><DollarSign size={14} /></AnimatedIcon>, width: 'w-28' },
-                        { label: t('venezuela.pagos.table.headers.reference'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><Hash size={14} /></AnimatedIcon>, width: 'w-36' },
-                        { label: t('venezuela.pagos.table.headers.destination'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><MapPin size={14} /></AnimatedIcon>, width: 'w-28' },
-                        { label: t('venezuela.pagos.table.headers.actions'), icon: <AnimatedIcon animation={["pulse", "shake"]}><MoreHorizontal size={14} /></AnimatedIcon>, width: 'w-28' }
-                      ].map((header, index) => (
-                        <th key={index} className={`px-2 py-3 text-left ${header.width}`}>
-                          <div className={`flex items-center gap-1 text-xs font-semibold uppercase tracking-wider ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>
-                            <AnimatedIcon animation="pulse">
-                              {header.icon}
-                            </AnimatedIcon>
-                            <span className="truncate">{header.label}</span>
-                          </div>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {filteredPayments.map((payment) => (
-                      <tr
-                        key={payment.id}
-                        className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-transparent transition-all duration-200 group"
-                      >
-                        <td className="px-2 py-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 bg-blue-500 text-white rounded-lg flex items-center justify-center text-xs font-semibold flex-shrink-0">
-                              {payment.id.split('-')[1] || String(payment.id)}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className={`text-sm font-medium truncate ${mounted && theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{payment.id}</div>
-                              <div className={`text-xs truncate ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}`}>{payment.descripcion}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-2 py-3">
-                          <div className="flex items-center gap-2">
-                            <div className={mounted && theme === 'dark' ? 'w-7 h-7 bg-slate-700 text-blue-200 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0' : 'w-7 h-7 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0'}>
-                              {payment.usuario.split(' ').map(n => n[0]).join('').toUpperCase()}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className={`text-sm font-medium truncate ${mounted && theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{payment.usuario}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-2 py-3">
-                          <StatusBadge status={payment.estado} sendChina={payment.sendChina} />
-                        </td>
-                        <td className={`px-2 py-3 text-sm ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-gray-900'}`}>
-                          <span className="truncate block">{formatDate(payment.fecha)}</span>
-                        </td>
-                        <td className="px-2 py-3">
-                          <div className={`text-sm font-bold truncate transition-colors duration-200 ${mounted && theme === 'dark' ? 'text-green-300 group-hover:text-green-400' : 'text-gray-900 group-hover:text-green-600'}`}>
-                            <span suppressHydrationWarning>{formatCompactMoney(payment.monto)}</span>
-                          </div>
-                        </td>
-                        <td className="px-2 py-3">
-                          <span className={`text-xs font-mono px-2 py-1 rounded truncate block ${mounted && theme === 'dark' ? 'text-slate-300 bg-slate-900' : 'text-gray-600 bg-gray-50'}`}>
-                            {payment.referencia}
-                          </span>
-                        </td>
-                        <td className="px-2 py-3">
-                          <div className="flex items-center gap-1">
-                            {payment.destino === 'China' && (
-                              <AnimatedIcon animation="pulse">
-                                <AlertTriangle size={10} className="text-orange-500 flex-shrink-0" />
-                              </AnimatedIcon>
-                            )}
-                            <span className={`text-xs px-2 py-1 rounded-full truncate ${payment.destino === 'China'
-                              ? mounted && theme === 'dark' ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-800'
-                              : mounted && theme === 'dark' ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-800'
-                              }`}>
-                              {payment.destino}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-2 py-3">
-                          <PaymentActions
-                            payment={payment}
-                            onApprove={handleApprove}
-                            onReject={openRejectionConfirmation}
-                            onViewDetails={openDetailsModal}
-                            onSend={handleSend}
-                            isSending={!!sendingChina[payment.id]}
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {filteredPayments.length === 0 && (
-                <div className="text-center py-8 md:py-16">
-                  <AnimatedIcon animation="bounce">
-                    <Package className="md:w-12 md:h-12 mx-auto text-gray-400 mb-4" />
-                  </AnimatedIcon>
-                  <p className="text-gray-500 text-base md:text-lg font-medium">{t('venezuela.pagos.empty.title')}</p>
-                  <p className="text-gray-400 text-sm mt-2">{t('venezuela.pagos.empty.subtitle')}</p>
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className={`mt-4 md:mt-6 text-center text-xs md:text-sm text-gray-500`}>
-              {t('venezuela.pagos.footer.showing', { shown: filteredPayments.length, total: payments.length })}
             </div>
           </div>
-        </main>
+        )}
+
+        {/* ================================ */}
+        {/* TARJETAS DE ESTADÍSTICAS */}
+        {/* ================================ */}
+        <StatsCards stats={stats} />
+
+        {/* Pestañas removidas: vista simplificada */}
+
+        {/* ================================ */}
+        {/* BARRA COMPACTA DERECHA */}
+        {/* ================================ */}
+        <Card className={mounted && theme === 'dark' ? 'mb-4 md:mb-6 bg-slate-800/70 border border-slate-700 backdrop-blur-sm shadow-lg hover:shadow-xl transition-shadow' : 'mb-4 md:mb-6 bg-white/80 border border-slate-200 backdrop-blur-sm shadow-lg hover:shadow-xl transition-shadow'}>
+          <CardHeader className="py-3">
+            <div className="flex flex-col gap-3 sm:gap-4">
+              <CardTitle className="text-lg font-semibold tracking-tight">{t('venezuela.pagos.listCardTitle')}</CardTitle>
+              {/* Controles Responsivos */}
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                {/* Buscador */}
+                <div className="w-full sm:flex-1 min-w-[12rem]">
+                  <Input
+                    placeholder={t('venezuela.pagos.searchPlaceholder')}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="h-10 w-full px-3"
+                  />
+                </div>
+                {/* Fila Filtro + Botón en mobile */}
+                <div className="flex flex-col xs:flex-row w-full sm:w-auto gap-2 sm:gap-3">
+                  <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <SelectTrigger className="h-10 w-full xs:min-w-[9rem] sm:w-44 md:w-48 px-3 whitespace-nowrap truncate">
+                      <SelectValue placeholder={t('venezuela.pagos.filters.allStatuses')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">{t('venezuela.pagos.filters.allStatuses')}</SelectItem>
+                      <SelectItem value="completado">{t('venezuela.pagos.filters.completed')}</SelectItem>
+                      <SelectItem value="enviadoChina">{t('venezuela.pagos.status.sendChina')}</SelectItem>
+                      <SelectItem value="pendiente">{t('venezuela.pagos.filters.pending')}</SelectItem>
+                      <SelectItem value="rechazado">{t('venezuela.pagos.filters.rejected')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    className="h-10 w-full xs:w-auto bg-[#202841] text-white hover:bg-opacity-90 flex items-center justify-center"
+                    onClick={exportarGeneral}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    <span className="hidden sm:inline">{t('venezuela.pagos.actions.export')}</span>
+                    <span className="sm:hidden">{t('venezuela.pagos.actions.exportShort')}</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+
+        {/* ================================ */}
+        {/* TABLA DE PAGOS */}
+        {/* ================================ */}
+        <div className={mounted && theme === 'dark' ? 'rounded-xl shadow-lg overflow-hidden border border-slate-700 bg-slate-800/70 backdrop-blur-sm transition-shadow hover:shadow-xl' : 'rounded-xl shadow-lg overflow-hidden border border-slate-200 bg-white/80 backdrop-blur-sm transition-shadow hover:shadow-xl'}>
+          <div className={mounted && theme === 'dark' ? 'px-4 md:px-6 py-3 md:py-4 border-b border-slate-700/60' : 'px-4 md:px-6 py-3 md:py-4 border-b border-slate-200/70'}>
+            <h2 className={`text-lg md:text-xl font-semibold flex items-center gap-2 ${mounted && theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+              <AnimatedIcon animation="float">
+                <Package className="md:w-6 md:h-6 text-blue-500" />
+              </AnimatedIcon>
+              {t('venezuela.pagos.table.ordersListTitle')}
+            </h2>
+            <p className={mounted && theme === 'dark' ? 'text-slate-300 text-xs md:text-sm mt-1' : 'text-gray-600 text-xs md:text-sm mt-1'}>
+              {t('venezuela.pagos.table.resultsFound', { count: filteredPayments.length })}
+            </p>
+          </div>
+
+          {/* Vista Mobile - Cards */}
+          <div className="block lg:hidden p-4 space-y-4">
+            {!loading && filteredPayments.map((payment) => (
+              <PaymentCard
+                key={payment.id}
+                payment={payment}
+                onApprove={handleApprove}
+                onReject={openRejectionConfirmation}
+                onViewDetails={openDetailsModal}
+                onSend={handleSend}
+                isSending={!!sendingChina[payment.id]}
+              />
+            ))}
+          </div>
+
+          {/* Vista Desktop - Tabla */}
+          <div className="hidden lg:block overflow-x-auto">
+            <table className={`w-full table-fixed ${mounted && theme === 'dark' ? 'bg-slate-800' : ''}`}>
+              <thead className={mounted && theme === 'dark' ? 'bg-slate-900' : 'bg-gray-50'}>
+                <tr>
+                  {[
+                    { label: t('venezuela.pagos.table.headers.id'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><Hash size={14} /></AnimatedIcon>, width: 'w-44' },
+                    { label: t('venezuela.pagos.table.headers.client'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><User size={14} /></AnimatedIcon>, width: 'w-36' },
+                    { label: t('venezuela.pagos.table.headers.status'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><CheckCircle size={14} /></AnimatedIcon>, width: 'w-32' },
+                    { label: t('venezuela.pagos.table.headers.date'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><Calendar size={14} /></AnimatedIcon>, width: 'w-24' },
+                    { label: t('venezuela.pagos.table.headers.amount'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><DollarSign size={14} /></AnimatedIcon>, width: 'w-28' },
+                    { label: t('venezuela.pagos.table.headers.reference'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><Hash size={14} /></AnimatedIcon>, width: 'w-36' },
+                    { label: t('venezuela.pagos.table.headers.destination'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><MapPin size={14} /></AnimatedIcon>, width: 'w-28' },
+                    { label: t('venezuela.pagos.table.headers.actions'), icon: <AnimatedIcon animation={["pulse", "shake"]}><MoreHorizontal size={14} /></AnimatedIcon>, width: 'w-28' }
+                  ].map((header, index) => (
+                    <th key={index} className={`px-2 py-3 text-left ${header.width}`}>
+                      <div className={`flex items-center gap-1 text-xs font-semibold uppercase tracking-wider ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>
+                        <AnimatedIcon animation="pulse">
+                          {header.icon}
+                        </AnimatedIcon>
+                        <span className="truncate">{header.label}</span>
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredPayments.map((payment) => (
+                  <tr
+                    key={payment.id}
+                    className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-transparent transition-all duration-200 group"
+                  >
+                    <td className="px-2 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 bg-blue-500 text-white rounded-lg flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                          {payment.id.split('-')[1] || String(payment.id)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className={`text-sm font-medium truncate ${mounted && theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{payment.id}</div>
+                          <div className={`text-xs truncate ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}`}>{payment.descripcion}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-2 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className={mounted && theme === 'dark' ? 'w-7 h-7 bg-slate-700 text-blue-200 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0' : 'w-7 h-7 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0'}>
+                          {payment.usuario.split(' ').map(n => n[0]).join('').toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className={`text-sm font-medium truncate ${mounted && theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{payment.usuario}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-2 py-3">
+                      <StatusBadge status={payment.estado} sendChina={payment.sendChina} />
+                    </td>
+                    <td className={`px-2 py-3 text-sm ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-gray-900'}`}>
+                      <span className="truncate block">{formatDate(payment.fecha)}</span>
+                    </td>
+                    <td className="px-2 py-3">
+                      <div className={`text-sm font-bold truncate transition-colors duration-200 ${mounted && theme === 'dark' ? 'text-green-300 group-hover:text-green-400' : 'text-gray-900 group-hover:text-green-600'}`}>
+                        <span suppressHydrationWarning>{formatCompactMoney(payment.monto)}</span>
+                      </div>
+                    </td>
+                    <td className="px-2 py-3">
+                      <span className={`text-xs font-mono px-2 py-1 rounded truncate block ${mounted && theme === 'dark' ? 'text-slate-300 bg-slate-900' : 'text-gray-600 bg-gray-50'}`}>
+                        {payment.referencia}
+                      </span>
+                    </td>
+                    <td className="px-2 py-3">
+                      <div className="flex items-center gap-1">
+                        {payment.destino === 'China' && (
+                          <AnimatedIcon animation="pulse">
+                            <AlertTriangle size={10} className="text-orange-500 flex-shrink-0" />
+                          </AnimatedIcon>
+                        )}
+                        <span className={`text-xs px-2 py-1 rounded-full truncate ${payment.destino === 'China'
+                          ? mounted && theme === 'dark' ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-800'
+                          : mounted && theme === 'dark' ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-800'
+                          }`}>
+                          {payment.destino}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-2 py-3">
+                      <PaymentActions
+                        payment={payment}
+                        onApprove={handleApprove}
+                        onReject={openRejectionConfirmation}
+                        onViewDetails={openDetailsModal}
+                        onSend={handleSend}
+                        isSending={!!sendingChina[payment.id]}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {filteredPayments.length === 0 && (
+            <div className="text-center py-8 md:py-16">
+              <AnimatedIcon animation="bounce">
+                <Package className="md:w-12 md:h-12 mx-auto text-gray-400 mb-4" />
+              </AnimatedIcon>
+              <p className="text-gray-500 text-base md:text-lg font-medium">{t('venezuela.pagos.empty.title')}</p>
+              <p className="text-gray-400 text-sm mt-2">{t('venezuela.pagos.empty.subtitle')}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className={`mt-4 md:mt-6 text-center text-xs md:text-sm text-gray-500`}>
+          {t('venezuela.pagos.footer.showing', { shown: filteredPayments.length, total: payments.length })}
+        </div>
       </div>
       <Toaster />
     </>

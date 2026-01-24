@@ -1064,8 +1064,8 @@ export default function Sidebar({ isExpanded, setIsExpanded, isMobileMenuOpen = 
       : isTablet
         ? (isExpanded ? 'w-64' : 'w-20')
         : isExpanded
-          ? (screenWidth < 1440 ? 'w-64' : 'w-72')
-          : 'w-20';
+          ? 'w-72'
+          : 'w-24';
 
     const iconSize = 'w-5 h-5';
     // Aumentar ligeramente el tamaño del logo en pantallas <1440px cuando está expandido
