@@ -103,6 +103,13 @@ interface Order {
   hasAlternative?: boolean;
   alternativeStatus?: 'pending' | 'accepted' | 'rejected' | null;
   alternativeRejectionReason?: string | null;
+  // Cotización
+  unitQuote?: number | null;
+  shippingPrice?: number | null;
+  height?: number | null;
+  width?: number | null;
+  long?: number | null;
+  weight?: number | null;
 }
 
 interface NewOrderData {
@@ -535,6 +542,12 @@ export default function PedidosPage() {
         hasAlternative: o.hasAlternative,
         alternativeStatus: o.alternativeStatus,
         alternativeRejectionReason: o.alternativeRejectionReason,
+        unitQuote: o.unitQuote,
+        shippingPrice: o.shippingPrice,
+        height: o.height,
+        width: o.width,
+        long: o.long,
+        weight: o.weight,
       };
     });
     setOrders(mapped);
@@ -1944,6 +1957,50 @@ export default function PedidosPage() {
                       );
                     })()}
                   </div>
+
+                  {/* Datos de Cotización (Visible si existe cotización) */}
+                  {(selectedOrder.unitQuote && selectedOrder.shippingPrice) && (
+                    <div className="mt-4">
+                      <p className={`font-semibold text-base md:text-lg mb-2 ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                        Datos de Cotización
+                      </p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className={`p-3 rounded-lg border ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                          <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Precio Unitario</p>
+                          <div className="flex items-baseline gap-1 mt-1">
+                            <span className="text-sm font-semibold">¥</span>
+                            <span className={`text-lg font-bold ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-700'}`}>
+                              {selectedOrder.unitQuote}
+                            </span>
+                          </div>
+                        </div>
+                        <div className={`p-3 rounded-lg border ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                          <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Envío Interno</p>
+                          <div className="flex items-baseline gap-1 mt-1">
+                            <span className="text-sm font-semibold">¥</span>
+                            <span className={`text-lg font-bold ${mounted && theme === 'dark' ? 'text-orange-400' : 'text-orange-700'}`}>
+                              {selectedOrder.shippingPrice}
+                            </span>
+                          </div>
+                        </div>
+                        <div className={`p-3 rounded-lg border ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                          <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Peso</p>
+                          <div className="flex items-baseline gap-1 mt-1">
+                            <span className={`text-lg font-bold ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-900'}`}>
+                              {selectedOrder.weight ?? 0}
+                            </span>
+                            <span className="text-xs text-slate-500 font-medium">kg</span>
+                          </div>
+                        </div>
+                        <div className={`p-3 rounded-lg border ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                          <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Medidas (cm)</p>
+                          <div className={`text-sm font-medium mt-1 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                            {selectedOrder.height ?? 0} x {selectedOrder.width ?? 0} x {selectedOrder.long ?? 0}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-6 md:mt-8">

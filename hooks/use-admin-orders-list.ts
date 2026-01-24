@@ -18,6 +18,12 @@ export interface AdminOrderListItem {
   hasAlternative?: boolean;
   alternativeStatus?: 'pending' | 'accepted' | 'rejected' | null;
   alternativeRejectionReason?: string | null;
+  unitQuote?: number | null;
+  shippingPrice?: number | null;
+  height?: number | null;
+  width?: number | null;
+  long?: number | null;
+  weight?: number | null;
 }
 
 export function useAdminOrdersList() {
@@ -35,7 +41,7 @@ export function useAdminOrdersList() {
       const [{ data: orders, error: ordersError }, { data: clients, error: clientsError }] = await Promise.all([
         supabase
           .from('orders')
-          .select('id, state, productName, description, client_id, asignedEVzla, asignedEChina, created_at, updated_at, estimatedBudget, reputation, pdfRoutes')
+          .select('id, state, productName, description, client_id, asignedEVzla, asignedEChina, created_at, updated_at, estimatedBudget, reputation, pdfRoutes, unitQuote, shippingPrice, height, width, long, weight')
           .eq('archived_by_admin', false) // Filter out archived
           // LIFO: Mayor ID primero
           .order('id', { ascending: false }),
@@ -93,6 +99,12 @@ export function useAdminOrdersList() {
           hasAlternative: alternativeStatus === 'pending',
           alternativeStatus: alternativeStatus,
           alternativeRejectionReason: rejectionReason,
+          unitQuote: o.unitQuote,
+          shippingPrice: o.shippingPrice,
+          height: o.height,
+          width: o.width,
+          long: o.long,
+          weight: o.weight,
         };
       });
 
