@@ -267,27 +267,27 @@ const PaymentDetailsModal: React.FC<{
         }`}
       onClick={handleBackdropClick}
     >
-      <div className={`bg-white rounded-lg p-6 max-w-2xl w-full shadow-xl transition-all duration-300 transform ${isClosing ? 'scale-95 opacity-0' : (isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0')
+      <div className={`bg-white dark:bg-slate-800 rounded-lg p-6 max-w-2xl w-full shadow-xl transition-all duration-300 transform ${isClosing ? 'scale-95 opacity-0' : (isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0')
         }`}>
         <div className="flex justify-between items-start">
           <div>
-            <h3 className="text-xl font-bold text-gray-900">{t('venezuela.pagos.modal.details.title')}</h3>
-            <p className="text-sm text-gray-500">{payment.id}</p>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t('venezuela.pagos.modal.details.title')}</h3>
+            <p className="text-sm text-gray-500 dark:text-slate-400">{payment.id}</p>
           </div>
-          <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
+          <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-white">
             <X size={24} />
           </button>
         </div>
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-semibold text-gray-800 mb-2">{t('venezuela.pagos.modal.details.clientInfo')}</h4>
-            <p><span className="font-medium">{t('venezuela.pagos.modal.details.fields.user')}</span> {payment.usuario}</p>
-            <p><span className="font-medium">{t('venezuela.pagos.modal.details.fields.productId')}</span> {payment.idProducto}</p>
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm dark:text-slate-300">
+          <div className="bg-gray-50 dark:bg-slate-700/50 p-4 rounded-lg">
+            <h4 className="font-semibold text-gray-800 dark:text-slate-200 mb-2">{t('venezuela.pagos.modal.details.clientInfo')}</h4>
+            <p><span className="font-medium text-gray-700 dark:text-slate-300">{t('venezuela.pagos.modal.details.fields.user')}</span> {payment.usuario}</p>
+            <p><span className="font-medium text-gray-700 dark:text-slate-300">{t('venezuela.pagos.modal.details.fields.productId')}</span> {payment.idProducto}</p>
           </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-semibold text-gray-800 mb-2">{t('venezuela.pagos.modal.details.paymentInfo')}</h4>
+          <div className="bg-gray-50 dark:bg-slate-700/50 p-4 rounded-lg">
+            <h4 className="font-semibold text-gray-800 dark:text-slate-200 mb-2">{t('venezuela.pagos.modal.details.paymentInfo')}</h4>
             <div className="flex items-center gap-2">
-              <span className="font-medium">{t('venezuela.pagos.modal.details.fields.amount')}</span>
+              <span className="font-medium text-gray-700 dark:text-slate-300">{t('venezuela.pagos.modal.details.fields.amount')}</span>
               <PriceDisplay
                 amount={payment.monto}
                 currency="USD"
@@ -296,14 +296,14 @@ const PaymentDetailsModal: React.FC<{
                 emphasizeBolivars={true}
               />
             </div>
-            <p><span className="font-medium">{t('venezuela.pagos.modal.details.fields.date')}</span> {new Date(payment.fecha).toLocaleDateString('es-ES')}</p>
-            <p><span className="font-medium">{t('venezuela.pagos.modal.details.fields.reference')}</span> {payment.referencia}</p>
-            <p><span className="font-medium">{t('venezuela.pagos.modal.details.fields.method')}</span> {payment.metodo}</p>
+            <p><span className="font-medium text-gray-700 dark:text-slate-300">{t('venezuela.pagos.modal.details.fields.date')}</span> {new Date(payment.fecha).toLocaleDateString('es-ES')}</p>
+            <p><span className="font-medium text-gray-700 dark:text-slate-300">{t('venezuela.pagos.modal.details.fields.reference')}</span> {payment.referencia}</p>
+            <p><span className="font-medium text-gray-700 dark:text-slate-300">{t('venezuela.pagos.modal.details.fields.method')}</span> {payment.metodo}</p>
           </div>
-          <div className="md:col-span-2 bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-semibold text-gray-800 mb-2">{t('venezuela.pagos.modal.details.additionalDetails')}</h4>
-            <p><span className="font-medium">{t('venezuela.pagos.modal.details.fields.destination')}</span> {payment.destino}</p>
-            <p><span className="font-medium">{t('venezuela.pagos.modal.details.fields.description')}</span> {payment.descripcion}</p>
+          <div className="md:col-span-2 bg-gray-50 dark:bg-slate-700/50 p-4 rounded-lg">
+            <h4 className="font-semibold text-gray-800 dark:text-slate-200 mb-2">{t('venezuela.pagos.modal.details.additionalDetails')}</h4>
+            <p><span className="font-medium text-gray-700 dark:text-slate-300">{t('venezuela.pagos.modal.details.fields.destination')}</span> {payment.destino}</p>
+            <p><span className="font-medium text-gray-700 dark:text-slate-300">{t('venezuela.pagos.modal.details.fields.description')}</span> {payment.descripcion}</p>
           </div>
         </div>
       </div>
@@ -1233,16 +1233,7 @@ const PaymentActions: React.FC<{
           </>
         )}
 
-        {payment.estado === 'completado' && (
-          <button
-            onClick={() => onSend(payment.id)}
-            disabled={payment.sendChina || isSending}
-            className={`flex items-center p-2 rounded-lg transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md ${payment.sendChina || isSending ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
-            title={payment.sendChina ? (t('venezuela.pagos.status.sentChina') || 'Enviado a China') : (t('venezuela.pagos.actions.send') || 'Enviar')}
-          >
-            <Send size={14} />
-          </button>
-        )}
+
 
         <button
           onClick={() => onViewDetails(payment)}

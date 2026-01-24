@@ -160,8 +160,8 @@ export default function VenezuelaTicketsPage() {
                     subtitle={t('admin.tickets.subtitle') || 'Gestión de códigos de barras'}
                 />
 
-                <div className="p-4 md:p-5 lg:p-6 space-y-4 md:space-y-5 lg:space-y-6">
-                    <Card className={`shadow-lg border-0 ${mounted && theme === 'dark' ? 'bg-slate-800/70 dark:border-slate-700' : 'bg-white/70'} backdrop-blur-sm hover:shadow-xl transition-shadow duration-300`}>
+                <div className="p-4 md:p-5 lg:p-6 h-[calc(100vh-4rem)] flex flex-col gap-4 md:gap-5 lg:gap-6">
+                    <Card className={`flex flex-col flex-1 shadow-lg border-0 ${mounted && theme === 'dark' ? 'bg-slate-800/70 dark:border-slate-700' : 'bg-white/70'} backdrop-blur-sm hover:shadow-xl transition-shadow duration-300`}>
                         <CardHeader className="pb-3">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                 <CardTitle className={`text-lg md:text-xl flex items-center ${mounted && theme === 'dark' ? 'text-white' : 'text-black'} w-full sm:w-auto`}>
@@ -194,7 +194,7 @@ export default function VenezuelaTicketsPage() {
                             </div>
                         </CardHeader>
 
-                        <CardContent className="overflow-x-hidden">
+                        <CardContent className="overflow-hidden flex-1 flex flex-col">
                             {isLoading ? (
                                 <div className="flex items-center justify-center py-12">
                                     <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
@@ -215,8 +215,8 @@ export default function VenezuelaTicketsPage() {
                             ) : (
                                 <>
                                     {/* Desktop Table */}
-                                    <div className={`hidden lg:block rounded-xl border ${mounted && theme === 'dark' ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-white/50'} backdrop-blur-sm overflow-x-auto`}>
-                                        <div className="min-h-[400px] transition-all duration-700 ease-in-out">
+                                    <div className={`hidden lg:flex flex-col flex-1 rounded-xl border ${mounted && theme === 'dark' ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-white/50'} backdrop-blur-sm overflow-hidden`}>
+                                        <div className="flex-1 overflow-auto transition-all duration-700 ease-in-out">
                                             <table className="w-full table-fixed min-w-full">
                                                 <thead className={`bg-gradient-to-r ${mounted && theme === 'dark' ? 'from-slate-800 to-slate-700 border-slate-600' : 'from-slate-50 to-blue-50 border-slate-200'} border-b`}>
                                                     <tr>
