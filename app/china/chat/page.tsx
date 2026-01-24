@@ -26,7 +26,7 @@ import { Info } from 'lucide-react';
 
 export default function ChinaChatPage() {
     const { toggleMobileMenu } = useChinaLayoutContext();
-    const { chinaId } = useChinaContext();
+    const { chinaId, chinaName } = useChinaContext();
     const router = useRouter();
     const { theme } = useTheme();
     const { t } = useTranslation();
@@ -65,11 +65,13 @@ export default function ChinaChatPage() {
         conversationUserId: selectedUserId,
         groupId: selectedGroupId,
         currentUserId: chinaId ?? null,
+        currentUserName: chinaName ?? null,
         currentUserRole: 'china',
     });
 
-    const { isOtherUserTyping, notifyTyping, stopTyping } = useChatTyping({
+    const { isOtherUserTyping, typingUserName, notifyTyping, stopTyping } = useChatTyping({
         currentUserId: chinaId ?? null,
+        currentUserName: chinaName ?? null,
         conversationUserId: selectedUserId,
         groupId: selectedGroupId ?? null,
     });
@@ -257,6 +259,7 @@ export default function ChinaChatPage() {
                                         currentUserId={chinaId || ''}
                                         isOtherUserTyping={isOtherUserTyping}
                                         otherUserName={selectedUserName}
+                                        typingUserName={typingUserName}
                                         loading={loading}
                                         onEditMessage={editMessage}
                                         onDeleteMessage={deleteMessage}

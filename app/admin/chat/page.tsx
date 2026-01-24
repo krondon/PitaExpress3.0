@@ -31,7 +31,7 @@ export default function AdminChatPage() {
     const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
     const [selectedUserName, setSelectedUserName] = useState<string>('');
     const { toggleMobileMenu } = useAdminLayoutContext();
-    const { adminId } = useAdminContext();
+    const { adminId, adminName } = useAdminContext();
     const router = useRouter();
     const { theme } = useTheme();
     const { t } = useTranslation();
@@ -101,11 +101,13 @@ export default function AdminChatPage() {
         conversationUserId: selectedUserId,
         groupId: selectedGroupId,
         currentUserId: adminId ?? null,
+        currentUserName: adminName ?? null,
         currentUserRole: 'admin',
     });
 
-    const { isOtherUserTyping, notifyTyping, stopTyping } = useChatTyping({
+    const { isOtherUserTyping, typingUserName, notifyTyping, stopTyping } = useChatTyping({
         currentUserId: adminId ?? null,
+        currentUserName: adminName ?? null,
         conversationUserId: selectedUserId,
         groupId: selectedGroupId ?? null,
     });
@@ -297,6 +299,7 @@ export default function AdminChatPage() {
                                         currentUserId={adminId || ''}
                                         isOtherUserTyping={isOtherUserTyping}
                                         otherUserName={selectedUserName}
+                                        typingUserName={typingUserName}
                                         loading={loading}
                                         onEditMessage={editMessage}
                                         onDeleteMessage={deleteMessage}

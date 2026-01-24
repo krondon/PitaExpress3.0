@@ -5,12 +5,14 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 
 interface UseChatTypingOptions {
     currentUserId: string | null;
+    currentUserName?: string | null;
     conversationUserId: string | null;
     groupId?: string | null;
 }
 
-export function useChatTyping({ currentUserId, conversationUserId, groupId }: UseChatTypingOptions) {
+export function useChatTyping({ currentUserId, currentUserName, conversationUserId, groupId }: UseChatTypingOptions) {
     const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
+    const [typingUserName, setTypingUserName] = useState<string | null>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const channelRef = useRef<any>(null);
     const supabase = getSupabaseBrowserClient();
@@ -41,6 +43,7 @@ export function useChatTyping({ currentUserId, conversationUserId, groupId }: Us
                 event: 'typing',
                 payload: {
                     userId: currentUserId,
+                    userName: currentUserName || 'Usuario',
                     isTyping: true,
                     timestamp: now,
                 },
@@ -58,6 +61,7 @@ export function useChatTyping({ currentUserId, conversationUserId, groupId }: Us
                     event: 'typing',
                     payload: {
                         userId: currentUserId,
+                        userName: currentUserName || 'Usuario',
                         isTyping: false,
                         timestamp: Date.now(),
                     },
@@ -80,6 +84,7 @@ export function useChatTyping({ currentUserId, conversationUserId, groupId }: Us
                 event: 'typing',
                 payload: {
                     userId: currentUserId,
+                    userName: currentUserName || 'Usuario',
                     isTyping: false,
                     timestamp: Date.now(),
                 },
@@ -122,8 +127,10 @@ export function useChatTyping({ currentUserId, conversationUserId, groupId }: Us
                 if (userId !== currentUserId) {
                     if (groupId) {
                         setIsOtherUserTyping(isTyping);
+                        setTypingUserName(isTyping ? payload.payload.userName : null);
                     } else if (userId === conversationUserId) {
                         setIsOtherUserTyping(isTyping);
+                        setTypingUserName(null); // En DM no necesitamos el nombre, ya lo sabemos
                     }
                 }
             })
@@ -151,6 +158,7 @@ export function useChatTyping({ currentUserId, conversationUserId, groupId }: Us
 
     return {
         isOtherUserTyping,
+        typingUserName,
         notifyTyping,
         stopTyping,
     };

@@ -8,6 +8,7 @@ interface UseChatMessagesOptions {
     conversationUserId?: string | null; // Para chats individuales
     groupId?: string | null; // Para chats de grupo
     currentUserId: string | null;
+    currentUserName?: string | null;
     currentUserRole: ChatRole;
 }
 
@@ -15,6 +16,7 @@ export function useChatMessages({
     conversationUserId,
     groupId,
     currentUserId,
+    currentUserName,
     currentUserRole
 }: UseChatMessagesOptions) {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -165,6 +167,7 @@ export function useChatMessages({
                 id: `temp-${Date.now()}`, // ID temporal
                 sender_id: currentUserId,
                 sender_role: currentUserRole,
+                sender_name: currentUserName || undefined,
                 receiver_id: isGroupMessage ? null : (payload.receiver_id || null),
                 receiver_role: isGroupMessage ? null : receiverRole,
                 group_id: isGroupMessage ? (payload.group_id || null) : null,

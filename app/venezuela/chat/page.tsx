@@ -26,7 +26,7 @@ import { Info } from 'lucide-react';
 
 export default function VenezuelaChatPage() {
     const { toggleMobileMenu } = useVzlaLayoutContext();
-    const { vzlaId } = useVzlaContext();
+    const { vzlaId, vzlaName } = useVzlaContext();
     const router = useRouter();
     const { theme } = useTheme();
     const { t } = useTranslation();
@@ -65,11 +65,13 @@ export default function VenezuelaChatPage() {
         conversationUserId: selectedUserId,
         groupId: selectedGroupId,
         currentUserId: vzlaId ?? null,
+        currentUserName: vzlaName ?? null,
         currentUserRole: 'venezuela',
     });
 
-    const { isOtherUserTyping, notifyTyping, stopTyping } = useChatTyping({
+    const { isOtherUserTyping, typingUserName, notifyTyping, stopTyping } = useChatTyping({
         currentUserId: vzlaId ?? null,
+        currentUserName: vzlaName ?? null,
         conversationUserId: selectedUserId,
         groupId: selectedGroupId ?? null,
     });
@@ -257,6 +259,7 @@ export default function VenezuelaChatPage() {
                                         currentUserId={vzlaId || ''}
                                         isOtherUserTyping={isOtherUserTyping}
                                         otherUserName={selectedUserName}
+                                        typingUserName={typingUserName}
                                         loading={loading}
                                         onEditMessage={editMessage}
                                         onDeleteMessage={deleteMessage}

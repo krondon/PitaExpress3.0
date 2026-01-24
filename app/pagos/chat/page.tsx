@@ -30,6 +30,7 @@ export default function PagosChatPage() {
     const { t } = useTranslation();
     const [mounted, setMounted] = useState(false);
     const [pagosId, setPagosId] = useState<string | null>(null);
+    const [pagosName, setPagosName] = useState<string | null>(null);
 
     // Obtener ID del usuario actual (Pagos)
     useEffect(() => {
@@ -39,6 +40,7 @@ export default function PagosChatPage() {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 setPagosId(user.id);
+                setPagosName(user.user_metadata?.name || user.email || 'Pagos');
             }
         };
         getUser();
@@ -75,11 +77,13 @@ export default function PagosChatPage() {
         conversationUserId: selectedUserId,
         groupId: selectedGroupId,
         currentUserId: pagosId || null,
+        currentUserName: pagosName || null,
         currentUserRole: 'pagos',
     });
 
-    const { isOtherUserTyping, notifyTyping, stopTyping } = useChatTyping({
+    const { isOtherUserTyping, typingUserName, notifyTyping, stopTyping } = useChatTyping({
         currentUserId: pagosId || null,
+        currentUserName: pagosName || null,
         conversationUserId: selectedUserId,
         groupId: selectedGroupId || null,
     });
@@ -267,6 +271,7 @@ export default function PagosChatPage() {
                                         currentUserId={pagosId || ''}
                                         isOtherUserTyping={isOtherUserTyping}
                                         otherUserName={selectedUserName}
+                                        typingUserName={typingUserName}
                                         loading={loading}
                                         onEditMessage={editMessage}
                                         onDeleteMessage={deleteMessage}
