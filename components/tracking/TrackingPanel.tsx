@@ -1,16 +1,17 @@
 // components/TrackingPanel.tsx
 "use client";
+import Image from 'next/image';
 
 // Componente para mostrar el GIF de transporte según el tipo
 const TransportGif = ({ transporte }: { transporte: string }) => {
   if (transporte === 'Aéreo') {
-    return <img src="/animations/viaje.gif" alt="Avión" className="w-10 h-10 object-contain" draggable={false} />;
+    return <Image src="/animations/viaje.gif" alt="Avión" width={40} height={40} className="w-10 h-10 object-contain" draggable={false} unoptimized />;
   }
   if (transporte === 'Marítimo') {
-    return <img src="/animations/barco.gif" alt="Barco" className="w-10 h-10 object-contain" draggable={false} />;
+    return <Image src="/animations/barco.gif" alt="Barco" width={40} height={40} className="w-10 h-10 object-contain" draggable={false} unoptimized />;
   }
   if (transporte === 'Terrestre') {
-    return <img src="/animations/camion.gif" alt="Camión" className="w-10 h-10 object-contain" draggable={false} />;
+    return <Image src="/animations/camion.gif" alt="Camión" width={40} height={40} className="w-10 h-10 object-contain" draggable={false} unoptimized />;
   }
   return null;
 };
@@ -211,7 +212,7 @@ const TrackingPanel = () => {
 
   return (
     <>
-  <div className="px-2 sm:px-8 lg:px-12 py-10">
+      <div className="px-2 sm:px-8 lg:px-12 py-10">
         {/* Modales de detalles y edición */}
         {/* TODO: Uncomment when OrderDetailsModal and EditOrderModal are implemented
         {showDetails && selectedOrder && (
@@ -303,12 +304,12 @@ const TrackingPanel = () => {
               {/* Selects juntos con el mismo espacio */}
               <div className="flex gap-2 ml-16">
                 {/* Select de estado animado */}
-        <div className="w-[200px] min-w-[180px] max-w-[240px] flex-shrink-0">
+                <div className="w-[200px] min-w-[180px] max-w-[240px] flex-shrink-0">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[200px] flex-shrink-0">
+                    <SelectTrigger className="w-[200px] flex-shrink-0">
                       <SelectValue placeholder="Todos los estados" />
                     </SelectTrigger>
-          <SelectContent className="w-[200px]">
+                    <SelectContent className="w-[200px]">
                       <SelectItem value="all">Todos los estados</SelectItem>
                       <SelectItem value="pedido-solicitado">Pedido Solicitado</SelectItem>
                       <SelectItem value="cotizacion-china">Cotización China</SelectItem>
@@ -322,13 +323,13 @@ const TrackingPanel = () => {
                     </SelectContent>
                   </Select>
                 </div>
-        {/* Select de transporte animado */}
-        <div className="w-[200px] min-w-[180px] max-w-[240px] flex-shrink-0">
+                {/* Select de transporte animado */}
+                <div className="w-[200px] min-w-[180px] max-w-[240px] flex-shrink-0">
                   <Select value={transportFilter} onValueChange={setTransportFilter}>
-          <SelectTrigger className="w-[200px] flex-shrink-0">
+                    <SelectTrigger className="w-[200px] flex-shrink-0">
                       <SelectValue placeholder="Todos los transportes" />
                     </SelectTrigger>
-          <SelectContent className="w-[200px]">
+                    <SelectContent className="w-[200px]">
                       <SelectItem value="all">Todos los transportes</SelectItem>
                       <SelectItem value="Aéreo">Aéreo</SelectItem>
                       <SelectItem value="Marítimo">Marítimo</SelectItem>
@@ -346,91 +347,91 @@ const TrackingPanel = () => {
         </div>
 
         {/* Tracking Table */}
-      <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden w-full">
-        <div className="px-4 py-6 border-b border-gray-200 w-full">
-          <h2 className="text-2xl font-bold text-gray-900">Tracking Detallado de Pedidos</h2>
-        </div>
-        <div className="overflow-x-auto w-full">
-          <table className="min-w-full table-fixed divide-y divide-gray-200 text-sm md:text-base">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="w-[120px] px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">ID Pedido</th>
-                <th className="w-[180px] px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
-                <th className="w-[220px] px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Pedido</th>
-                <th className="w-[120px] px-4 py-3 text-center font-medium text-gray-500 uppercase tracking-wider">Transporte</th>
-                <th className="w-[120px] px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                <th className="w-[100px] md:w-[120px] px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Días</th>
-                <th className="w-[140px] px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {data.map(item => (
-                <tr key={item.id} className="hover:bg-gray-50 transition-all duration-200 cursor-pointer">
-                  <td className="w-[120px] p-4 whitespace-nowrap">
-                    <div className="font-medium text-gray-900">{item.id}</div>
-                    <div className="text-xs text-gray-500">{item.fecha}</div>
-                  </td>
-                  <td className="w-[180px] p-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-2">
-                        <span className="text-xs font-medium text-gray-600">{item.usuario.charAt(0)}</span>
-                      </div>
-                      <div className="font-medium text-gray-900 truncate">{item.usuario}</div>
-                    </div>
-                  </td>
-                  <td className="w-[220px] p-4 max-w-sm truncate">
-                    <div className="text-gray-900 truncate">{item.pedido}</div>
-                  </td>
-                  <td className="w-[120px] p-4 whitespace-nowrap align-middle text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <TransportGif transporte={item.transporte} />
-                      <span className="text-gray-900 font-medium">{item.transporte}</span>
-                    </div>
-                  </td>
-                  <td className="w-[120px] p-4 whitespace-nowrap">
-                    <StatusBadge estado={item.estado} />
-                  </td>
-                  <td className="w-[120px] p-4 whitespace-nowrap hidden md:table-cell">
-                    <div className="text-gray-900">
-                      {item.diasRestantes > 0 ? `${item.diasRestantes} días` : 'Completado'}
-                    </div>
-                  </td>
-                  <td className="w-[140px] p-4 whitespace-nowrap font-medium hidden md:table-cell">
-                    <div className="flex items-center space-x-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="bg-white/50 border-slate-200 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
-                        onClick={() => handleView(item)}
-                      >
-                        <Eye className="w-4 h-4 mr-1" />
-                        Ver
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEdit(item)}>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteOrder(item.id)}>
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Eliminar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </td>
+        <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden w-full">
+          <div className="px-4 py-6 border-b border-gray-200 w-full">
+            <h2 className="text-2xl font-bold text-gray-900">Tracking Detallado de Pedidos</h2>
+          </div>
+          <div className="overflow-x-auto w-full">
+            <table className="min-w-full table-fixed divide-y divide-gray-200 text-sm md:text-base">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="w-[120px] px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">ID Pedido</th>
+                  <th className="w-[180px] px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
+                  <th className="w-[220px] px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Pedido</th>
+                  <th className="w-[120px] px-4 py-3 text-center font-medium text-gray-500 uppercase tracking-wider">Transporte</th>
+                  <th className="w-[120px] px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                  <th className="w-[100px] md:w-[120px] px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Días</th>
+                  <th className="w-[140px] px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {data.map(item => (
+                  <tr key={item.id} className="hover:bg-gray-50 transition-all duration-200 cursor-pointer">
+                    <td className="w-[120px] p-4 whitespace-nowrap">
+                      <div className="font-medium text-gray-900">{item.id}</div>
+                      <div className="text-xs text-gray-500">{item.fecha}</div>
+                    </td>
+                    <td className="w-[180px] p-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-2">
+                          <span className="text-xs font-medium text-gray-600">{item.usuario.charAt(0)}</span>
+                        </div>
+                        <div className="font-medium text-gray-900 truncate">{item.usuario}</div>
+                      </div>
+                    </td>
+                    <td className="w-[220px] p-4 max-w-sm truncate">
+                      <div className="text-gray-900 truncate">{item.pedido}</div>
+                    </td>
+                    <td className="w-[120px] p-4 whitespace-nowrap align-middle text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <TransportGif transporte={item.transporte} />
+                        <span className="text-gray-900 font-medium">{item.transporte}</span>
+                      </div>
+                    </td>
+                    <td className="w-[120px] p-4 whitespace-nowrap">
+                      <StatusBadge estado={item.estado} />
+                    </td>
+                    <td className="w-[120px] p-4 whitespace-nowrap hidden md:table-cell">
+                      <div className="text-gray-900">
+                        {item.diasRestantes > 0 ? `${item.diasRestantes} días` : 'Completado'}
+                      </div>
+                    </td>
+                    <td className="w-[140px] p-4 whitespace-nowrap font-medium hidden md:table-cell">
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="bg-white/50 border-slate-200 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200"
+                          onClick={() => handleView(item)}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          Ver
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEdit(item)}>
+                              <Edit className="w-4 h-4 mr-2" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteOrder(item.id)}>
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Eliminar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
       </div>
     </>
   );

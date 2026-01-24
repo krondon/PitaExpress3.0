@@ -722,18 +722,20 @@ export default function PedidosPage() {
           text: [33, 37, 41] as [number, number, number]
         };
 
+        const normalizeText = (text: string) => text ? text.normalize("NFD").replace(/[\u0300-\u036f]/g, "") : "";
+
         const pedidoTable: [string, string][] = [
           [t('admin.orders.pdf.fields.orderId'), `${numeroPedido}`],
           [t('admin.orders.pdf.fields.clientId'), `${newOrderData.client_id}`],
-          [t('admin.orders.pdf.fields.userName'), `${newOrderData.client_name || t('admin.orders.common.unknown')}`],
+          [t('admin.orders.pdf.fields.userName'), normalizeText(newOrderData.client_name || t('admin.orders.common.unknown'))],
           [t('admin.orders.pdf.fields.date'), `${fechaPedidoLegible}`],
           [t('admin.orders.pdf.fields.shippingType'), `${newOrderData.deliveryType}`],
-          [t('admin.orders.pdf.fields.deliveryVzla'), `${newOrderData.deliveryVenezuela}`],
-          [t('admin.orders.pdf.fields.product'), `${newOrderData.productName}`],
+          [t('admin.orders.pdf.fields.deliveryVzla'), normalizeText(newOrderData.deliveryVenezuela)],
+          [t('admin.orders.pdf.fields.product'), normalizeText(newOrderData.productName)],
           [t('admin.orders.pdf.fields.quantity'), `${newOrderData.quantity}`],
           [t('admin.orders.pdf.fields.estimatedBudget'), `$${newOrderData.estimatedBudget}`],
-          [t('admin.orders.pdf.fields.description'), newOrderData.description || t('admin.orders.common.unknown')],
-          [t('admin.orders.pdf.fields.specifications'), newOrderData.specifications || t('admin.orders.common.unknown')],
+          [t('admin.orders.pdf.fields.description'), normalizeText(newOrderData.description || t('admin.orders.common.unknown'))],
+          [t('admin.orders.pdf.fields.specifications'), normalizeText(newOrderData.specifications || t('admin.orders.common.unknown'))],
         ];
         if (newOrderData.requestType === 'link') {
           pedidoTable.push([t('admin.orders.pdf.fields.url'), newOrderData.productUrl || t('admin.orders.common.unknown')]);

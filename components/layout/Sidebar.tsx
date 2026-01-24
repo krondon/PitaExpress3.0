@@ -1002,7 +1002,7 @@ export default function Sidebar({ isExpanded, setIsExpanded, isMobileMenuOpen = 
     };
 
     loadInitialData();
-  }, [userRole, clientCtx?.clientId, vzlaCtx?.vzlaId, chinaCtx?.chinaId]);
+  }, [userRole, clientCtx?.clientId, vzlaCtx?.vzlaId, chinaCtx?.chinaId, refetchVzlaActiveOrders, refetchVzlaPendingPayments, refetchChinaActiveOrders]);
 
   // Merge dynamic badges into client menu
   // Merge dynamic badges into client menu

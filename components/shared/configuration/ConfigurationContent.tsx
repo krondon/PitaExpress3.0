@@ -1169,7 +1169,7 @@ function AdminReviewsSection() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [supabase, t, toast]);
 
   const fetchReviews = async (showFullLoading = true) => {
     try {

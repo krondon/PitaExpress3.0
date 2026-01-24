@@ -189,7 +189,7 @@ export default function ChinaOrdersTabContent() {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(5.2);
       doc.setTextColor(60, 60, 65);
-      const desc = t('admin.orders.china.modals.labelWarning.description', { defaultValue: 'Asegúrate de poner la etiqueta al producto antes de empaquetar.' });
+      const desc = t('admin.orders.china.modals.labelWarning.description', { defaultValue: 'Asegúrate de poner la etiqueta al producto antes de empaquetar.' }).normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       doc.text(doc.splitTextToSize(desc, labelW - 8), labelW / 2, 26.5, { align: 'center' });
 
       // (Footer eliminado a petición del usuario)
