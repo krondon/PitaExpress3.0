@@ -1560,7 +1560,7 @@ export default function PedidosChina() {
       const code = `#PED-${String(pedidoId).padStart(3, '0')}`;
       doc.setFont('helvetica', 'bold'); doc.setTextColor(20, 20, 25); doc.setFontSize(16); doc.text(code, labelW / 2, 20, { align: 'center' });
       doc.setFont('helvetica', 'normal'); doc.setFontSize(5.2); doc.setTextColor(60, 60, 65);
-      const desc = t('chinese.ordersPage.modals.labelWarning.description', { defaultValue: 'Asegúrate de poner la etiqueta al producto antes de empaquetar.' });
+      const desc = t('chinese.ordersPage.modals.labelWarning.description', { defaultValue: 'Asegurate de poner la etiqueta al producto antes de empaquetar' }).normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       doc.text(doc.splitTextToSize(desc, labelW - 8), labelW / 2, 26.5, { align: 'center' });
       const blobUrl = doc.output('bloburl');
       window.open(blobUrl, '_blank', 'noopener,noreferrer');
