@@ -169,7 +169,7 @@ export function CreateGroupModal({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className={`sm:max-w-lg ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : ''}`}>
+            <DialogContent className={`sm:max-w-lg w-full max-h-[90vh] flex flex-col ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : ''}`}>
                 <DialogHeader>
                     <DialogTitle className={`flex items-center gap-2 ${mounted && theme === 'dark' ? 'text-white' : ''}`}>
                         <Users className="h-5 w-5 text-purple-500" />
@@ -180,7 +180,7 @@ export function CreateGroupModal({
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-4 py-4">
+                <div className="space-y-4 py-4 flex-1 overflow-y-auto min-h-0 px-1">
                     {/* Avatar Selection */}
                     <div className="flex justify-center mb-2">
                         <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
