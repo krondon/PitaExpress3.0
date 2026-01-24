@@ -22,9 +22,19 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { GroupInfoSheet } from '@/components/chat/GroupInfoSheet';
 import { useChatGroups } from '@/hooks/use-chat-groups';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ChatGroupsProvider } from '@/lib/contexts/ChatGroupsContext';
 import React from 'react';
 
 export default function AdminChatPage() {
+    const { adminId } = useAdminContext();
+    return (
+        <ChatGroupsProvider currentUserId={adminId || ''}>
+            <AdminChatContent />
+        </ChatGroupsProvider>
+    );
+}
+
+function AdminChatContent() {
     // 1. Estados de Navegación
     const [view, setView] = useState<'list' | 'chat'>('list');
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -201,8 +211,8 @@ export default function AdminChatPage() {
             <Header
                 notifications={unreadCount}
                 onMenuToggle={toggleMobileMenu}
-                title={view === 'list' ? t('chat.list.title') : t('chat.china.title', { name: selectedUserName })}
-                subtitle={view === 'list' ? t('chat.list.subtitle') : t('chat.china.subtitle')}
+                title={t('chat.list.title')}
+                subtitle={t('chat.list.subtitle')}
                 notificationsItems={notificationsList}
                 onMarkAllAsRead={async () => {
                     await markAllAsRead();

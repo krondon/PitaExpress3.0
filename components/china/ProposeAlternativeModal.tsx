@@ -8,6 +8,7 @@ import { X, ImageIcon, Send, Upload } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useTranslation } from '@/hooks/useTranslation';
+import Image from 'next/image';
 
 interface ProposeAlternativeModalProps {
     isOpen: boolean;
@@ -236,10 +237,13 @@ export default function ProposeAlternativeModal({
                         />
                         {altImageFile ? (
                             <div className="relative">
-                                <img
+                                <Image
                                     src={URL.createObjectURL(altImageFile)}
                                     alt="Alternativa"
+                                    width={600}
+                                    height={400}
                                     className="w-full h-48 object-cover rounded-lg border-2 border-slate-200 dark:border-slate-700"
+                                    unoptimized
                                 />
                                 <button
                                     onClick={() => setAltImageFile(null)}

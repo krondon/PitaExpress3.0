@@ -30,7 +30,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Search, Users, UserPlus, UserMinus, Crown, Loader2, LogOut, Trash2, FileText, Image as ImageIcon, MoreVertical } from 'lucide-react';
+import { Search, Users, UserPlus, UserMinus, Crown, Loader2, LogOut, Trash2, FileText, Image as ImageIcon, MoreVertical, Camera, Edit2, Check } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useChatGroups } from '@/hooks/use-chat-groups';
@@ -74,6 +74,13 @@ export function GroupInfoSheet({
     const [removing, setRemoving] = useState<string | null>(null);
     const [adding, setAdding] = useState<string | null>(null);
 
+    // Edit states
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [isEditingDesc, setIsEditingDesc] = useState(false);
+    const [newName, setNewName] = useState(groupName);
+    const [newDesc, setNewDesc] = useState('');
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
     // Media State
     const [media, setMedia] = useState<any[]>([]);
     const [loadingMedia, setLoadingMedia] = useState(false);
@@ -96,7 +103,15 @@ export function GroupInfoSheet({
         }
     }, [open, groupId]);
 
-    const { getGroupMembers, addMember, removeMember, promoteMember, demoteMember, leaveGroup, deleteGroup, searchUsers, groups } = useChatGroups({ currentUserId });
+    const { getGroupMembers, addMember, removeMember, promoteMember, demoteMember, leaveGroup, deleteGroup, searchUsers, groups, updateGroup } = useChatGroups({ currentUserId });
+    const currentGroup = groups.find(g => g.id === groupId);
+
+    useEffect(() => {
+        if (currentGroup) {
+            setNewName(currentGroup.name);
+            setNewDesc(currentGroup.description || '');
+        }
+    }, [currentGroup]);
     const { theme } = useTheme();
     const { t } = useTranslation();
     const [mounted, setMounted] = useState(false);
@@ -199,23 +214,131 @@ export function GroupInfoSheet({
         }
     };
 
+    const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !groupId) return;
+
+        setUploadingAvatar(true);
+        try {
+            const supabase = getSupabaseBrowserClient();
+            const fileName = `group_${groupId}_${Date.now()}`;
+            const { data, error: uploadError } = await supabase.storage
+                .from('avatar')
+                .upload(fileName, file, { upsert: true });
+
+            if (uploadError) throw uploadError;
+
+            const { data: { publicUrl } } = supabase.storage.from('avatar').getPublicUrl(fileName);
+            await updateGroup(groupId, { avatar_url: publicUrl });
+        } catch (err) {
+            console.error('Error uploading avatar:', err);
+        } finally {
+            setUploadingAvatar(false);
+        }
+    };
+
+    const handleUpdateName = async () => {
+        if (!newName.trim() || newName === currentGroup?.name) {
+            setIsEditingName(false);
+            return;
+        }
+        const success = await updateGroup(groupId, { name: newName });
+        if (success) setIsEditingName(false);
+    };
+
+    const handleUpdateDesc = async () => {
+        if (newDesc === currentGroup?.description) {
+            setIsEditingDesc(false);
+            return;
+        }
+        const success = await updateGroup(groupId, { description: newDesc });
+        if (success) setIsEditingDesc(false);
+    };
+
     return (
         <>
             <Sheet open={open} onOpenChange={onOpenChange}>
                 <SheetContent className={`w-80 sm:w-96 ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : ''}`}>
                     <SheetHeader>
-                        <SheetTitle className={`flex items-center gap-2 ${mounted && theme === 'dark' ? 'text-white' : ''}`}>
-                            <Avatar className="h-10 w-10">
-                                <AvatarImage src={avatarUrl || groups.find(g => g.id === groupId)?.avatar_url || ''} />
-                                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-600 text-white flex items-center justify-center">
-                                    <Users className="h-5 w-5" />
+                        <div className="relative mx-auto mt-4 group">
+                            <Avatar className="h-24 w-24">
+                                <AvatarImage src={avatarUrl || currentGroup?.avatar_url || ''} />
+                                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-600 text-white flex items-center justify-center text-3xl">
+                                    <Users className="h-12 w-12" />
                                 </AvatarFallback>
                             </Avatar>
-                            {groupName}
-                        </SheetTitle>
-                        <SheetDescription>
-                            {t('chat.groups.info.description') || 'Información del grupo y miembros'}
-                        </SheetDescription>
+                            {isAdmin && (
+                                <label className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                    {uploadingAvatar ? (
+                                        <Loader2 className="h-6 w-6 text-white animate-spin" />
+                                    ) : (
+                                        <Camera className="h-6 w-6 text-white" />
+                                    )}
+                                    <input type="file" className="hidden" accept="image/*" onChange={handleAvatarUpload} disabled={uploadingAvatar} />
+                                </label>
+                            )}
+                        </div>
+                        <div className="flex flex-col items-center mt-2 space-y-1">
+                            {isEditingName ? (
+                                <div className="flex items-center gap-2 w-full max-w-[200px]">
+                                    <Input
+                                        value={newName}
+                                        onChange={(e) => setNewName(e.target.value)}
+                                        className="h-8 text-center font-bold"
+                                        autoFocus
+                                        onKeyDown={(e) => e.key === 'Enter' && handleUpdateName()}
+                                    />
+                                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={handleUpdateName}>
+                                        <Check className="h-4 w-4 text-green-500" />
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2">
+                                    <SheetTitle className={`text-xl font-bold ${mounted && theme === 'dark' ? 'text-white' : ''}`}>
+                                        {currentGroup?.name || groupName}
+                                    </SheetTitle>
+                                    {isAdmin && (
+                                        <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => setIsEditingName(true)}>
+                                            <Edit2 className="h-3 w-3 text-slate-400" />
+                                        </Button>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="w-full">
+                                {isEditingDesc ? (
+                                    <div className="flex items-center gap-2">
+                                        <Input
+                                            value={newDesc}
+                                            onChange={(e) => setNewDesc(e.target.value)}
+                                            placeholder="Añade una descripción..."
+                                            className="h-8 text-center text-sm"
+                                            autoFocus
+                                            onKeyDown={(e) => e.key === 'Enter' && handleUpdateDesc()}
+                                        />
+                                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={handleUpdateDesc}>
+                                            <Check className="h-4 w-4 text-green-500" />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center group">
+                                        <p className={`text-sm text-center px-4 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                            {currentGroup?.description || 'Sin descripción'}
+                                            {isAdmin && !currentGroup?.description && (
+                                                <Button size="sm" variant="link" className="text-xs h-auto p-0 ml-1 text-blue-500" onClick={() => setIsEditingDesc(true)}>
+                                                    Añadir descripción
+                                                </Button>
+                                            )}
+                                        </p>
+                                        {isAdmin && currentGroup?.description && (
+                                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => setIsEditingDesc(true)}>
+                                                <Edit2 className="h-3 w-3 text-slate-400" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </SheetHeader>
 
                     <Tabs defaultValue="info" className="flex flex-col h-full mt-6">

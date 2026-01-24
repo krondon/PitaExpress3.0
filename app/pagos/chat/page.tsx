@@ -21,9 +21,29 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { GroupInfoSheet } from '@/components/chat/GroupInfoSheet';
 import { useChatGroups } from '@/hooks/use-chat-groups';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ChatGroupsProvider } from '@/lib/contexts/ChatGroupsContext';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 
 export default function PagosChatPage() {
+    const supabase = getSupabaseBrowserClient();
+    const [userId, setUserId] = useState<string | null>(null);
+
+    useEffect(() => {
+        const getUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) setUserId(user.id);
+        };
+        getUser();
+    }, [supabase]);
+
+    return (
+        <ChatGroupsProvider currentUserId={userId}>
+            <PagosChatContent />
+        </ChatGroupsProvider>
+    );
+}
+
+function PagosChatContent() {
     const { toggleMobileMenu } = usePagosLayoutContext();
     const router = useRouter();
     const { theme } = useTheme();
@@ -173,8 +193,8 @@ export default function PagosChatPage() {
             <Header
                 notifications={unreadCount}
                 onMenuToggle={toggleMobileMenu}
-                title={view === 'list' ? t('chat.list.title') : (isGroupChat ? selectedUserName : t('chat.direct.title', { name: selectedUserName }))}
-                subtitle={view === 'list' ? t('chat.list.subtitle') : (isGroupChat ? t('chat.group.subtitle') : t('chat.direct.subtitle'))}
+                title={t('chat.list.title')}
+                subtitle={t('chat.list.subtitle')}
                 notificationsItems={notificationsList}
                 onMarkAllAsRead={async () => {
                     await markAllAsRead();

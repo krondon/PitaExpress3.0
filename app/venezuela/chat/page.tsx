@@ -22,9 +22,19 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { GroupInfoSheet } from '@/components/chat/GroupInfoSheet';
 import { useChatGroups } from '@/hooks/use-chat-groups';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ChatGroupsProvider } from '@/lib/contexts/ChatGroupsContext';
 import { Info } from 'lucide-react';
 
 export default function VenezuelaChatPage() {
+    const { vzlaId } = useVzlaContext();
+    return (
+        <ChatGroupsProvider currentUserId={vzlaId || ''}>
+            <VenezuelaChatContent />
+        </ChatGroupsProvider>
+    );
+}
+
+function VenezuelaChatContent() {
     const { toggleMobileMenu } = useVzlaLayoutContext();
     const { vzlaId, vzlaName } = useVzlaContext();
     const router = useRouter();
@@ -161,8 +171,8 @@ export default function VenezuelaChatPage() {
             <Header
                 notifications={unreadCount}
                 onMenuToggle={toggleMobileMenu}
-                title={view === 'list' ? t('chat.list.title') : (isGroupChat ? selectedUserName : t('chat.direct.title', { name: selectedUserName }))}
-                subtitle={view === 'list' ? t('chat.list.subtitle') : (isGroupChat ? t('chat.group.subtitle') : t('chat.direct.subtitle'))}
+                title={t('chat.list.title')}
+                subtitle={t('chat.list.subtitle')}
                 notificationsItems={notificationsList}
                 onMarkAllAsRead={async () => {
                     await markAllAsRead();

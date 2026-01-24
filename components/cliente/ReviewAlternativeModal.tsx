@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { X, CheckCircle, XCircle, Package, DollarSign, FileText } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useProductAlternatives } from '@/hooks/use-product-alternatives';
+import Image from 'next/image';
 
 interface ProductAlternative {
     id: number;
@@ -153,10 +154,13 @@ export default function ReviewAlternativeModal({
                             </div>
                             <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-4 space-y-3">
                                 {originalProduct.imageUrl && (
-                                    <img
+                                    <Image
                                         src={originalProduct.imageUrl}
                                         alt={originalProduct.name}
+                                        width={400}
+                                        height={300}
                                         className="w-full h-48 object-cover rounded-lg"
+                                        unoptimized
                                     />
                                 )}
                                 <div>
@@ -177,10 +181,13 @@ export default function ReviewAlternativeModal({
                             </div>
                             <div className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-700 rounded-lg p-4 space-y-3">
                                 {alternative.alternative_image_url && (
-                                    <img
+                                    <Image
                                         src={alternative.alternative_image_url}
                                         alt={alternative.alternative_product_name}
+                                        width={400}
+                                        height={300}
                                         className="w-full h-48 object-cover rounded-lg"
+                                        unoptimized
                                     />
                                 )}
                                 <div>

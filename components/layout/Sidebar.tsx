@@ -646,7 +646,7 @@ export default function Sidebar({ isExpanded, setIsExpanded, isMobileMenuOpen = 
     return () => {
       supabase.removeChannel(profileChannel);
     };
-  }, [userRole, chinaCtx?.chinaId]);
+  }, [userRole, chinaCtx]);
 
   // Venezuela realtime
   useRealtimeVzla(
@@ -713,7 +713,7 @@ export default function Sidebar({ isExpanded, setIsExpanded, isMobileMenuOpen = 
     return () => {
       supabase.removeChannel(profileChannel);
     };
-  }, [userRole, vzlaCtx?.vzlaId]);
+  }, [userRole, vzlaCtx]);
 
   // Venezuela boxes/containers realtime for support
   useRealtimeVzlaBoxesContainers(
@@ -861,7 +861,7 @@ export default function Sidebar({ isExpanded, setIsExpanded, isMobileMenuOpen = 
       window.clearInterval(intervalId);
       supabase.removeChannel(profileChannel);
     };
-  }, [userRole, clientCtx?.clientId]);
+  }, [userRole, clientCtx]);
 
   // === Client pending payments realtime ===
   useEffect(() => {
