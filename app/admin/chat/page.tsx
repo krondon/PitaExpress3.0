@@ -107,6 +107,7 @@ export default function AdminChatPage() {
     const { isOtherUserTyping, notifyTyping, stopTyping } = useChatTyping({
         currentUserId: adminId ?? null,
         conversationUserId: selectedUserId,
+        groupId: selectedGroupId ?? null,
     });
 
     // Callback estable para nuevos mensajes
@@ -124,6 +125,7 @@ export default function AdminChatPage() {
     // Realtime: escuchar nuevos mensajes
     useChatRealtime({
         currentUserId: adminId ?? null,
+        groupId: selectedGroupId ?? null,
         onNewMessage: handleNewMessage,
     });
 

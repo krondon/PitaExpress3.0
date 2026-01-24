@@ -71,6 +71,7 @@ export default function ChinaChatPage() {
     const { isOtherUserTyping, notifyTyping, stopTyping } = useChatTyping({
         currentUserId: chinaId ?? null,
         conversationUserId: selectedUserId,
+        groupId: selectedGroupId ?? null,
     });
 
     // Callback estable para nuevos mensajes
@@ -88,6 +89,7 @@ export default function ChinaChatPage() {
     // Realtime: escuchar nuevos mensajes
     useChatRealtime({
         currentUserId: chinaId ?? null,
+        groupId: selectedGroupId ?? null,
         onNewMessage: handleNewMessage,
     });
 

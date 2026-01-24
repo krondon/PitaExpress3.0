@@ -71,6 +71,7 @@ export default function VenezuelaChatPage() {
     const { isOtherUserTyping, notifyTyping, stopTyping } = useChatTyping({
         currentUserId: vzlaId ?? null,
         conversationUserId: selectedUserId,
+        groupId: selectedGroupId ?? null,
     });
 
     // Callback estable para nuevos mensajes
@@ -88,6 +89,7 @@ export default function VenezuelaChatPage() {
     // Realtime: escuchar nuevos mensajes
     useChatRealtime({
         currentUserId: vzlaId ?? null,
+        groupId: selectedGroupId ?? null,
         onNewMessage: handleNewMessage,
     });
 

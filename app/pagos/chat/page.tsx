@@ -81,6 +81,7 @@ export default function PagosChatPage() {
     const { isOtherUserTyping, notifyTyping, stopTyping } = useChatTyping({
         currentUserId: pagosId || null,
         conversationUserId: selectedUserId,
+        groupId: selectedGroupId || null,
     });
 
     // Callback estable para nuevos mensajes
@@ -98,6 +99,7 @@ export default function PagosChatPage() {
     // Realtime: escuchar nuevos mensajes
     useChatRealtime({
         currentUserId: pagosId || null,
+        groupId: selectedGroupId || null,
         onNewMessage: handleNewMessage,
     });
 

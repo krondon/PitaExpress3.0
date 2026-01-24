@@ -6,9 +6,10 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 interface UseChatTypingOptions {
     currentUserId: string | null;
     conversationUserId: string | null;
+    groupId?: string | null;
 }
 
-export function useChatTyping({ currentUserId, conversationUserId }: UseChatTypingOptions) {
+export function useChatTyping({ currentUserId, conversationUserId, groupId }: UseChatTypingOptions) {
     const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const channelRef = useRef<any>(null);
@@ -16,10 +17,11 @@ export function useChatTyping({ currentUserId, conversationUserId }: UseChatTypi
 
     // Notificar que el usuario está escribiendo (usando Broadcast - NO toca BD)
     const notifyTyping = useCallback(() => {
-        if (!currentUserId || !conversationUserId || !channelRef.current) {
-
+        if (!currentUserId || !channelRef.current) {
             return;
         }
+        // Debe haber target (user o group)
+        if (!conversationUserId && !groupId) return;
 
         // Limpiar timeout anterior
         if (typingTimeoutRef.current) {
@@ -63,7 +65,7 @@ export function useChatTyping({ currentUserId, conversationUserId }: UseChatTypi
                 (window as any).__lastTypingBroadcast = 0;
             }
         }, 1500);
-    }, [currentUserId, conversationUserId]);
+    }, [currentUserId, conversationUserId, groupId]);
 
     // Detener indicador de "escribiendo"
     const stopTyping = useCallback(() => {
@@ -87,15 +89,22 @@ export function useChatTyping({ currentUserId, conversationUserId }: UseChatTypi
 
     // Configurar canal de broadcast para escuchar typing del otro usuario
     useEffect(() => {
-        if (!currentUserId || !conversationUserId) {
+        if (!currentUserId || (!conversationUserId && !groupId)) {
             setIsOtherUserTyping(false);
             return;
         }
 
 
 
-        // Crear canal único para esta conversación
-        const channelName = `chat:${[currentUserId, conversationUserId].sort().join('-')}`;
+        // Crear canal único
+        let channelName = '';
+        if (groupId) {
+            channelName = `chat:group:${groupId}`;
+        } else if (conversationUserId) {
+            channelName = `chat:${[currentUserId, conversationUserId].sort().join('-')}`;
+        } else {
+            return;
+        }
 
         const channel = supabase.channel(channelName);
         channelRef.current = channel;
@@ -108,9 +117,14 @@ export function useChatTyping({ currentUserId, conversationUserId }: UseChatTypi
                 const { userId, isTyping } = payload.payload;
 
                 // Solo mostrar si es del otro usuario
-                if (userId === conversationUserId) {
-
-                    setIsOtherUserTyping(isTyping);
+                // Si es grupo, cualquier userId difernte al mio
+                // Si es DM, solo el conversationUserId
+                if (userId !== currentUserId) {
+                    if (groupId) {
+                        setIsOtherUserTyping(isTyping);
+                    } else if (userId === conversationUserId) {
+                        setIsOtherUserTyping(isTyping);
+                    }
                 }
             })
             .subscribe((status) => {
