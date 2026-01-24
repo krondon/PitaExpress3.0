@@ -332,42 +332,47 @@ export function GroupInfoSheet({
                                                             </div>
                                                         </div>
 
-                                                        {/* Actions menu (only for admins, can't act on yourself) */}
-                                                        {isAdmin && member.user_id !== currentUserId && (
-                                                            <DropdownMenu>
-                                                                <DropdownMenuTrigger asChild>
-                                                                    <Button variant="ghost" className="h-8 w-8 p-0">
-                                                                        <MoreVertical className="h-4 w-4" />
-                                                                    </Button>
-                                                                </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end">
-                                                                    {member.role !== 'admin' ? (
-                                                                        <DropdownMenuItem onClick={() => handlePromoteMember(member.user_id)}>
-                                                                            <Crown className="mr-2 h-4 w-4" />
-                                                                            {t('chat.groups.members.promote') || 'Hacer administrador'}
-                                                                        </DropdownMenuItem>
-                                                                    ) : (
-                                                                        // Only show demote if the target is NOT the group owner
-                                                                        groups.find(g => g.id === groupId)?.created_by !== member.user_id && (
-                                                                            <DropdownMenuItem onClick={() => handleDemoteMember(member.user_id)}>
-                                                                                <UserMinus className="mr-2 h-4 w-4" />
-                                                                                {t('chat.groups.members.demote') || 'Quitar administrador'}
+                                                        {/* Actions menu (only for admins, can't act on yourself or the owner) */}
+                                                        {isAdmin &&
+                                                            member.user_id !== currentUserId &&
+                                                            member.user_id !== groups.find(g => g.id === groupId)?.created_by && (
+                                                                <DropdownMenu>
+                                                                    <DropdownMenuTrigger asChild>
+                                                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                                                            <MoreVertical className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </DropdownMenuTrigger>
+                                                                    <DropdownMenuContent align="end">
+                                                                        {member.role !== 'admin' ? (
+                                                                            <DropdownMenuItem onClick={() => handlePromoteMember(member.user_id)}>
+                                                                                <Crown className="mr-2 h-4 w-4" />
+                                                                                {t('chat.groups.members.promote') || 'Hacer administrador'}
                                                                             </DropdownMenuItem>
-                                                                        )
-                                                                    )}
-                                                                    <DropdownMenuItem
-                                                                        className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                                                                        onClick={() => {
-                                                                            setMemberToRemove(member.user_id);
-                                                                            setRemoveMemberDialogOpen(true);
-                                                                        }}
-                                                                    >
-                                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                                        {t('common.delete') || 'Eliminar'}
-                                                                    </DropdownMenuItem>
-                                                                </DropdownMenuContent>
-                                                            </DropdownMenu>
-                                                        )}
+                                                                        ) : (
+                                                                            // Only show demote if the target is NOT the group owner
+                                                                            groups.find(g => g.id === groupId)?.created_by !== member.user_id && (
+                                                                                <DropdownMenuItem onClick={() => handleDemoteMember(member.user_id)}>
+                                                                                    <UserMinus className="mr-2 h-4 w-4" />
+                                                                                    {t('chat.groups.members.demote') || 'Quitar administrador'}
+                                                                                </DropdownMenuItem>
+                                                                            )
+                                                                        )}
+                                                                        {/* Solo permitir eliminar si NO es el dueño del grupo */}
+                                                                        {groups.find(g => g.id === groupId)?.created_by !== member.user_id && (
+                                                                            <DropdownMenuItem
+                                                                                className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                                                                                onClick={() => {
+                                                                                    setMemberToRemove(member.user_id);
+                                                                                    setRemoveMemberDialogOpen(true);
+                                                                                }}
+                                                                            >
+                                                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                                                {t('common.delete') || 'Eliminar'}
+                                                                            </DropdownMenuItem>
+                                                                        )}
+                                                                    </DropdownMenuContent>
+                                                                </DropdownMenu>
+                                                            )}
                                                     </div>
                                                 ))}
                                             </div>
