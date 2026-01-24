@@ -22,10 +22,29 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
     const [isLoading, setIsLoading] = useState(false);
     const [mounted, setMounted] = useState(false);
 
+    const [currentFullCode, setCurrentFullCode] = useState('');
+
     useEffect(() => {
         setMounted(true);
         return () => setMounted(false);
     }, []);
+
+    // Update code when ticket changes or modal opens
+    useEffect(() => {
+        if (ticket && open) {
+            const date = new Date();
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = String(date.getFullYear()).slice(-2);
+            const dateSuffix = `${day}${month}${year}`;
+
+            // Assuming base_code matches PLXXXX format, just append date
+            // or if full_code is passed, maybe we should reconstruct from base_code
+            // Ideally use ticket.base_code + dateSuffix
+            const newCode = `${ticket.base_code}${dateSuffix}`;
+            setCurrentFullCode(newCode);
+        }
+    }, [ticket, open]);
 
     const handlePrint = async () => {
         if (!ticket) return;
@@ -33,11 +52,14 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
         setIsLoading(true);
 
         try {
-            // Record print in history
+            // Record print in history AND update full_code
             const response = await fetch('/api/admin/tickets/print', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ticket_id: ticket.id })
+                body: JSON.stringify({
+                    ticket_id: ticket.id,
+                    new_full_code: currentFullCode
+                })
             });
 
             const data = await response.json();
@@ -108,7 +130,7 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                                 <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                     <div style={{ transform: 'scaleX(2.5)', transformOrigin: 'center' }}>
                                         <Barcode
-                                            value={ticket.full_code}
+                                            value={currentFullCode || ticket.full_code}
                                             format="CODE128"
                                             width={1}
                                             height={80}
@@ -124,7 +146,7 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                                         marginTop: '8px',
                                         marginLeft: '1.2em'
                                     }}>
-                                        {ticket.full_code}
+                                        {currentFullCode || ticket.full_code}
                                     </div>
                                 </div>
                             </div>
@@ -245,7 +267,7 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                             <div style={{ transform: 'scaleX(2.5)', transformOrigin: 'center' }}>
                                 <Barcode
-                                    value={ticket.full_code}
+                                    value={currentFullCode || ticket.full_code}
                                     format="CODE128"
                                     width={1}
                                     height={140}
@@ -262,7 +284,7 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                                 marginTop: '10px',
                                 marginLeft: '1.2em'
                             }}>
-                                {ticket.full_code}
+                                {currentFullCode || ticket.full_code}
                             </div>
                         </div>
                     </div>
