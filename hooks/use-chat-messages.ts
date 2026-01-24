@@ -304,12 +304,12 @@ export function useChatMessages({
         try {
             if (isGroupChat && groupId) {
                 // Marcar mensajes de grupo como leídos
+                // Usar RPC para marcar mensajes de grupo como leídos, saltando restricciones de RLS
                 const { error } = await supabase
-                    .from('chat_messages')
-                    .update({ read: true })
-                    .eq('group_id', groupId)
-                    .neq('sender_id', currentUserId)
-                    .eq('read', false);
+                    .rpc('mark_group_messages_read', {
+                        p_group_id: groupId,
+                        p_user_id: currentUserId,
+                    });
 
                 if (error) {
                     console.error('Error marking group messages as read:', error);
