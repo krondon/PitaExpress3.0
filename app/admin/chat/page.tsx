@@ -30,6 +30,7 @@ export default function AdminChatPage() {
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
     const [selectedUserName, setSelectedUserName] = useState<string>('');
+    const [selectedConversationAvatar, setSelectedConversationAvatar] = useState<string | undefined>(undefined);
     const { toggleMobileMenu } = useAdminLayoutContext();
     const { adminId, adminName } = useAdminContext();
     const router = useRouter();
@@ -131,7 +132,7 @@ export default function AdminChatPage() {
         onNewMessage: handleNewMessage,
     });
 
-    const handleSelectConversation = useCallback((conversationId: string, name: string) => {
+    const handleSelectConversation = useCallback((conversationId: string, name: string, avatarUrl?: string) => {
         // Parsear el formato: 'user_UUID' o 'group_UUID'
         if (conversationId.startsWith('group_')) {
             setSelectedGroupId(conversationId.replace('group_', ''));
@@ -141,6 +142,7 @@ export default function AdminChatPage() {
             setSelectedGroupId(null);
         }
         setSelectedUserName(name);
+        setSelectedConversationAvatar(avatarUrl);
         setView('chat');
     }, []);
 
@@ -259,7 +261,7 @@ export default function AdminChatPage() {
                                     {selectedGroupId ? (
                                         <Avatar className="h-10 w-10">
                                             <AvatarImage
-                                                src={groups.find(g => g.id === selectedGroupId)?.avatar_url || ''}
+                                                src={selectedConversationAvatar || groups.find(g => g.id === selectedGroupId)?.avatar_url || ''}
                                                 alt={groups.find(g => g.id === selectedGroupId)?.name}
                                             />
                                             <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">

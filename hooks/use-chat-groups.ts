@@ -52,7 +52,7 @@ export function useChatGroups({ currentUserId }: UseChatGroupsOptions): UseChatG
             const { data, error: fetchError } = await supabase
                 .from('chat_groups')
                 .select(`
-          *,
+          id, name, description, avatar_url, created_at, updated_at, created_by,
           chat_group_members!inner (user_id)
         `)
                 .eq('chat_group_members.user_id', currentUserId)

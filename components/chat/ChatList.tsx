@@ -33,7 +33,7 @@ import { CreateGroupModal } from './CreateGroupModal';
 import { GroupInfoSheet } from './GroupInfoSheet';
 
 interface ChatListProps {
-    onSelectConversation: (conversationId: string, name: string) => void;
+    onSelectConversation: (conversationId: string, name: string, avatarUrl?: string) => void;
     selectedUserId: string | null;
     currentUserId: string | null;
 }
@@ -603,7 +603,7 @@ export function ChatList({ onSelectConversation, selectedUserId, currentUserId }
                                     }`}
                             >
                                 <button
-                                    onClick={() => onSelectConversation(conv.id, conv.name)}
+                                    onClick={() => onSelectConversation(conv.id, conv.name, conv.avatar)}
                                     className="w-full p-4 text-left"
                                 >
                                     <div className="flex items-start gap-3">

@@ -42,6 +42,7 @@ export default function ChinaChatPage() {
     const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
     const [selectedUserName, setSelectedUserName] = useState<string>('');
     const [showGroupInfo, setShowGroupInfo] = useState(false);
+    const [selectedConversationAvatar, setSelectedConversationAvatar] = useState<string | undefined>(undefined);
     const { groups } = useChatGroups({ currentUserId: chinaId || '' });
 
     // Notificaciones
@@ -95,7 +96,7 @@ export default function ChinaChatPage() {
         onNewMessage: handleNewMessage,
     });
 
-    const handleSelectConversation = useCallback((conversationId: string, name: string) => {
+    const handleSelectConversation = useCallback((conversationId: string, name: string, avatarUrl?: string) => {
         // Parsear el formato: 'user_UUID' o 'group_UUID'
         if (conversationId.startsWith('group_')) {
             setSelectedGroupId(conversationId.replace('group_', ''));
@@ -105,6 +106,7 @@ export default function ChinaChatPage() {
             setSelectedGroupId(null);
         }
         setSelectedUserName(name);
+        setSelectedConversationAvatar(avatarUrl);
         setView('chat');
     }, []);
 
@@ -219,7 +221,7 @@ export default function ChinaChatPage() {
                                     {selectedGroupId ? (
                                         <Avatar className="h-10 w-10">
                                             <AvatarImage
-                                                src={groups.find(g => g.id === selectedGroupId)?.avatar_url || ''}
+                                                src={selectedConversationAvatar || groups.find(g => g.id === selectedGroupId)?.avatar_url || ''}
                                                 alt={groups.find(g => g.id === selectedGroupId)?.name}
                                             />
                                             <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">

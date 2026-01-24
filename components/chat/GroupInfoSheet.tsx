@@ -47,6 +47,7 @@ interface GroupInfoSheetProps {
     onLeaveGroup?: () => void;
     onDeleteGroup?: () => void;
     isOwner?: boolean;
+    avatarUrl?: string;
 }
 
 export function GroupInfoSheet({
@@ -58,6 +59,7 @@ export function GroupInfoSheet({
     onLeaveGroup,
     onDeleteGroup,
     isOwner = false,
+    avatarUrl,
 }: GroupInfoSheetProps) {
     const [members, setMembers] = useState<ChatGroupMember[]>([]);
     const [loading, setLoading] = useState(true);
@@ -204,7 +206,7 @@ export function GroupInfoSheet({
                     <SheetHeader>
                         <SheetTitle className={`flex items-center gap-2 ${mounted && theme === 'dark' ? 'text-white' : ''}`}>
                             <Avatar className="h-10 w-10">
-                                <AvatarImage src={groups.find(g => g.id === groupId)?.avatar_url || ''} />
+                                <AvatarImage src={avatarUrl || groups.find(g => g.id === groupId)?.avatar_url || ''} />
                                 <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-600 text-white flex items-center justify-center">
                                     <Users className="h-5 w-5" />
                                 </AvatarFallback>
