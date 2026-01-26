@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
 
         // Parse request body
         const body = await request.json();
-        const { ticket_id } = body;
+        const { ticket_id, new_full_code } = body;
 
         // Validate input
         if (!ticket_id || typeof ticket_id !== 'number') {
@@ -39,6 +39,23 @@ export async function POST(request: NextRequest) {
             })
             .select()
             .single();
+
+        // Update ticket created_at date to current time AND update full_code
+        const updatePayload: any = { created_at: new Date().toISOString() };
+        if (new_full_code) {
+            updatePayload.full_code = new_full_code;
+        }
+
+        const { error: updateError } = await supabase
+            .from('tickets')
+            .update(updatePayload)
+            .eq('id', ticket_id);
+
+        if (updateError) {
+            console.error('Error updating ticket date:', updateError);
+            // We don't fail the request here as the print record was successful, 
+            // but we log the error.
+        }
 
         if (printError) {
             console.error('Error recording print:', printError);

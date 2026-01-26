@@ -103,6 +103,13 @@ interface Order {
   hasAlternative?: boolean;
   alternativeStatus?: 'pending' | 'accepted' | 'rejected' | null;
   alternativeRejectionReason?: string | null;
+  // Cotización
+  unitQuote?: number | null;
+  shippingPrice?: number | null;
+  height?: number | null;
+  width?: number | null;
+  long?: number | null;
+  weight?: number | null;
 }
 
 interface NewOrderData {
@@ -133,9 +140,9 @@ const NUMERIC_STATE_TO_UI: Record<number, Order['status']> = {
   2: 'pendiente-china',     // Recibido, pendiente gestión China
   3: 'pendiente-china',     // Cotizado (seguimos tratándolo como pendiente-china hasta asignación Vzla)
   4: 'pendiente-vzla',      // Asignado / pendiente Venezuela
-  5: 'en-transito',         // Procesando / logística
-  6: 'en-transito',
-  7: 'en-transito',
+  5: 'pendiente-china',     // Listo para empaquetar (movido a pendiente para facilitar gestión en China)
+  6: 'en-transito',         // En caja
+  7: 'en-transito',         // En contenedor (China lo ve como Procesando, Admin general 'en-transito' está bien, pero revisemos si quieren procesando)
   8: 'en-transito',         // Enviado a Vzla
   9: 'en-transito',         // Llegando a Vzla
   10: 'en-transito',        // Aduana
@@ -535,6 +542,12 @@ export default function PedidosPage() {
         hasAlternative: o.hasAlternative,
         alternativeStatus: o.alternativeStatus,
         alternativeRejectionReason: o.alternativeRejectionReason,
+        unitQuote: o.unitQuote,
+        shippingPrice: o.shippingPrice,
+        height: o.height,
+        width: o.width,
+        long: o.long,
+        weight: o.weight,
       };
     });
     setOrders(mapped);
@@ -709,18 +722,20 @@ export default function PedidosPage() {
           text: [33, 37, 41] as [number, number, number]
         };
 
+        const normalizeText = (text: string) => text ? text.normalize("NFD").replace(/[\u0300-\u036f]/g, "") : "";
+
         const pedidoTable: [string, string][] = [
           [t('admin.orders.pdf.fields.orderId'), `${numeroPedido}`],
           [t('admin.orders.pdf.fields.clientId'), `${newOrderData.client_id}`],
-          [t('admin.orders.pdf.fields.userName'), `${newOrderData.client_name || t('admin.orders.common.unknown')}`],
+          [t('admin.orders.pdf.fields.userName'), normalizeText(newOrderData.client_name || t('admin.orders.common.unknown'))],
           [t('admin.orders.pdf.fields.date'), `${fechaPedidoLegible}`],
           [t('admin.orders.pdf.fields.shippingType'), `${newOrderData.deliveryType}`],
-          [t('admin.orders.pdf.fields.deliveryVzla'), `${newOrderData.deliveryVenezuela}`],
-          [t('admin.orders.pdf.fields.product'), `${newOrderData.productName}`],
+          [t('admin.orders.pdf.fields.deliveryVzla'), normalizeText(newOrderData.deliveryVenezuela)],
+          [t('admin.orders.pdf.fields.product'), normalizeText(newOrderData.productName)],
           [t('admin.orders.pdf.fields.quantity'), `${newOrderData.quantity}`],
           [t('admin.orders.pdf.fields.estimatedBudget'), `$${newOrderData.estimatedBudget}`],
-          [t('admin.orders.pdf.fields.description'), newOrderData.description || t('admin.orders.common.unknown')],
-          [t('admin.orders.pdf.fields.specifications'), newOrderData.specifications || t('admin.orders.common.unknown')],
+          [t('admin.orders.pdf.fields.description'), normalizeText(newOrderData.description || t('admin.orders.common.unknown'))],
+          [t('admin.orders.pdf.fields.specifications'), normalizeText(newOrderData.specifications || t('admin.orders.common.unknown'))],
         ];
         if (newOrderData.requestType === 'link') {
           pedidoTable.push([t('admin.orders.pdf.fields.url'), newOrderData.productUrl || t('admin.orders.common.unknown')]);
@@ -1944,6 +1959,50 @@ export default function PedidosPage() {
                       );
                     })()}
                   </div>
+
+                  {/* Datos de Cotización (Visible si existe cotización) */}
+                  {(selectedOrder.unitQuote && selectedOrder.shippingPrice) && (
+                    <div className="mt-4">
+                      <p className={`font-semibold text-base md:text-lg mb-2 ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                        Datos de Cotización
+                      </p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className={`p-3 rounded-lg border ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                          <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Precio Unitario</p>
+                          <div className="flex items-baseline gap-1 mt-1">
+                            <span className="text-sm font-semibold">¥</span>
+                            <span className={`text-lg font-bold ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-700'}`}>
+                              {selectedOrder.unitQuote}
+                            </span>
+                          </div>
+                        </div>
+                        <div className={`p-3 rounded-lg border ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                          <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Envío Interno</p>
+                          <div className="flex items-baseline gap-1 mt-1">
+                            <span className="text-sm font-semibold">¥</span>
+                            <span className={`text-lg font-bold ${mounted && theme === 'dark' ? 'text-orange-400' : 'text-orange-700'}`}>
+                              {selectedOrder.shippingPrice}
+                            </span>
+                          </div>
+                        </div>
+                        <div className={`p-3 rounded-lg border ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                          <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Peso</p>
+                          <div className="flex items-baseline gap-1 mt-1">
+                            <span className={`text-lg font-bold ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-900'}`}>
+                              {selectedOrder.weight ?? 0}
+                            </span>
+                            <span className="text-xs text-slate-500 font-medium">kg</span>
+                          </div>
+                        </div>
+                        <div className={`p-3 rounded-lg border ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                          <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Medidas (cm)</p>
+                          <div className={`text-sm font-medium mt-1 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                            {selectedOrder.height ?? 0} x {selectedOrder.width ?? 0} x {selectedOrder.long ?? 0}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-6 md:mt-8">

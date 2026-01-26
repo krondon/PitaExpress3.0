@@ -13,6 +13,7 @@ interface ChatMessagesProps {
     currentUserId: string;
     isOtherUserTyping: boolean;
     otherUserName?: string;
+    typingUserName?: string | null;
     loading?: boolean;
     onEditMessage?: (id: string, newContent: string) => void;
     onDeleteMessage?: (id: string) => void;
@@ -23,6 +24,7 @@ export function ChatMessages({
     currentUserId,
     isOtherUserTyping,
     otherUserName,
+    typingUserName,
     loading,
     onEditMessage,
     onDeleteMessage,
@@ -88,7 +90,7 @@ export function ChatMessages({
                             timestamp={msg.created_at}
                             isSent={msg.sender_id === currentUserId}
                             isRead={msg.read}
-                            senderName={msg.sender_id !== currentUserId ? otherUserName : undefined}
+                            senderName={msg.sender_id !== currentUserId ? (msg.sender_name || otherUserName) : undefined}
                             isEdited={msg.is_edited}
                             onEdit={onEditMessage}
                             onDelete={onDeleteMessage}
@@ -99,7 +101,7 @@ export function ChatMessages({
 
                 {isOtherUserTyping && (
                     <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                        <TypingIndicator userName={otherUserName} />
+                        <TypingIndicator userName={typingUserName || otherUserName} />
                     </div>
                 )}
 

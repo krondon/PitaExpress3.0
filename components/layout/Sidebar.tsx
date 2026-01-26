@@ -112,6 +112,20 @@ const VENEZUELA_MENU_ITEMS = [
     badge: null,
     color: 'text-orange-500',
     path: '/venezuela/pedidos'
+  },
+  {
+    id: 'tickets',
+    icon: Ticket,
+    badge: null,
+    color: 'text-orange-500',
+    path: '/venezuela/tickets'
+  },
+  {
+    id: 'chat',
+    icon: MessageSquare,
+    badge: null,
+    color: 'text-orange-500',
+    path: '/venezuela/chat'
   }
 ];
 
@@ -155,6 +169,13 @@ const getPagosMenuItems = (pending: number | null) => [
     badge: typeof pending === 'number' && pending > 0 ? pending : null,
     color: 'text-orange-500',
     path: '/pagos/validacion-pagos'
+  },
+  {
+    id: 'chat',
+    icon: MessageSquare,
+    badge: null,
+    color: 'text-orange-500',
+    path: '/pagos/chat'
   }
 ];
 
@@ -625,7 +646,7 @@ export default function Sidebar({ isExpanded, setIsExpanded, isMobileMenuOpen = 
     return () => {
       supabase.removeChannel(profileChannel);
     };
-  }, [userRole, chinaCtx?.chinaId]);
+  }, [userRole, chinaCtx]);
 
   // Venezuela realtime
   useRealtimeVzla(
@@ -692,7 +713,7 @@ export default function Sidebar({ isExpanded, setIsExpanded, isMobileMenuOpen = 
     return () => {
       supabase.removeChannel(profileChannel);
     };
-  }, [userRole, vzlaCtx?.vzlaId]);
+  }, [userRole, vzlaCtx]);
 
   // Venezuela boxes/containers realtime for support
   useRealtimeVzlaBoxesContainers(
@@ -840,7 +861,7 @@ export default function Sidebar({ isExpanded, setIsExpanded, isMobileMenuOpen = 
       window.clearInterval(intervalId);
       supabase.removeChannel(profileChannel);
     };
-  }, [userRole, clientCtx?.clientId]);
+  }, [userRole, clientCtx]);
 
   // === Client pending payments realtime ===
   useEffect(() => {
@@ -981,7 +1002,7 @@ export default function Sidebar({ isExpanded, setIsExpanded, isMobileMenuOpen = 
     };
 
     loadInitialData();
-  }, [userRole, clientCtx?.clientId, vzlaCtx?.vzlaId, chinaCtx?.chinaId]);
+  }, [userRole, clientCtx?.clientId, vzlaCtx?.vzlaId, chinaCtx?.chinaId, refetchVzlaActiveOrders, refetchVzlaPendingPayments, refetchChinaActiveOrders]);
 
   // Merge dynamic badges into client menu
   // Merge dynamic badges into client menu
@@ -1043,8 +1064,8 @@ export default function Sidebar({ isExpanded, setIsExpanded, isMobileMenuOpen = 
       : isTablet
         ? (isExpanded ? 'w-64' : 'w-20')
         : isExpanded
-          ? (screenWidth < 1440 ? 'w-64' : 'w-72')
-          : 'w-20';
+          ? 'w-72'
+          : 'w-24';
 
     const iconSize = 'w-5 h-5';
     // Aumentar ligeramente el tamaño del logo en pantallas <1440px cuando está expandido

@@ -20,11 +20,13 @@ export default function ConfiguracionPage() {
         title={t('admin.configuration.title')}
         subtitle={t('admin.configuration.subtitle')}
       />
-      <ConfigurationContent
-        role="admin"
-        onUserImageUpdate={(url) => setAdmin({ userImage: url })}
-        layoutMode="integrated"
-      />
+      <div className="w-full flex-1">
+        <ConfigurationContent
+          role="admin"
+          onUserImageUpdate={(url) => setAdmin({ userImage: url })}
+          layoutMode="integrated"
+        />
+      </div>
     </>
   );
 }

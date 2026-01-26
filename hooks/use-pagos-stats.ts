@@ -55,7 +55,7 @@ export function usePagosStats(pollMs: number = 0): UsePagosStats {
         .from('orders')
         .select('id,state,totalQuote,estimatedBudget')
         .gte('state', 4)
-        .lte('state', 8) // limite razonable al flujo actual
+
         .limit(2000); // safety cap
       if (error) throw error;
       const comp = compute(data || []);

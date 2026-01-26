@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useTheme } from 'next-themes';
 import { useToast } from '@/hooks/use-toast';
-import Sidebar from '@/components/layout/Sidebar';
+import { useAdminLayoutContext } from '@/lib/AdminLayoutContext';
 import Header from '@/components/layout/Header';
 import { Toaster } from '@/components/ui/toaster';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -42,6 +42,7 @@ import {
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useRealtimeAdmin } from '@/hooks/use-realtime-admin';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatCompactMoney } from '@/lib/utils';
 
 // ================================
 // TIPOS DE DATOS TYPESCRIPT
@@ -120,7 +121,9 @@ const StatsCards: React.FC<{ stats: PaymentStats }> = ({ stats }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-700 dark:text-blue-300 text-xs md:text-sm font-medium mb-1">{t('venezuela.pagos.stats.totalSpent')}</p>
-              <p className="text-xl md:text-2xl lg:text-3xl font-bold text-blue-800 dark:text-blue-200">${stats.totalGastado.toLocaleString()}</p>
+              <p className="text-xl md:text-2xl lg:text-3xl font-bold text-blue-800 dark:text-blue-200" suppressHydrationWarning>
+                {formatCompactMoney(stats.totalGastado)}
+              </p>
             </div>
             <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 dark:bg-blue-800/30 rounded-lg flex items-center justify-center">
               <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400" />
@@ -185,24 +188,24 @@ const StatusBadge: React.FC<{ status: string; sendChina?: boolean }> = ({ status
       return {
         className: 'bg-indigo-100 text-indigo-800 border-indigo-200',
         text: t('venezuela.pagos.status.sentChina') || 'Enviado a China',
-        icon: <AnimatedIcon animation={["pulse","float"]}><Send size={12} /></AnimatedIcon>
+        icon: <AnimatedIcon animation={["pulse", "float"]}><Send size={12} /></AnimatedIcon>
       };
     }
     const configs = {
       completado: {
         className: 'bg-green-100 text-green-800 border-green-200',
         text: t('venezuela.pagos.status.completado'),
-        icon: <AnimatedIcon animation={["pulse","bounce"]}><CheckCircle size={12} /></AnimatedIcon>
+        icon: <AnimatedIcon animation={["pulse", "bounce"]}><CheckCircle size={12} /></AnimatedIcon>
       },
       pendiente: {
         className: 'bg-orange-100 text-orange-800 border-orange-200',
         text: t('venezuela.pagos.status.pendiente'),
-        icon: <AnimatedIcon animation={["pulse","spin"]}><Clock size={12} /></AnimatedIcon>
+        icon: <AnimatedIcon animation={["pulse", "spin"]}><Clock size={12} /></AnimatedIcon>
       },
       rechazado: {
         className: 'bg-red-100 text-red-800 border-red-200',
         text: t('venezuela.pagos.status.rechazado'),
-        icon: <AnimatedIcon animation={["pulse","shake"]}><X size={12} /></AnimatedIcon>
+        icon: <AnimatedIcon animation={["pulse", "shake"]}><X size={12} /></AnimatedIcon>
       }
     };
     return configs[estado as keyof typeof configs] || configs.pendiente;
@@ -259,50 +262,48 @@ const PaymentDetailsModal: React.FC<{
   if (!isOpen || !payment) return null;
 
   return (
-    <div 
-      className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-all duration-300 ${
-        isClosing ? 'opacity-0' : 'opacity-100'
-      }`}
+    <div
+      className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-all duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'
+        }`}
       onClick={handleBackdropClick}
     >
-      <div className={`bg-white rounded-lg p-6 max-w-2xl w-full shadow-xl transition-all duration-300 transform ${
-        isClosing ? 'scale-95 opacity-0' : (isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0')
-      }`}>
+      <div className={`bg-white dark:bg-slate-800 rounded-lg p-6 max-w-2xl w-full shadow-xl transition-all duration-300 transform ${isClosing ? 'scale-95 opacity-0' : (isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0')
+        }`}>
         <div className="flex justify-between items-start">
           <div>
-            <h3 className="text-xl font-bold text-gray-900">{t('venezuela.pagos.modal.details.title')}</h3>
-            <p className="text-sm text-gray-500">{payment.id}</p>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t('venezuela.pagos.modal.details.title')}</h3>
+            <p className="text-sm text-gray-500 dark:text-slate-400">{payment.id}</p>
           </div>
-          <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
+          <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-white">
             <X size={24} />
           </button>
         </div>
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-semibold text-gray-800 mb-2">{t('venezuela.pagos.modal.details.clientInfo')}</h4>
-            <p><span className="font-medium">{t('venezuela.pagos.modal.details.fields.user')}</span> {payment.usuario}</p>
-            <p><span className="font-medium">{t('venezuela.pagos.modal.details.fields.productId')}</span> {payment.idProducto}</p>
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm dark:text-slate-300">
+          <div className="bg-gray-50 dark:bg-slate-700/50 p-4 rounded-lg">
+            <h4 className="font-semibold text-gray-800 dark:text-slate-200 mb-2">{t('venezuela.pagos.modal.details.clientInfo')}</h4>
+            <p><span className="font-medium text-gray-700 dark:text-slate-300">{t('venezuela.pagos.modal.details.fields.user')}</span> {payment.usuario}</p>
+            <p><span className="font-medium text-gray-700 dark:text-slate-300">{t('venezuela.pagos.modal.details.fields.productId')}</span> {payment.idProducto}</p>
           </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-semibold text-gray-800 mb-2">{t('venezuela.pagos.modal.details.paymentInfo')}</h4>
+          <div className="bg-gray-50 dark:bg-slate-700/50 p-4 rounded-lg">
+            <h4 className="font-semibold text-gray-800 dark:text-slate-200 mb-2">{t('venezuela.pagos.modal.details.paymentInfo')}</h4>
             <div className="flex items-center gap-2">
-              <span className="font-medium">{t('venezuela.pagos.modal.details.fields.amount')}</span>
-              <PriceDisplay 
-                amount={payment.monto} 
+              <span className="font-medium text-gray-700 dark:text-slate-300">{t('venezuela.pagos.modal.details.fields.amount')}</span>
+              <PriceDisplay
+                amount={payment.monto}
                 currency="USD"
                 variant="inline"
                 size="md"
                 emphasizeBolivars={true}
               />
             </div>
-            <p><span className="font-medium">{t('venezuela.pagos.modal.details.fields.date')}</span> {new Date(payment.fecha).toLocaleDateString('es-ES')}</p>
-            <p><span className="font-medium">{t('venezuela.pagos.modal.details.fields.reference')}</span> {payment.referencia}</p>
-            <p><span className="font-medium">{t('venezuela.pagos.modal.details.fields.method')}</span> {payment.metodo}</p>
+            <p><span className="font-medium text-gray-700 dark:text-slate-300">{t('venezuela.pagos.modal.details.fields.date')}</span> {new Date(payment.fecha).toLocaleDateString('es-ES')}</p>
+            <p><span className="font-medium text-gray-700 dark:text-slate-300">{t('venezuela.pagos.modal.details.fields.reference')}</span> {payment.referencia}</p>
+            <p><span className="font-medium text-gray-700 dark:text-slate-300">{t('venezuela.pagos.modal.details.fields.method')}</span> {payment.metodo}</p>
           </div>
-          <div className="md:col-span-2 bg-gray-50 p-4 rounded-lg">
-            <h4 className="font-semibold text-gray-800 mb-2">{t('venezuela.pagos.modal.details.additionalDetails')}</h4>
-            <p><span className="font-medium">{t('venezuela.pagos.modal.details.fields.destination')}</span> {payment.destino}</p>
-            <p><span className="font-medium">{t('venezuela.pagos.modal.details.fields.description')}</span> {payment.descripcion}</p>
+          <div className="md:col-span-2 bg-gray-50 dark:bg-slate-700/50 p-4 rounded-lg">
+            <h4 className="font-semibold text-gray-800 dark:text-slate-200 mb-2">{t('venezuela.pagos.modal.details.additionalDetails')}</h4>
+            <p><span className="font-medium text-gray-700 dark:text-slate-300">{t('venezuela.pagos.modal.details.fields.destination')}</span> {payment.destino}</p>
+            <p><span className="font-medium text-gray-700 dark:text-slate-300">{t('venezuela.pagos.modal.details.fields.description')}</span> {payment.descripcion}</p>
           </div>
         </div>
       </div>
@@ -326,7 +327,7 @@ const PaymentCard: React.FC<{ payment: Payment; onApprove: (id: string) => void;
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const formatCurrency = (amount: number) => {
-    return `$${amount.toLocaleString('es-ES', { 
+    return `$${amount.toLocaleString('es-ES', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     })}`;
@@ -353,7 +354,7 @@ const PaymentCard: React.FC<{ payment: Payment; onApprove: (id: string) => void;
             <p className="text-xs text-gray-500">{payment.idProducto}</p>
           </div>
         </div>
-  <StatusBadge status={payment.estado} sendChina={payment.sendChina} />
+        <StatusBadge status={payment.estado} sendChina={payment.sendChina} />
       </div>
 
       {/* Detalles */}
@@ -364,8 +365,8 @@ const PaymentCard: React.FC<{ payment: Payment; onApprove: (id: string) => void;
         </div>
         <div className="flex justify-between items-center">
           <span className="text-gray-600">{t('venezuela.pagos.mobile.amount')}</span>
-          <PriceDisplay 
-            amount={payment.monto} 
+          <PriceDisplay
+            amount={payment.monto}
             currency="USD"
             variant="inline"
             size="sm"
@@ -463,11 +464,10 @@ const ConfirmationDialog: React.FC<{
         <div className="mt-6 flex justify-end space-x-2">
           <button
             onClick={onClose}
-            className={`px-4 py-2 rounded-md transition-colors ${
-              isDark 
-                ? 'bg-slate-700 text-slate-200 hover:bg-slate-600' 
-                : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-            }`}
+            className={`px-4 py-2 rounded-md transition-colors ${isDark
+              ? 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+              : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+              }`}
           >
             {t('venezuela.pagos.modal.reject.cancel')}
           </button>
@@ -490,8 +490,7 @@ const PaymentValidationDashboard: React.FC = () => {
   const { theme } = useTheme();
   const { t } = useTranslation();
   const { toast } = useToast();
-  const [sidebarExpanded, setSidebarExpanded] = useState(true);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { toggleMobileMenu } = useAdminLayoutContext();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -526,8 +525,8 @@ const PaymentValidationDashboard: React.FC = () => {
 
   useRealtimeAdmin(
     () => { scheduleRefresh(); },
-    () => {},
-    () => {}
+    () => { },
+    () => { }
   );
 
   // Realtime para clientes: refresh cuando cambian nombres/datos
@@ -571,12 +570,13 @@ const PaymentValidationDashboard: React.FC = () => {
       startTimeout();
       try {
         const selectCols = 'id, client_id, productName, description, totalQuote, estimatedBudget, created_at, state, sendChina';
-        // Incluir estados 4 (pendiente), 5 (completado) y -1 (rechazado)
-        const { data, error } = await supabase
+        // Incluir estados >= 4 (pendiente, completado, avanzado) y rechazos (-1) si alcanzaron pagos
+        let query = supabase
           .from('orders')
           .select(selectCols)
-          .or('state.eq.4,state.eq.5,state.eq.-1')
+          .or('state.gte.4,and(state.eq.-1,max_state_reached.gte.4)')
           .order('created_at', { ascending: false });
+        const { data, error } = await query;
         if (error) throw error;
         const clientIds = (data || []).map((o: any) => o.client_id);
         let clientMap = new Map<string, string>();
@@ -592,6 +592,7 @@ const PaymentValidationDashboard: React.FC = () => {
           let estado: Payment['estado'];
           if (o.state === 4) estado = 'pendiente';
           else if (o.state === -1) estado = 'rechazado';
+          else if (o.state >= 5) estado = 'completado';
           else estado = 'completado';
           return {
             id: String(o.id),
@@ -623,7 +624,7 @@ const PaymentValidationDashboard: React.FC = () => {
   const stats = useMemo((): PaymentStats => {
     const completados = payments.filter(p => p.estado === 'completado');
     const pendientes = payments.filter(p => p.estado === 'pendiente');
-    
+
     return {
       totalGastado: completados.reduce((sum, p) => sum + p.monto, 0),
       pagosTotales: payments.length,
@@ -750,7 +751,7 @@ const PaymentValidationDashboard: React.FC = () => {
         body: JSON.stringify({ state: 5 }),
       });
       if (!resp.ok) {
-        const msg = await resp.json().catch(()=>({ error: 'Error al actualizar estado' }));
+        const msg = await resp.json().catch(() => ({ error: 'Error al actualizar estado' }));
         throw new Error(msg?.error || 'Error al actualizar el estado del pedido');
       }
     } catch (e: any) {
@@ -899,7 +900,7 @@ const PaymentValidationDashboard: React.FC = () => {
   };
 
   const formatCurrency = (amount: number) => {
-    return `$${amount.toLocaleString('es-ES', { 
+    return `$${amount.toLocaleString('es-ES', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     })}`;
@@ -925,7 +926,7 @@ const PaymentValidationDashboard: React.FC = () => {
       if (v === null || v === undefined) return '';
       return typeof v === 'object' ? JSON.stringify(v) : v;
     }));
-  await (writeXlsx as any)([headerRow, ...bodyRows], {
+    await (writeXlsx as any)([headerRow, ...bodyRows], {
       fileName: (t('venezuela.pagos.export.fileName') as string) || 'export.xlsx',
       sheet: (t('venezuela.pagos.export.sheetName') as string) || 'Hoja 1'
     });
@@ -949,252 +950,226 @@ const PaymentValidationDashboard: React.FC = () => {
         title={t('venezuela.pagos.modal.reject.title')}
         message={t('venezuela.pagos.modal.reject.message')}
       />
-      <div
-        className={
-          `min-h-screen flex overflow-x-hidden ` +
-          (mounted && theme === 'dark'
-            ? 'bg-slate-900'
-            : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50')
-        }
-      >
-        <Sidebar 
-          isExpanded={sidebarExpanded} 
-          setIsExpanded={setSidebarExpanded}
-          isMobileMenuOpen={isMobileMenuOpen}
-          onMobileMenuClose={() => setIsMobileMenuOpen(false)}
-          userRole="admin" 
-        />
-        <main className={`flex-1 transition-all duration-300 ${
-          sidebarExpanded ? 'lg:ml-72 lg:w-[calc(100%-18rem)]' : 'lg:ml-24 lg:w-[calc(100%-6rem)]'
-        } w-full`}>
-          <Header 
-            notifications={3}
-            onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            title={t('venezuela.pagos.title')}
-            subtitle={t('venezuela.pagos.subtitle')}
-          />
-          <div className="p-4 md:p-5 lg:p-6">
-            {/* Error visible */}
-            {error && (
-              <div className={`mb-4 md:mb-6 flex items-start justify-between gap-3 rounded-lg border ${mounted && theme === 'dark' ? 'border-red-800 bg-red-900/30' : 'border-red-300 bg-red-50'} p-3 ${mounted && theme === 'dark' ? 'text-red-200' : 'text-red-800'}`}>
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="mt-0.5" size={18} />
-                  <div>
-                    <p className="font-semibold">{t('venezuela.pagos.error.loadErrorTitle')}</p>
-                    <p className="text-sm break-all">{error}</p>
-                  </div>
-                </div>
+
+      <Header
+        notifications={3}
+        onMenuToggle={toggleMobileMenu}
+        title={t('venezuela.pagos.title')}
+        subtitle={t('venezuela.pagos.subtitle')}
+      />
+      <div className="p-4 md:p-5 lg:p-6">
+        {/* Error visible */}
+        {error && (
+          <div className={`mb-4 md:mb-6 flex items-start justify-between gap-3 rounded-lg border ${mounted && theme === 'dark' ? 'border-red-800 bg-red-900/30' : 'border-red-300 bg-red-50'} p-3 ${mounted && theme === 'dark' ? 'text-red-200' : 'text-red-800'}`}>
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="mt-0.5" size={18} />
+              <div>
+                <p className="font-semibold">{t('venezuela.pagos.error.loadErrorTitle')}</p>
+                <p className="text-sm break-all">{error}</p>
               </div>
-            )}
-
-            {/* ================================ */}
-            {/* TARJETAS DE ESTADÍSTICAS */}
-            {/* ================================ */}
-            <StatsCards stats={stats} />
-
-            {/* Pestañas removidas: vista simplificada */}
-
-            {/* ================================ */}
-            {/* BARRA COMPACTA DERECHA */}
-            {/* ================================ */}
-            <Card className={mounted && theme === 'dark' ? 'mb-4 md:mb-6 bg-slate-800/70 border border-slate-700 backdrop-blur-sm shadow-lg hover:shadow-xl transition-shadow' : 'mb-4 md:mb-6 bg-white/80 border border-slate-200 backdrop-blur-sm shadow-lg hover:shadow-xl transition-shadow'}>
-              <CardHeader className="py-3">
-                <div className="flex flex-col gap-3 sm:gap-4">
-                  <CardTitle className="text-lg font-semibold tracking-tight">{t('venezuela.pagos.listCardTitle')}</CardTitle>
-                  {/* Controles Responsivos */}
-                  <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-                    {/* Buscador */}
-                    <div className="w-full sm:flex-1 min-w-[12rem]">
-                      <Input
-                        placeholder={t('venezuela.pagos.searchPlaceholder')}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="h-10 w-full px-3"
-                      />
-                    </div>
-                    {/* Fila Filtro + Botón en mobile */}
-                    <div className="flex flex-col xs:flex-row w-full sm:w-auto gap-2 sm:gap-3">
-                      <Select value={filterStatus} onValueChange={setFilterStatus}>
-                        <SelectTrigger className="h-10 w-full xs:min-w-[9rem] sm:w-44 md:w-48 px-3 whitespace-nowrap truncate">
-                          <SelectValue placeholder={t('venezuela.pagos.filters.allStatuses')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="todos">{t('venezuela.pagos.filters.allStatuses')}</SelectItem>
-                          <SelectItem value="completado">{t('venezuela.pagos.filters.completed')}</SelectItem>
-                          <SelectItem value="enviadoChina">{t('venezuela.pagos.status.sendChina')}</SelectItem>
-                          <SelectItem value="pendiente">{t('venezuela.pagos.filters.pending')}</SelectItem>
-                          <SelectItem value="rechazado">{t('venezuela.pagos.filters.rejected')}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        className="h-10 w-full xs:w-auto bg-[#202841] text-white hover:bg-opacity-90 flex items-center justify-center"
-                        onClick={exportarGeneral}
-                      >
-                        <Download className="w-4 h-4 mr-2" />
-                        <span className="hidden sm:inline">{t('venezuela.pagos.actions.export')}</span>
-                        <span className="sm:hidden">{t('venezuela.pagos.actions.exportShort')}</span>
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
-
-            {/* ================================ */}
-            {/* TABLA DE PAGOS */}
-            {/* ================================ */}
-            <div className={mounted && theme === 'dark' ? 'rounded-xl shadow-lg overflow-hidden border border-slate-700 bg-slate-800/70 backdrop-blur-sm transition-shadow hover:shadow-xl' : 'rounded-xl shadow-lg overflow-hidden border border-slate-200 bg-white/80 backdrop-blur-sm transition-shadow hover:shadow-xl'}>
-              <div className={mounted && theme === 'dark' ? 'px-4 md:px-6 py-3 md:py-4 border-b border-slate-700/60' : 'px-4 md:px-6 py-3 md:py-4 border-b border-slate-200/70'}>
-                <h2 className={`text-lg md:text-xl font-semibold flex items-center gap-2 ${mounted && theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                  <AnimatedIcon animation="float">
-                    <Package className="md:w-6 md:h-6 text-blue-500" />
-                  </AnimatedIcon>
-                  {t('venezuela.pagos.table.ordersListTitle')}
-                </h2>
-                <p className={mounted && theme === 'dark' ? 'text-slate-300 text-xs md:text-sm mt-1' : 'text-gray-600 text-xs md:text-sm mt-1'}>
-                  {t('venezuela.pagos.table.resultsFound', { count: filteredPayments.length })}
-                </p>
-              </div>
-
-              {/* Vista Mobile - Cards */}
-              <div className="block lg:hidden p-4 space-y-4">
-                {!loading && filteredPayments.map((payment) => (
-                  <PaymentCard
-                    key={payment.id}
-                    payment={payment}
-                    onApprove={handleApprove}
-                    onReject={openRejectionConfirmation}
-                    onViewDetails={openDetailsModal}
-                    onSend={handleSend}
-                    isSending={!!sendingChina[payment.id]}
-                  />
-                ))}
-              </div>
-
-              {/* Vista Desktop - Tabla */}
-              <div className="hidden lg:block overflow-x-auto">
-                <table className={`w-full table-fixed ${mounted && theme === 'dark' ? 'bg-slate-800' : ''}`}> 
-                  <thead className={mounted && theme === 'dark' ? 'bg-slate-900' : 'bg-gray-50'}>
-                    <tr>
-                      {[
-                        { label: t('venezuela.pagos.table.headers.id'), icon: <AnimatedIcon animation={["pulse","bounce"]}><Hash size={14} /></AnimatedIcon>, width: 'w-44' },
-                        { label: t('venezuela.pagos.table.headers.client'), icon: <AnimatedIcon animation={["pulse","bounce"]}><User size={14} /></AnimatedIcon>, width: 'w-36' },
-                        { label: t('venezuela.pagos.table.headers.status'), icon: <AnimatedIcon animation={["pulse","bounce"]}><CheckCircle size={14} /></AnimatedIcon>, width: 'w-32' },
-                        { label: t('venezuela.pagos.table.headers.date'), icon: <AnimatedIcon animation={["pulse","bounce"]}><Calendar size={14} /></AnimatedIcon>, width: 'w-24' },
-                        { label: t('venezuela.pagos.table.headers.amount'), icon: <AnimatedIcon animation={["pulse","bounce"]}><DollarSign size={14} /></AnimatedIcon>, width: 'w-28' },
-                        { label: t('venezuela.pagos.table.headers.reference'), icon: <AnimatedIcon animation={["pulse","bounce"]}><Hash size={14} /></AnimatedIcon>, width: 'w-36' },
-                        { label: t('venezuela.pagos.table.headers.destination'), icon: <AnimatedIcon animation={["pulse","bounce"]}><MapPin size={14} /></AnimatedIcon>, width: 'w-28' },
-                        { label: t('venezuela.pagos.table.headers.actions'), icon: <AnimatedIcon animation={["pulse","shake"]}><MoreHorizontal size={14} /></AnimatedIcon>, width: 'w-28' }
-                      ].map((header, index) => (
-                        <th key={index} className={`px-2 py-3 text-left ${header.width}`}>
-                          <div className={`flex items-center gap-1 text-xs font-semibold uppercase tracking-wider ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>
-                            <AnimatedIcon animation="pulse">
-                              {header.icon}
-                            </AnimatedIcon>
-                            <span className="truncate">{header.label}</span>
-                          </div>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {filteredPayments.map((payment) => (
-                      <tr 
-                        key={payment.id} 
-                        className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-transparent transition-all duration-200 group"
-                      >
-                        <td className="px-2 py-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 bg-blue-500 text-white rounded-lg flex items-center justify-center text-xs font-semibold flex-shrink-0">
-                              {payment.id.split('-')[1] || String(payment.id)}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className={`text-sm font-medium truncate ${mounted && theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{payment.id}</div>
-                              <div className={`text-xs truncate ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}`}>{payment.descripcion}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-2 py-3">
-                          <div className="flex items-center gap-2">
-                            <div className={mounted && theme === 'dark' ? 'w-7 h-7 bg-slate-700 text-blue-200 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0' : 'w-7 h-7 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0'}>
-                              {payment.usuario.split(' ').map(n => n[0]).join('').toUpperCase()}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className={`text-sm font-medium truncate ${mounted && theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{payment.usuario}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-2 py-3">
-                          <StatusBadge status={payment.estado} sendChina={payment.sendChina} />
-                        </td>
-                        <td className={`px-2 py-3 text-sm ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-gray-900'}`}>
-                          <span className="truncate block">{formatDate(payment.fecha)}</span>
-                        </td>
-                        <td className="px-2 py-3">
-                          <div className={`text-sm font-bold truncate transition-colors duration-200 ${mounted && theme === 'dark' ? 'text-green-300 group-hover:text-green-400' : 'text-gray-900 group-hover:text-green-600'}`}>
-                            <PriceDisplay 
-                              amount={payment.monto} 
-                              currency="USD"
-                              variant="inline"
-                              size="sm"
-                              emphasizeBolivars={true}
-                            />
-                          </div>
-                        </td>
-                        <td className="px-2 py-3">
-                          <span className={`text-xs font-mono px-2 py-1 rounded truncate block ${mounted && theme === 'dark' ? 'text-slate-300 bg-slate-900' : 'text-gray-600 bg-gray-50'}`}> 
-                            {payment.referencia}
-                          </span>
-                        </td>
-                        <td className="px-2 py-3">
-                          <div className="flex items-center gap-1">
-                            {payment.destino === 'China' && (
-                              <AnimatedIcon animation="pulse">
-                                <AlertTriangle size={10} className="text-orange-500 flex-shrink-0" />
-                              </AnimatedIcon>
-                            )}
-                            <span className={`text-xs px-2 py-1 rounded-full truncate ${
-                              payment.destino === 'China'
-                                ? mounted && theme === 'dark' ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-800'
-                                : mounted && theme === 'dark' ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-800'
-                            }`}>
-                              {payment.destino}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-2 py-3">
-                          <PaymentActions 
-                            payment={payment} 
-                            onApprove={handleApprove}
-                            onReject={openRejectionConfirmation}
-                            onViewDetails={openDetailsModal}
-                            onSend={handleSend}
-                            isSending={!!sendingChina[payment.id]}
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {filteredPayments.length === 0 && (
-                <div className="text-center py-8 md:py-16">
-                  <AnimatedIcon animation="bounce">
-                    <Package className="md:w-12 md:h-12 mx-auto text-gray-400 mb-4" />
-                  </AnimatedIcon>
-                  <p className="text-gray-500 text-base md:text-lg font-medium">{t('venezuela.pagos.empty.title')}</p>
-                  <p className="text-gray-400 text-sm mt-2">{t('venezuela.pagos.empty.subtitle')}</p>
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className={`mt-4 md:mt-6 text-center text-xs md:text-sm text-gray-500`}>
-              {t('venezuela.pagos.footer.showing', { shown: filteredPayments.length, total: payments.length })}
             </div>
           </div>
-        </main>
+        )}
+
+        {/* ================================ */}
+        {/* TARJETAS DE ESTADÍSTICAS */}
+        {/* ================================ */}
+        <StatsCards stats={stats} />
+
+        {/* Pestañas removidas: vista simplificada */}
+
+        {/* ================================ */}
+        {/* BARRA COMPACTA DERECHA */}
+        {/* ================================ */}
+        <Card className={mounted && theme === 'dark' ? 'mb-4 md:mb-6 bg-slate-800/70 border border-slate-700 backdrop-blur-sm shadow-lg hover:shadow-xl transition-shadow' : 'mb-4 md:mb-6 bg-white/80 border border-slate-200 backdrop-blur-sm shadow-lg hover:shadow-xl transition-shadow'}>
+          <CardHeader className="py-3">
+            <div className="flex flex-col gap-3 sm:gap-4">
+              <CardTitle className="text-lg font-semibold tracking-tight">{t('venezuela.pagos.listCardTitle')}</CardTitle>
+              {/* Controles Responsivos */}
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                {/* Buscador */}
+                <div className="w-full sm:flex-1 min-w-[12rem]">
+                  <Input
+                    placeholder={t('venezuela.pagos.searchPlaceholder')}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="h-10 w-full px-3"
+                  />
+                </div>
+                {/* Fila Filtro + Botón en mobile */}
+                <div className="flex flex-col xs:flex-row w-full sm:w-auto gap-2 sm:gap-3">
+                  <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <SelectTrigger className="h-10 w-full xs:min-w-[9rem] sm:w-44 md:w-48 px-3 whitespace-nowrap truncate">
+                      <SelectValue placeholder={t('venezuela.pagos.filters.allStatuses')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">{t('venezuela.pagos.filters.allStatuses')}</SelectItem>
+                      <SelectItem value="completado">{t('venezuela.pagos.filters.completed')}</SelectItem>
+                      <SelectItem value="enviadoChina">{t('venezuela.pagos.status.sendChina')}</SelectItem>
+                      <SelectItem value="pendiente">{t('venezuela.pagos.filters.pending')}</SelectItem>
+                      <SelectItem value="rechazado">{t('venezuela.pagos.filters.rejected')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    className="h-10 w-full xs:w-auto bg-[#202841] text-white hover:bg-opacity-90 flex items-center justify-center"
+                    onClick={exportarGeneral}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    <span className="hidden sm:inline">{t('venezuela.pagos.actions.export')}</span>
+                    <span className="sm:hidden">{t('venezuela.pagos.actions.exportShort')}</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+
+        {/* ================================ */}
+        {/* TABLA DE PAGOS */}
+        {/* ================================ */}
+        <div className={mounted && theme === 'dark' ? 'rounded-xl shadow-lg overflow-hidden border border-slate-700 bg-slate-800/70 backdrop-blur-sm transition-shadow hover:shadow-xl' : 'rounded-xl shadow-lg overflow-hidden border border-slate-200 bg-white/80 backdrop-blur-sm transition-shadow hover:shadow-xl'}>
+          <div className={mounted && theme === 'dark' ? 'px-4 md:px-6 py-3 md:py-4 border-b border-slate-700/60' : 'px-4 md:px-6 py-3 md:py-4 border-b border-slate-200/70'}>
+            <h2 className={`text-lg md:text-xl font-semibold flex items-center gap-2 ${mounted && theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+              <AnimatedIcon animation="float">
+                <Package className="md:w-6 md:h-6 text-blue-500" />
+              </AnimatedIcon>
+              {t('venezuela.pagos.table.ordersListTitle')}
+            </h2>
+            <p className={mounted && theme === 'dark' ? 'text-slate-300 text-xs md:text-sm mt-1' : 'text-gray-600 text-xs md:text-sm mt-1'}>
+              {t('venezuela.pagos.table.resultsFound', { count: filteredPayments.length })}
+            </p>
+          </div>
+
+          {/* Vista Mobile - Cards */}
+          <div className="block lg:hidden p-4 space-y-4">
+            {!loading && filteredPayments.map((payment) => (
+              <PaymentCard
+                key={payment.id}
+                payment={payment}
+                onApprove={handleApprove}
+                onReject={openRejectionConfirmation}
+                onViewDetails={openDetailsModal}
+                onSend={handleSend}
+                isSending={!!sendingChina[payment.id]}
+              />
+            ))}
+          </div>
+
+          {/* Vista Desktop - Tabla */}
+          <div className="hidden lg:block overflow-x-auto">
+            <table className={`w-full table-fixed ${mounted && theme === 'dark' ? 'bg-slate-800' : ''}`}>
+              <thead className={mounted && theme === 'dark' ? 'bg-slate-900' : 'bg-gray-50'}>
+                <tr>
+                  {[
+                    { label: t('venezuela.pagos.table.headers.id'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><Hash size={14} /></AnimatedIcon>, width: 'w-44' },
+                    { label: t('venezuela.pagos.table.headers.client'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><User size={14} /></AnimatedIcon>, width: 'w-36' },
+                    { label: t('venezuela.pagos.table.headers.status'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><CheckCircle size={14} /></AnimatedIcon>, width: 'w-32' },
+                    { label: t('venezuela.pagos.table.headers.date'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><Calendar size={14} /></AnimatedIcon>, width: 'w-24' },
+                    { label: t('venezuela.pagos.table.headers.amount'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><DollarSign size={14} /></AnimatedIcon>, width: 'w-28' },
+                    { label: t('venezuela.pagos.table.headers.reference'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><Hash size={14} /></AnimatedIcon>, width: 'w-36' },
+                    { label: t('venezuela.pagos.table.headers.destination'), icon: <AnimatedIcon animation={["pulse", "bounce"]}><MapPin size={14} /></AnimatedIcon>, width: 'w-28' },
+                    { label: t('venezuela.pagos.table.headers.actions'), icon: <AnimatedIcon animation={["pulse", "shake"]}><MoreHorizontal size={14} /></AnimatedIcon>, width: 'w-28' }
+                  ].map((header, index) => (
+                    <th key={index} className={`px-2 py-3 text-left ${header.width}`}>
+                      <div className={`flex items-center gap-1 text-xs font-semibold uppercase tracking-wider ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>
+                        <AnimatedIcon animation="pulse">
+                          {header.icon}
+                        </AnimatedIcon>
+                        <span className="truncate">{header.label}</span>
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredPayments.map((payment) => (
+                  <tr
+                    key={payment.id}
+                    className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-transparent transition-all duration-200 group"
+                  >
+                    <td className="px-2 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 bg-blue-500 text-white rounded-lg flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                          {payment.id.split('-')[1] || String(payment.id)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className={`text-sm font-medium truncate ${mounted && theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{payment.id}</div>
+                          <div className={`text-xs truncate ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}`}>{payment.descripcion}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-2 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className={mounted && theme === 'dark' ? 'w-7 h-7 bg-slate-700 text-blue-200 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0' : 'w-7 h-7 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0'}>
+                          {payment.usuario.split(' ').map(n => n[0]).join('').toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className={`text-sm font-medium truncate ${mounted && theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{payment.usuario}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-2 py-3">
+                      <StatusBadge status={payment.estado} sendChina={payment.sendChina} />
+                    </td>
+                    <td className={`px-2 py-3 text-sm ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-gray-900'}`}>
+                      <span className="truncate block">{formatDate(payment.fecha)}</span>
+                    </td>
+                    <td className="px-2 py-3">
+                      <div className={`text-sm font-bold truncate transition-colors duration-200 ${mounted && theme === 'dark' ? 'text-green-300 group-hover:text-green-400' : 'text-gray-900 group-hover:text-green-600'}`}>
+                        <span suppressHydrationWarning>{formatCompactMoney(payment.monto)}</span>
+                      </div>
+                    </td>
+                    <td className="px-2 py-3">
+                      <span className={`text-xs font-mono px-2 py-1 rounded truncate block ${mounted && theme === 'dark' ? 'text-slate-300 bg-slate-900' : 'text-gray-600 bg-gray-50'}`}>
+                        {payment.referencia}
+                      </span>
+                    </td>
+                    <td className="px-2 py-3">
+                      <div className="flex items-center gap-1">
+                        {payment.destino === 'China' && (
+                          <AnimatedIcon animation="pulse">
+                            <AlertTriangle size={10} className="text-orange-500 flex-shrink-0" />
+                          </AnimatedIcon>
+                        )}
+                        <span className={`text-xs px-2 py-1 rounded-full truncate ${payment.destino === 'China'
+                          ? mounted && theme === 'dark' ? 'bg-red-900 text-red-200' : 'bg-red-100 text-red-800'
+                          : mounted && theme === 'dark' ? 'bg-blue-900 text-blue-200' : 'bg-blue-100 text-blue-800'
+                          }`}>
+                          {payment.destino}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-2 py-3">
+                      <PaymentActions
+                        payment={payment}
+                        onApprove={handleApprove}
+                        onReject={openRejectionConfirmation}
+                        onViewDetails={openDetailsModal}
+                        onSend={handleSend}
+                        isSending={!!sendingChina[payment.id]}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {filteredPayments.length === 0 && (
+            <div className="text-center py-8 md:py-16">
+              <AnimatedIcon animation="bounce">
+                <Package className="md:w-12 md:h-12 mx-auto text-gray-400 mb-4" />
+              </AnimatedIcon>
+              <p className="text-gray-500 text-base md:text-lg font-medium">{t('venezuela.pagos.empty.title')}</p>
+              <p className="text-gray-400 text-sm mt-2">{t('venezuela.pagos.empty.subtitle')}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className={`mt-4 md:mt-6 text-center text-xs md:text-sm text-gray-500`}>
+          {t('venezuela.pagos.footer.showing', { shown: filteredPayments.length, total: payments.length })}
+        </div>
       </div>
       <Toaster />
     </>
@@ -1204,62 +1179,53 @@ const PaymentValidationDashboard: React.FC = () => {
 // ================================
 // COMPONENTE: ACCIONES DE PAGO PENDIENTE
 // ================================
-const PaymentActions: React.FC<{ 
-  payment: Payment; 
-  onApprove: (id: string) => void; 
+const PaymentActions: React.FC<{
+  payment: Payment;
+  onApprove: (id: string) => void;
   onReject: (id: string) => void;
   onViewDetails: (payment: Payment) => void;
   onSend: (id: string) => void;
   isSending?: boolean;
-}> = ({ 
-  payment, 
-  onApprove, 
+}> = ({
+  payment,
+  onApprove,
   onReject,
   onViewDetails,
   onSend,
   isSending
 }) => {
-  const { t } = useTranslation();
-  return (
-    <div className="flex items-center gap-2">
-      {payment.estado === 'pendiente' && (
-        <>
-          <button 
-            onClick={() => onApprove(payment.id)}
-            className="flex items-center p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
-          >
-            <Check size={14} />
-          </button>
-          <button 
-            onClick={() => onReject(payment.id)}
-            className="flex items-center p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
-          >
-            <X size={14} />
-          </button>
-        </>
-      )}
+    const { t } = useTranslation();
+    return (
+      <div className="flex items-center gap-2">
+        {payment.estado === 'pendiente' && (
+          <>
+            <button
+              onClick={() => onApprove(payment.id)}
+              className="flex items-center p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
+            >
+              <Check size={14} />
+            </button>
+            <button
+              onClick={() => onReject(payment.id)}
+              className="flex items-center p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
+            >
+              <X size={14} />
+            </button>
+          </>
+        )}
 
-      {payment.estado === 'completado' && (
-        <button 
-          onClick={() => onSend(payment.id)}
-          disabled={payment.sendChina || isSending}
-          className={`flex items-center p-2 rounded-lg transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md ${payment.sendChina || isSending ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
-          title={payment.sendChina ? (t('venezuela.pagos.status.sentChina') || 'Enviado a China') : (t('venezuela.pagos.actions.send') || 'Enviar')}
+
+
+        <button
+          onClick={() => onViewDetails(payment)}
+          className="flex items-center p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
+          title={t('venezuela.pagos.actions.view')}
         >
-          <Send size={14} />
+          <Eye size={14} />
         </button>
-      )}
-
-      <button 
-        onClick={() => onViewDetails(payment)}
-        className="flex items-center p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all duration-200 transform hover:scale-110 shadow-sm hover:shadow-md"
-        title={t('venezuela.pagos.actions.view')}
-      >
-        <Eye size={14} />
-      </button>
-    </div>
-  );
-};
+      </div>
+    );
+  };
 
 // ================================
 // COMPONENTE: AVATAR DE USUARIO

@@ -39,6 +39,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useRouter } from 'next/navigation';
 import { useNotifications } from '@/hooks/use-notifications';
 import { useTheme } from 'next-themes';
+import { formatCompactMoney } from '@/lib/utils';
 
 export default function AdminDashboard() {
   const { t } = useTranslation();
@@ -211,7 +212,7 @@ export default function AdminDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className={`text-xl md:text-2xl lg:text-3xl font-bold ${mounted && theme === 'dark' ? 'text-blue-200' : 'text-blue-900'}`}>{totalIngresos}$</div>
+                <div className={`text-xl md:text-2xl lg:text-3xl font-bold ${mounted && theme === 'dark' ? 'text-blue-200' : 'text-blue-900'}`}>{formatCompactMoney(totalIngresos)}</div>
                 <div className={`mt-2 w-full ${mounted && theme === 'dark' ? 'bg-blue-900/30' : 'bg-blue-200'} rounded-full h-2`}>
                   <div className="bg-blue-500 h-2 rounded-full" style={{ width: '85%' }}></div>
                 </div>

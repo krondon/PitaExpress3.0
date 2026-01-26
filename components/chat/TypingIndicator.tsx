@@ -9,8 +9,8 @@ interface TypingIndicatorProps {
 export const TypingIndicator = memo(function TypingIndicator({ userName }: TypingIndicatorProps) {
     return (
         <div className="flex items-center gap-2 px-2 py-1">
-            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
-                <span className="text-xs text-slate-600 font-medium">
+            <div className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
+                <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">
                     {userName || 'Usuario'} está escribiendo
                 </span>
                 <div className="flex gap-1">

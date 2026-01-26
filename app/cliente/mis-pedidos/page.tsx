@@ -488,6 +488,26 @@ export default function MisPedidosPage() {
     return priceStr;
   }, [exchangeRate]);
 
+  // Helper para formatear números grandes de forma compacta (ej. 38.7B, 1.5M)
+  const formatCompactMoney = useCallback((amount: number) => {
+    // Si es menor a 1 millón, usar formato estándar
+    if (amount < 1_000_000) {
+      return `$${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    // Si es billón (Billion) o más (1,000,000,000)
+    if (amount >= 1_000_000_000) {
+      return `$${(amount / 1_000_000_000).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}B`;
+    }
+
+    // Si es millón (Million) o más
+    if (amount >= 1_000_000) {
+      return `$${(amount / 1_000_000).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}M`;
+    }
+
+    return `$${amount.toLocaleString()}`;
+  }, []);
+
   // Inicialización
   useEffect(() => {
     setMounted(true);
@@ -2066,7 +2086,12 @@ export default function MisPedidosPage() {
                 </div>
                 <div className="hidden md:block w-px h-12 md:h-16 bg-white/20"></div>
                 <div className="text-center">
-                  <div className="text-2xl md:text-3xl lg:text-4xl font-bold">${stats.totalSpent.toLocaleString()}</div>
+                  <div
+                    className="text-2xl md:text-3xl lg:text-4xl font-bold"
+                    title={`$${stats.totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                  >
+                    {formatCompactMoney(stats.totalSpent)}
+                  </div>
                   <p className={`text-xs md:text-sm ${mounted && theme === 'dark' ? 'text-green-200' : 'text-green-100'}`}>{t('client.dashboard.totalSpent')}</p>
                 </div>
               </div>
@@ -2720,7 +2745,12 @@ export default function MisPedidosPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className={`text-xl md:text-2xl lg:text-3xl font-bold ${mounted && theme === 'dark' ? 'text-blue-300' : 'text-blue-900'}`}>${stats.totalSpent.toLocaleString()}</div>
+              <div
+                className={`text-xl md:text-2xl lg:text-3xl font-bold ${mounted && theme === 'dark' ? 'text-blue-300' : 'text-blue-900'}`}
+                title={`$${stats.totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+              >
+                {formatCompactMoney(stats.totalSpent)}
+              </div>
               <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-blue-700'}`}>{t('client.dashboard.totalInvestment')}</p>
               <div className={`mt-2 w-full rounded-full h-2 ${mounted && theme === 'dark' ? 'bg-blue-900/50' : 'bg-blue-200'}`}>
                 <div className={`h-2 rounded-full ${mounted && theme === 'dark' ? 'bg-blue-500' : 'bg-blue-500'}`} style={{ width: '100%' }}></div>

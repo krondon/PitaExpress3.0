@@ -24,7 +24,7 @@ export function ChatInput({ onSendMessage, onTyping, onStopTyping, disabled }: C
     const [mounted, setMounted] = useState(false);
 
     const { uploadFile, uploading, error: uploadError } = useChatUpload();
-    
+
     useEffect(() => {
         setMounted(true);
     }, []);
@@ -60,6 +60,10 @@ export function ChatInput({ onSendMessage, onTyping, onStopTyping, disabled }: C
             console.error('Error sending message:', error);
         } finally {
             setSending(false);
+            // Mantener el foco en el input después de enviar (especialmente útil si se usó el botón de enviar)
+            setTimeout(() => {
+                textareaRef.current?.focus();
+            }, 0);
         }
     };
 

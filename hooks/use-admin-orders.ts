@@ -25,11 +25,12 @@ export function useAdminOrders() {
       setError(null);
 
       const [totalActivosRes, pendientesRes, transitoRes, entregadosRes, ingresosRes] = await Promise.all([
-        supabase.from('orders').select('id', { count: 'exact', head: true }).in('state', [...PENDING_STATES, ...TRANSIT_STATES, ...DELIVERED_STATES]),
+        supabase.from('orders').select('id', { count: 'exact', head: true }).or('state.gte.1,state.lte.12'), // Active = 1..12
         supabase.from('orders').select('id', { count: 'exact', head: true }).in('state', PENDING_STATES as any),
         supabase.from('orders').select('id', { count: 'exact', head: true }).in('state', TRANSIT_STATES as any),
         supabase.from('orders').select('id', { count: 'exact', head: true }).in('state', DELIVERED_STATES as any),
-        supabase.from('orders').select('estimatedBudget').in('state', PENDING_STATES as any),
+        // Ingresos: Solo ordenes validadas/pagadas (state >= 5, que corresponden a enviadas/procesando ya con pago confirmado)
+        supabase.from('orders').select('totalQuote, estimatedBudget').gte('state', 5),
       ]);
 
       if (totalActivosRes.error) throw totalActivosRes.error;
@@ -42,7 +43,11 @@ export function useAdminOrders() {
       const pedidosPendientes = pendientesRes.count ?? 0;
       const pedidosTransito = transitoRes.count ?? 0;
       const pedidosEntregados = entregadosRes.count ?? 0;
-      const totalIngresos = (ingresosRes.data ?? []).reduce((acc: number, row: any) => acc + (row.estimatedBudget ?? 0), 0);
+      // Usar totalQuote si existe (cotización real), fallback a budget
+      const totalIngresos = (ingresosRes.data ?? []).reduce((acc: number, row: any) => {
+        const val = row.totalQuote || row.estimatedBudget || 0;
+        return acc + Number(val);
+      }, 0);
 
       setData({ totalPedidos, pedidosPendientes, pedidosTransito, pedidosEntregados, totalIngresos });
     } catch (err: any) {

@@ -143,7 +143,29 @@ export default function DashboardPage() {
   const pedidosRecientes = clientOrders?.slice(-3).reverse() ?? [];
   const orderId = pedidosRecientes.map(order => order.id);
   const orderName = pedidosRecientes.map(order => order.productName);
+
   const orderStatus = pedidosRecientes.map(order => order.state);
+
+  // Helper para formatear números grandes de forma compacta (ej. 38.7B, 1.5M)
+  const formatCompactMoney = (amount: number) => {
+    // Si es menor a 1 millón, usar formato estándar con 2 decimales
+    if (amount < 1_000_000) {
+      return `$${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    // Si es billón (Billion) o más (1,000,000,000)
+    if (amount >= 1_000_000_000) {
+      return `$${(amount / 1_000_000_000).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}B`;
+    }
+
+    // Si es millón (Million) o más
+    if (amount >= 1_000_000) {
+      return `$${(amount / 1_000_000).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}M`;
+    }
+
+    return `$${amount.toLocaleString()}`;
+  };
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -305,7 +327,13 @@ export default function DashboardPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className={`text-xl md:text-2xl lg:text-3xl font-bold ${mounted && theme === 'dark' ? 'text-blue-300' : 'text-blue-900'}`}>${totalGastado.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                <div
+                  className={`text-xl md:text-2xl lg:text-3xl font-bold ${mounted && theme === 'dark' ? 'text-blue-300' : 'text-blue-900'}`}
+                  title={`$${totalGastado.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                  suppressHydrationWarning
+                >
+                  {formatCompactMoney(totalGastado)}
+                </div>
                 <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-blue-700'}`}>{t('client.dashboard.totalInvestment')}</p>
                 <div className={`mt-2 w-full rounded-full h-2 ${mounted && theme === 'dark' ? 'bg-blue-900/50' : 'bg-blue-200'}`}>
                   <div className="bg-blue-500 h-2 rounded-full" style={{ width: `100%` }}></div>

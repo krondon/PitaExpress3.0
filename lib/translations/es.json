@@ -3495,6 +3495,15 @@
       "activeConversations": "Conversaciones Activas",
       "selectConversation": "Selecciona una conversación para comenzar a chatear",
       "deleteChat": "Eliminar chat",
+      "leaveGroup": "Salir del grupo",
+      "newChat": "Nuevo Chat",
+      "startNewChat": "Iniciar nueva conversación",
+      "searchUsers": "Buscar usuarios...",
+      "searchPlaceholder": "Buscar conversación...",
+      "noUsersFound": "No se encontraron usuarios",
+      "noResults": "No se encontraron conversaciones",
+      "noConversations": "No hay conversaciones aún",
+      "group": "Grupo",
       "pagination": {
         "page": "Página {{current}} de {{total}}",
         "previous": "Anterior",
@@ -3506,6 +3515,50 @@
         "cancel": "Cancelar",
         "delete": "Eliminar",
         "deleting": "Eliminando..."
+      }
+    },
+    "groups": {
+      "info": {
+        "title": "Info de Grupo",
+        "description": "Descripción",
+        "members": "Miembros",
+        "addMember": "Añadir Miembro",
+        "searchUsers": "Buscar usuarios...",
+        "leaveGroup": "Salir del grupo",
+        "deleteGroup": "Eliminar grupo",
+        "group": "Grupo",
+        "tabs": {
+          "info": "Información",
+          "media": "Multimedia"
+        },
+        "media": {
+          "photos": "Fotos",
+          "documents": "Documentos",
+          "empty": "No hay archivos compartidos"
+        }
+      },
+      "members": {
+        "promote": "Hacer administrador",
+        "demote": "Quitar administrador",
+        "remove": {
+          "title": "¿Eliminar miembro?",
+          "description": "Este usuario será eliminado del grupo. ¿Estás seguro?"
+        }
+      },
+      "create": {
+        "title": "Crear grupo",
+        "description": "Crea un nuevo grupo de chat con los miembros que selecciones.",
+        "name": "Nombre del grupo",
+        "namePlaceholder": "Ej: Equipo de ventas",
+        "descriptionLabel": "Descripción (opcional)",
+        "descriptionPlaceholder": "Describe el propósito del grupo...",
+        "members": "Seleccionar miembros",
+        "selected": "seleccionados",
+        "filterUsers": "Filtrar usuarios...",
+        "noUsersFound": "No se encontraron usuarios",
+        "noUsersAvailable": "No hay usuarios disponibles",
+        "creating": "Creando...",
+        "create": "Crear grupo"
       }
     },
     "notFound": {

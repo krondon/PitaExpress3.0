@@ -215,11 +215,13 @@ export default function PedidosChina() {
     // 1-2: pendiente (pedidos nuevos y recibidos)
     // 3: cotizado
     // 4: procesando
+    // 5-8: enviado (AHORA 6-8, 5 se mueve a pendiente)
     // 5-8: enviado
-    if (state >= 5 && state <= 8) return 'enviado';
-    if (state === 4) return 'procesando';
+    // AHORA: 6 y 8 enviado. 7 procesando. 5 pendiente.
+    if (state === 6 || state === 8) return 'enviado';
+    if (state === 4 || state === 7) return 'procesando';
     if (state === 3) return 'cotizado';
-    if (state === 1 || state === 2) return 'pendiente';
+    if (state === 1 || state === 2 || state === 5) return 'pendiente';
     // Fallback
     return 'pendiente';
   }
@@ -1558,7 +1560,7 @@ export default function PedidosChina() {
       const code = `#PED-${String(pedidoId).padStart(3, '0')}`;
       doc.setFont('helvetica', 'bold'); doc.setTextColor(20, 20, 25); doc.setFontSize(16); doc.text(code, labelW / 2, 20, { align: 'center' });
       doc.setFont('helvetica', 'normal'); doc.setFontSize(5.2); doc.setTextColor(60, 60, 65);
-      const desc = t('chinese.ordersPage.modals.labelWarning.description', { defaultValue: 'Asegúrate de poner la etiqueta al producto antes de empaquetar.' });
+      const desc = t('chinese.ordersPage.modals.labelWarning.description', { defaultValue: 'Asegurate de poner la etiqueta al producto antes de empaquetar' }).normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       doc.text(doc.splitTextToSize(desc, labelW - 8), labelW / 2, 26.5, { align: 'center' });
       const blobUrl = doc.output('bloburl');
       window.open(blobUrl, '_blank', 'noopener,noreferrer');
@@ -1745,7 +1747,8 @@ export default function PedidosChina() {
             </div>
           )}
           <div className="flex w-full sm:w-auto flex-wrap items-center gap-1.5 sm:gap-2 justify-start sm:justify-end">
-            {p.estado === 'enviado' && (p.numericState ?? 0) < 6 && (
+            {/* Botón Empaquetar: Para enviados no procesados Y para estado 5 (listo para empaquetar) */}
+            {((p.estado === 'enviado' && (p.numericState ?? 0) < 6) || (p.numericState === 5)) && (
               <Button
                 size="sm"
                 className="h-7 sm:h-8 px-2 sm:px-3 flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-[10px] sm:text-xs"
@@ -1790,7 +1793,7 @@ export default function PedidosChina() {
               <span className="hidden sm:inline">{t('chinese.ordersPage.orders.view', { defaultValue: 'Ver' })}</span>
             </Button>
 
-            {p.estado === 'pendiente' && (() => {
+            {p.estado === 'pendiente' && p.numericState !== 5 && (() => {
               // Ocultar botones si hay una alternativa pendiente
               if (p.alternativeStatus === 'pending') return null;
 

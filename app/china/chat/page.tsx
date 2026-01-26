@@ -1,31 +1,43 @@
 "use client";
 
 import { useState, useCallback, useEffect } from 'react';
-import Sidebar from '@/components/layout/Sidebar';
+
 import Header from '@/components/layout/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { ChatMessages } from '@/components/chat/ChatMessages';
 import { ChatInput } from '@/components/chat/ChatInput';
+import { ChatList } from '@/components/chat/ChatList';
 import { useChatMessages } from '@/hooks/use-chat-messages';
 import { useChatRealtime } from '@/hooks/use-chat-realtime';
 import { useChatTyping } from '@/hooks/use-chat-typing';
 import { useChinaContext } from '@/lib/ChinaContext';
+import { useChinaLayoutContext } from '@/lib/ChinaLayoutContext';
 import { useNotifications } from '@/hooks/use-notifications';
-import { getSupabaseBrowserClient } from '@/lib/supabase/client';
-import { MessageSquare, Loader2, Shield } from 'lucide-react';
+import { MessageSquare, ArrowLeft, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { ChatMessage } from '@/lib/types/chat';
 import { useTheme } from 'next-themes';
 import { useTranslation } from '@/hooks/useTranslation';
+import { GroupInfoSheet } from '@/components/chat/GroupInfoSheet';
+import { useChatGroups } from '@/hooks/use-chat-groups';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ChatGroupsProvider } from '@/lib/contexts/ChatGroupsContext';
+import { Info } from 'lucide-react';
 
 export default function ChinaChatPage() {
-    const [sidebarExpanded, setSidebarExpanded] = useState(true);
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { chinaId } = useChinaContext();
+    return (
+        <ChatGroupsProvider currentUserId={chinaId || ''}>
+            <ChinaChatContent />
+        </ChatGroupsProvider>
+    );
+}
+
+function ChinaChatContent() {
+    const { toggleMobileMenu } = useChinaLayoutContext();
+    const { chinaId, chinaName } = useChinaContext();
     const router = useRouter();
-    const [adminId, setAdminId] = useState<string | null>(null);
-    const [adminName, setAdminName] = useState<string>('Administrador');
-    const [loadingAdmin, setLoadingAdmin] = useState(true);
     const { theme } = useTheme();
     const { t } = useTranslation();
     const [mounted, setMounted] = useState(false);
@@ -33,6 +45,15 @@ export default function ChinaChatPage() {
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    // Estado de navegación: 'list' o 'chat'
+    const [view, setView] = useState<'list' | 'chat'>('list');
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+    const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+    const [selectedUserName, setSelectedUserName] = useState<string>('');
+    const [showGroupInfo, setShowGroupInfo] = useState(false);
+    const [selectedConversationAvatar, setSelectedConversationAvatar] = useState<string | undefined>(undefined);
+    const { groups } = useChatGroups({ currentUserId: chinaId || '' });
 
     // Notificaciones
     const { uiItems: notificationsList, unreadCount, markAllAsRead } = useNotifications({
@@ -42,38 +63,6 @@ export default function ChinaChatPage() {
         enabled: true
     });
 
-    // Obtener ID del admin principal (buscar el primer Admin en userlevel)
-    useEffect(() => {
-        const fetchAdminId = async () => {
-            try {
-                const supabase = getSupabaseBrowserClient();
-
-                // Buscar directamente en userlevel al primer Admin
-                const { data: adminData, error } = await supabase
-                    .from('userlevel')
-                    .select('id')
-                    .eq('user_level', 'Admin')
-                    .limit(1)
-                    .single();
-
-                if (error) {
-                    console.error('❌ Error fetching admin:', error);
-                } else if (adminData?.id) {
-                    setAdminId(adminData.id);
-                    setAdminName('Administrador');
-                } else {
-                    console.error('❌ Admin not found in userlevel');
-                }
-            } catch (error) {
-                console.error('❌ Error fetching admin:', error);
-            } finally {
-                setLoadingAdmin(false);
-            }
-        };
-
-        fetchAdminId();
-    }, []);
-
     const {
         messages,
         loading,
@@ -82,38 +71,69 @@ export default function ChinaChatPage() {
         addMessage,
         editMessage,
         deleteMessage,
+        isGroupChat,
     } = useChatMessages({
-        conversationUserId: adminId,
+        conversationUserId: selectedUserId,
+        groupId: selectedGroupId,
         currentUserId: chinaId ?? null,
+        currentUserName: chinaName ?? null,
         currentUserRole: 'china',
     });
 
-    const { isOtherUserTyping, notifyTyping, stopTyping } = useChatTyping({
+    const { isOtherUserTyping, typingUserName, notifyTyping, stopTyping } = useChatTyping({
         currentUserId: chinaId ?? null,
-        conversationUserId: adminId,
+        currentUserName: chinaName ?? null,
+        conversationUserId: selectedUserId,
+        groupId: selectedGroupId ?? null,
     });
 
     // Callback estable para nuevos mensajes
     const handleNewMessage = useCallback((message: ChatMessage) => {
-
-        if (message.sender_id === adminId) {
-
+        // Mensajes individuales
+        if (selectedUserId && message.sender_id === selectedUserId && !message.group_id) {
             addMessage(message);
         }
-    }, [adminId, addMessage]);
+        // Mensajes de grupo
+        if (selectedGroupId && message.group_id === selectedGroupId) {
+            addMessage(message);
+        }
+    }, [selectedUserId, selectedGroupId, addMessage]);
 
     // Realtime: escuchar nuevos mensajes
     useChatRealtime({
         currentUserId: chinaId ?? null,
+        groupId: selectedGroupId ?? null,
         onNewMessage: handleNewMessage,
     });
 
+    const handleSelectConversation = useCallback((conversationId: string, name: string, avatarUrl?: string) => {
+        // Parsear el formato: 'user_UUID' o 'group_UUID'
+        if (conversationId.startsWith('group_')) {
+            setSelectedGroupId(conversationId.replace('group_', ''));
+            setSelectedUserId(null);
+        } else {
+            setSelectedUserId(conversationId.replace('user_', ''));
+            setSelectedGroupId(null);
+        }
+        setSelectedUserName(name);
+        setSelectedConversationAvatar(avatarUrl);
+        setView('chat');
+    }, []);
+
+    const handleBackToList = useCallback(() => {
+        setView('list');
+        setSelectedUserId(null);
+        setSelectedGroupId(null);
+        setSelectedUserName('');
+    }, []);
+
     const handleSendMessage = useCallback(
         async (text: string, fileData?: { url: string; name: string; type: string; size: number }) => {
-            if (!adminId) return;
+            if (!selectedUserId && !selectedGroupId) return;
 
             const success = await sendMessage({
-                receiver_id: adminId,
+                receiver_id: selectedUserId || undefined,
+                group_id: selectedGroupId || undefined,
                 message: text || undefined,
                 file_url: fileData?.url,
                 file_name: fileData?.name,
@@ -125,76 +145,123 @@ export default function ChinaChatPage() {
                 stopTyping();
             }
         },
-        [adminId, sendMessage, stopTyping]
+        [selectedUserId, selectedGroupId, sendMessage, stopTyping]
     );
 
-    if (loadingAdmin) {
-        return (
-            <div className={`min-h-screen flex items-center justify-center ${mounted && theme === 'dark' ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50'}`}>
-                <div className="text-center">
-                    <div className={`animate-spin rounded-full h-12 w-12 border-b-2 ${mounted && theme === 'dark' ? 'border-blue-400' : 'border-blue-600'} mx-auto`}></div>
-                    <p className={`mt-4 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>{t('chat.loading')}</p>
-                </div>
-            </div>
-        );
-    }
-
-    if (!adminId) {
-        return (
-            <div className={`min-h-screen flex items-center justify-center ${mounted && theme === 'dark' ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50'}`}>
-                <Card className={`max-w-md ${mounted && theme === 'dark' ? 'bg-slate-800/70 dark:border-slate-700' : ''}`}>
-                    <CardContent className="p-8 text-center">
-                        <MessageSquare className={`w-16 h-16 ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-slate-400'} mx-auto mb-4`} />
-                        <h3 className={`text-xl font-semibold mb-2 ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-700'}`}>
-                            {t('chat.notFound.title')}
-                        </h3>
-                        <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}>
-                            {t('chat.notFound.message')}
-                        </p>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
-
     return (
-        <div className={`min-h-screen flex overflow-x-hidden ${mounted && theme === 'dark' ? 'bg-slate-900' : 'bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50'}`}>
-            <Sidebar
-                isExpanded={sidebarExpanded}
-                setIsExpanded={setSidebarExpanded}
-                isMobileMenuOpen={isMobileMenuOpen}
-                onMobileMenuClose={() => setIsMobileMenuOpen(false)}
-                userRole="china"
+        <>
+
+            <GroupInfoSheet
+                open={showGroupInfo}
+                onOpenChange={setShowGroupInfo}
+                groupId={selectedGroupId || ''}
+                currentUserId={chinaId || ''}
+                groupName={groups.find(g => g.id === selectedGroupId)?.name || ''}
+                isOwner={groups.find(g => g.id === selectedGroupId)?.created_by === chinaId}
+                onLeaveGroup={() => {
+                    setShowGroupInfo(false);
+                    handleBackToList();
+                }}
+                onDeleteGroup={() => {
+                    setShowGroupInfo(false);
+                    handleBackToList();
+                }}
             />
 
-            <main className={`flex-1 transition-all duration-300 ${sidebarExpanded ? 'lg:ml-72 lg:w-[calc(100%-18rem)]' : 'lg:ml-24 lg:w-[calc(100%-6rem)]'
-                }`}>
-                <Header
-                    notifications={unreadCount}
-                    onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    title={t('chat.admin.title', { name: adminName })}
-                    subtitle={t('chat.admin.subtitle')}
-                    notificationsItems={notificationsList}
-                    onMarkAllAsRead={async () => {
-                        await markAllAsRead();
-                    }}
-                    onOpenNotifications={() => {
-                        router.push('/china/pedidos');
-                    }}
-                />
+            <Header
+                notifications={unreadCount}
+                onMenuToggle={toggleMobileMenu}
+                title={t('chat.list.title')}
+                subtitle={t('chat.list.subtitle')}
+                notificationsItems={notificationsList}
+                onMarkAllAsRead={async () => {
+                    await markAllAsRead();
+                }}
+                onOpenNotifications={() => {
+                    router.push('/china/pedidos');
+                }}
+            />
 
-                <div className="p-4 md:p-5 lg:p-6">
+            <div className="p-4 md:p-5 lg:p-6 space-y-6">
+                {/* Vista: Lista de Conversaciones */}
+                {view === 'list' && (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <Card className={`${mounted && theme === 'dark' ? 'bg-slate-800/70 dark:border-slate-700' : 'bg-white/80 border-slate-200'} backdrop-blur-sm shadow-lg`}>
-                            <CardHeader className={`px-5.2 py-2 border-b ${mounted && theme === 'dark' ? 'border-slate-700 bg-gradient-to-r from-slate-800 to-slate-700' : 'border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50'}`}>
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-blue-500 rounded-full">
-                                        <Shield className="h-5 w-5 text-white" />
-                                    </div>
+                        <Card className={`${mounted && theme === 'dark' ? 'bg-slate-800/70 dark:border-slate-700' : 'bg-white/80 border-slate-200'} backdrop-blur-sm hover:shadow-lg transition-shadow`}>
+                            <CardHeader>
+                                <div className="flex items-center justify-between">
                                     <div>
-                                        <CardTitle className={`text-base font-semibold ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{adminName}</CardTitle>
-                                        <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('chat.admin.role')}</p>
+                                        <CardTitle className={`text-lg md:text-xl font-semibold flex items-center gap-2 ${mounted && theme === 'dark' ? 'text-white' : ''}`}>
+                                            <Users className={`h-5 w-5 ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`} />
+                                            {t('chat.list.activeConversations')}
+                                        </CardTitle>
+                                        <p className={`text-xs md:text-sm mt-1 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
+                                            {t('chat.list.selectConversation')}
+                                        </p>
                                     </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <ChatList
+                                    onSelectConversation={handleSelectConversation}
+                                    selectedUserId={selectedUserId ? `user_${selectedUserId}` : (selectedGroupId ? `group_${selectedGroupId}` : null)}
+                                    currentUserId={chinaId ?? null}
+                                />
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
+
+                {/* Vista: Chat Abierto */}
+                {view === 'chat' && (
+                    <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+                        {/* Card del Chat */}
+                        <Card className={`${mounted && theme === 'dark' ? 'bg-slate-800/70 dark:border-slate-700' : 'bg-white/80 border-slate-200'} backdrop-blur-sm shadow-lg`}>
+                            <CardHeader className={`px-2.5 py-2 border-b ${mounted && theme === 'dark' ? 'border-slate-700 bg-gradient-to-r from-slate-800 to-slate-700' : 'border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50'}`}>
+                                <div className="flex items-center gap-3">
+                                    {/* Botón Volver */}
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={handleBackToList}
+                                        className={`h-8 w-8 p-0 ${mounted && theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-blue-100'} transition-all`}
+                                    >
+                                        <ArrowLeft className="h-4 w-4" />
+                                    </Button>
+
+                                    {selectedGroupId ? (
+                                        <Avatar className="h-10 w-10">
+                                            <AvatarImage
+                                                src={selectedConversationAvatar || groups.find(g => g.id === selectedGroupId)?.avatar_url || ''}
+                                                alt={groups.find(g => g.id === selectedGroupId)?.name}
+                                            />
+                                            <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+                                                <Users className="h-5 w-5 text-white" />
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    ) : (
+                                        <div className="p-2 bg-blue-500 rounded-full">
+                                            <MessageSquare className="h-5 w-5 text-white" />
+                                        </div>
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                        <CardTitle className={`text-base font-semibold truncate ${mounted && theme === 'dark' ? 'text-white' : ''}`}>
+                                            {selectedGroupId ? (groups.find(g => g.id === selectedGroupId)?.name || selectedUserName) : selectedUserName}
+                                        </CardTitle>
+                                        <p className={`text-xs truncate ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
+                                            {isGroupChat ? t('chat.group.subtitle') : t('chat.direct.subtitle')}
+                                        </p>
+                                    </div>
+
+                                    {selectedGroupId && (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => setShowGroupInfo(true)}
+                                            className={`ml-2 ${mounted && theme === 'dark' ? 'hover:bg-slate-700 text-slate-300' : 'hover:bg-blue-100 text-slate-600'}`}
+                                        >
+                                            <Info className="h-5 w-5" />
+                                        </Button>
+                                    )}
                                 </div>
                             </CardHeader>
                             <CardContent className="p-0">
@@ -203,7 +270,8 @@ export default function ChinaChatPage() {
                                         messages={messages}
                                         currentUserId={chinaId || ''}
                                         isOtherUserTyping={isOtherUserTyping}
-                                        otherUserName={adminName}
+                                        otherUserName={selectedUserName}
+                                        typingUserName={typingUserName}
                                         loading={loading}
                                         onEditMessage={editMessage}
                                         onDeleteMessage={deleteMessage}
@@ -218,8 +286,8 @@ export default function ChinaChatPage() {
                             </CardContent>
                         </Card>
                     </div>
-                </div>
-            </main>
-        </div>
+                )}
+            </div>
+        </>
     );
 }
