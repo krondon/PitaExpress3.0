@@ -67,6 +67,123 @@
     background: transparent;
 }
 
+/* En pantallas con altura menor a 900px, reducir tamaños para que quepa todo */
+@media (max-height: 900px) {
+    .hero-section {
+        min-height: 100vh;
+        height: auto;
+        align-items: center;
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+        overflow-y: auto;
+    }
+
+    .stacking-section {
+        position: relative;
+        min-height: auto;
+    }
+
+    .login-card {
+        max-width: 320px;
+        padding: 20px;
+        transform: scale(0.95);
+        transform-origin: top center;
+    }
+
+    .login-card h2 {
+        font-size: 1.15rem;
+        margin-bottom: 0.15rem;
+    }
+
+    .login-card .subtitle {
+        font-size: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .auth-tabs-pl {
+        margin-bottom: 12px;
+        padding: 2px;
+    }
+
+    .auth-tab-pl {
+        padding: 6px 8px;
+        font-size: 11px;
+    }
+
+    .pl-form-label {
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .pl-form-input {
+        padding: 8px 10px;
+        font-size: 12px;
+        border-radius: 8px;
+    }
+
+    .btn-primary-pl {
+        padding: 8px 14px;
+        font-size: 12px;
+        border-radius: 8px;
+    }
+
+    .social-btn-pl {
+        padding: 6px;
+        font-size: 10px;
+        border-radius: 8px;
+    }
+
+    .separator-pl {
+        margin: 10px 0;
+        font-size: 9px;
+    }
+
+    .link-secondary-pl {
+        font-size: 11px;
+    }
+
+    .hero-title {
+        font-size: 28px;
+    }
+
+    .hero-subtitle {
+        font-size: 13px;
+        margin-bottom: 1rem !important;
+    }
+
+    .feature-benefit-pl {
+        gap: 10px;
+    }
+
+    .feature-benefit-pl h4 {
+        font-size: 13px;
+    }
+
+    .feature-benefit-pl p {
+        font-size: 11px;
+    }
+
+    .feature-benefit-icon-pl {
+        padding: 8px;
+    }
+
+    .logo-image-pl {
+        max-width: 200px !important;
+    }
+
+    .space-y-4>*+* {
+        margin-top: 0.75rem !important;
+    }
+
+    .mb-6 {
+        margin-bottom: 0.75rem !important;
+    }
+
+    .mb-8 {
+        margin-bottom: 1rem !important;
+    }
+}
+
 .hero-section.stacking-section {
     border-radius: 0;
     box-shadow: none;

@@ -19,8 +19,8 @@ export default function HeroSection() {
             <div className="container mx-auto px-4">
                 <div className="flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-24">
 
-                    {/* Left Column: Hero Text */}
-                    <div className="w-full lg:w-1/2 text-center lg:text-left max-w-xl order-2 lg:order-1">
+                    {/* Left Column: Hero Text - centered vertically */}
+                    <div className="w-full lg:w-1/2 text-center lg:text-left max-w-xl order-2 lg:order-1 lg:self-center">
                         <div className="mb-6">
                             <div style={{ padding: '10px 16px 6px', borderRadius: '12px' }}>
                                 <Image
@@ -59,8 +59,8 @@ export default function HeroSection() {
                         </div>
                     </div>
 
-                    {/* Right Column: Auth Card */}
-                    <div className="w-full lg:w-auto flex justify-center order-1 lg:order-2">
+                    {/* Right Column: Auth Card - stays at top */}
+                    <div className="w-full lg:w-auto flex justify-center order-1 lg:order-2 lg:self-start lg:pt-4">
                         {currentView === "auth" ? (
                             <PremiumLoginCard onNavigateToPasswordReset={navigateToPasswordReset} />
                         ) : (
