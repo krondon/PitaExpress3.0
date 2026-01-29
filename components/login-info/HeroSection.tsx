@@ -1,15 +1,19 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import PremiumLoginCard from "./PremiumLoginCard";
+import PremiumPasswordReset from "./PremiumPasswordReset";
 import { Shield, MapPin } from "lucide-react";
 
-type Props = {
-    onNavigateToPasswordReset: () => void;
-};
+type AuthView = "auth" | "password-reset";
 
-export default function HeroSection({ onNavigateToPasswordReset }: Props) {
+export default function HeroSection() {
+    const [currentView, setCurrentView] = useState<AuthView>("auth");
+
+    const navigateToPasswordReset = (): void => setCurrentView("password-reset");
+    const navigateToAuth = (): void => setCurrentView("auth");
+
     return (
         <section className="hero-section stacking-section">
             <div className="container mx-auto px-4">
@@ -55,9 +59,13 @@ export default function HeroSection({ onNavigateToPasswordReset }: Props) {
                         </div>
                     </div>
 
-                    {/* Right Column: Login Card */}
+                    {/* Right Column: Auth Card */}
                     <div className="w-full lg:w-auto flex justify-center order-1 lg:order-2">
-                        <PremiumLoginCard onNavigateToPasswordReset={onNavigateToPasswordReset} />
+                        {currentView === "auth" ? (
+                            <PremiumLoginCard onNavigateToPasswordReset={navigateToPasswordReset} />
+                        ) : (
+                            <PremiumPasswordReset onNavigateToAuth={navigateToAuth} />
+                        )}
                     </div>
 
                 </div>

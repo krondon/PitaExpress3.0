@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import PasswordReset from "../PasswordReset/PasswordReset";
+import PremiumPasswordReset from "@/components/login-info/PremiumPasswordReset";
+import VideoBackground from "@/components/login-info/VideoBackground";
 import LanguageSwitcher from "@/components/ui/LanguageSwitcher";
-import { STEPS } from "@/lib/constants/auth";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function PasswordResetRedirectPage() {
@@ -44,15 +44,19 @@ export default function PasswordResetRedirectPage() {
 
   return (
     <main>
-      <div className="password-reset-container">
-        <PasswordReset
-          onNavigateToAuth={() => {
-            window.location.replace("/login-register");
-          }}
-          initialStep={STEPS.NEW_PASSWORD}
-        />
+      <div className="hero-section">
+        <VideoBackground />
+        <div className="hero-overlay"></div>
+        <div className="hero-content">
+          <PremiumPasswordReset
+            onNavigateToAuth={() => {
+              window.location.replace("/login-register");
+            }}
+            initialStep={2}
+          />
+        </div>
       </div>
-  <LanguageSwitcher />
+      <LanguageSwitcher />
     </main>
   );
 }
