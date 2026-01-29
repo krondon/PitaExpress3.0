@@ -34,7 +34,13 @@
       "passwordMustBeNormal": "密码至少需要达到‘一般’强度才能注册。",
       "passwordMustBeVeryStrong": "密码需要达到‘非常强’才能继续。",
       "animationLoadError": "无法加载动画",
-      "registerAnimationLoadError": "无法加载注册动画"
+      "registerAnimationLoadError": "无法加载注册动画",
+      "orContinueWith": "或继续使用",
+      "noAccount": "还没有账户？",
+      "createAccount": "创建账户",
+      "alreadyHaveAccount": "已有账户？",
+      "nameRequired": "姓名是必填项",
+      "emailRequired": "电子邮件是必填项"
     },
     "login": {
       "title": "登录",
@@ -87,6 +93,17 @@
       "alts": {
         "securityShield": "安全盾"
       },
+      "linkSent": {
+        "title": "链接已发送！",
+        "subtitle": "我们已发送重置链接至：",
+        "checkInbox": "请查看您的收件箱并按照说明操作。如果找不到，请检查垃圾邮件文件夹。",
+        "backToLogin": "返回登录",
+        "resend": "重新发送链接",
+        "resending": "正在重新发送..."
+      },
+      "sending": "发送中...",
+      "resetting": "正在重置...",
+      "sendError": "发送邮件时出错",
       "passwordsNoMatchAlert": "密码不匹配。",
       "resetSuccess": "密码重置成功！将跳转到登录页面。",
       "resetError": "重置密码时发生错误。",
