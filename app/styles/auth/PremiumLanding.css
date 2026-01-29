@@ -619,34 +619,149 @@
 /* =========================================
    RESPONSIVE
    ========================================= */
-@media (max-width: 1024px) {
-    .hero-title {
-        font-size: 36px;
-    }
 
-    .section-title-pl {
-        font-size: 28px;
+/* Pantallas menores a 1400px */
+@media (max-width: 1400px) {
+    .hero-section .container {
+        padding-left: 2rem;
+        padding-right: 2rem;
     }
 }
 
-@media (max-width: 768px) {
+/* Pantallas menores a 1200px (laptops pequeñas) */
+@media (max-width: 1200px) {
+    .hero-section {
+        padding: 1.5rem;
+    }
+
+    .hero-title {
+        font-size: 38px;
+    }
+
+    .hero-subtitle {
+        font-size: 16px;
+    }
+
+    .login-card {
+        max-width: 360px;
+        padding: 28px;
+    }
+
+    .feature-benefit-pl h4 {
+        font-size: 15px;
+    }
+
+    .feature-benefit-pl p {
+        font-size: 13px;
+    }
+}
+
+/* Pantallas menores a 1024px (tablets landscape) */
+@media (max-width: 1024px) {
     .hero-section {
         padding: 1rem;
     }
 
     .hero-title {
+        font-size: 32px;
+    }
+
+    .hero-subtitle {
+        font-size: 15px;
+    }
+
+    .login-card {
+        max-width: 340px;
+        padding: 24px;
+    }
+
+    .login-card h2 {
+        font-size: 1.3rem;
+    }
+
+    .login-card .subtitle {
+        font-size: 0.8rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .section-title-pl {
         font-size: 28px;
+    }
+
+    .auth-tab-pl {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .pl-form-input {
+        padding: 12px;
+        font-size: 13px;
+    }
+
+    .btn-primary-pl {
+        padding: 12px 20px;
+        font-size: 13px;
+    }
+
+    .social-btn-pl {
+        padding: 8px;
+        font-size: 11px;
+    }
+}
+
+/* Pantallas menores a 900px - cambiar a layout vertical */
+@media (max-width: 900px) {
+    .hero-section .flex {
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .hero-title {
+        font-size: 28px;
+    }
+
+    .login-card {
+        max-width: 400px;
+        width: 100%;
+    }
+
+    .feature-benefit-pl {
+        justify-content: center;
+    }
+
+    .logo-image-pl {
+        max-width: 250px !important;
+        margin: 0 auto;
+    }
+}
+
+/* Tablets portrait y móviles grandes */
+@media (max-width: 768px) {
+    .hero-section {
+        padding: 1rem;
+        min-height: auto;
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+
+    .hero-title {
+        font-size: 24px;
         text-align: center;
     }
 
     .hero-subtitle {
-        font-size: 16px;
+        font-size: 14px;
         text-align: center;
     }
 
     .login-card {
-        padding: 24px;
+        padding: 20px;
         max-width: 100%;
+        border-radius: 20px;
+    }
+
+    .login-card h2 {
+        font-size: 1.2rem;
     }
 
     .section-pl {
@@ -659,5 +774,52 @@
 
     .feature-card-pl {
         padding: 24px;
+    }
+
+    .scroll-indicator-pl {
+        display: none;
+    }
+
+    .feature-benefit-pl {
+        flex-direction: column;
+        text-align: center;
+        align-items: center;
+    }
+}
+
+/* Móviles */
+@media (max-width: 480px) {
+    .hero-section {
+        padding: 0.75rem;
+    }
+
+    .login-card {
+        padding: 16px;
+        border-radius: 16px;
+    }
+
+    .auth-tabs-pl {
+        margin-bottom: 16px;
+    }
+
+    .auth-tab-pl {
+        padding: 10px;
+        font-size: 12px;
+    }
+
+    .pl-form-input {
+        padding: 10px;
+    }
+
+    .btn-primary-pl {
+        padding: 12px 16px;
+    }
+
+    .separator-pl {
+        margin: 16px 0;
+    }
+
+    .logo-image-pl {
+        max-width: 200px !important;
     }
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import { Eye, EyeOff, ArrowLeft, Mail, Check } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, Mail } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { MAX_EMAIL, MAX_PASSWORD } from "@/lib/constants/validation";
 
@@ -12,6 +12,8 @@ type Props = {
 };
 
 type Step = "email" | "success" | "new-password";
+
+const COOLDOWN_SECONDS = 60;
 
 export default function PremiumPasswordReset({ onNavigateToAuth, initialStep }: Props) {
     const { t } = useTranslation();
@@ -26,6 +28,15 @@ export default function PremiumPasswordReset({ onNavigateToAuth, initialStep }: 
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
     const [passwordStrength, setPasswordStrength] = useState<"none" | "low" | "medium" | "strong" | "very-strong">("none");
+    const [cooldown, setCooldown] = useState(0);
+
+    // Contador de cooldown
+    useEffect(() => {
+        if (cooldown > 0) {
+            const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [cooldown]);
 
     const validateEmail = (value: string) => {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -96,9 +107,10 @@ export default function PremiumPasswordReset({ onNavigateToAuth, initialStep }: 
             });
             if (error) throw error;
             setStep("success");
+            setCooldown(COOLDOWN_SECONDS);
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : String(err);
-            setErrorMsg(message || "Error al enviar el email");
+            setErrorMsg(message || t('auth.passwordReset.sendError'));
         } finally {
             setLoading(false);
         }
@@ -138,7 +150,7 @@ export default function PremiumPasswordReset({ onNavigateToAuth, initialStep }: 
 
     // Reenviar email
     const handleResend = async () => {
-        if (!email) return;
+        if (!email || cooldown > 0) return;
         setLoading(true);
         try {
             const supabase = getSupabaseBrowserClient();
@@ -147,6 +159,7 @@ export default function PremiumPasswordReset({ onNavigateToAuth, initialStep }: 
                     ? `${process.env.NEXT_PUBLIC_SITE_URL}/login-register/reset`
                     : undefined,
             });
+            setCooldown(COOLDOWN_SECONDS);
         } catch {
             // silencioso
         } finally {
@@ -213,7 +226,7 @@ export default function PremiumPasswordReset({ onNavigateToAuth, initialStep }: 
                         disabled={loading || !email}
                     >
                         {loading && <span className="spinner-pl"></span>}
-                        {loading ? "Enviando..." : t('auth.passwordReset.buttons.continue')}
+                        {loading ? t('auth.passwordReset.sending') : t('auth.passwordReset.buttons.continue')}
                     </button>
                 </form>
             )}
@@ -232,9 +245,9 @@ export default function PremiumPasswordReset({ onNavigateToAuth, initialStep }: 
                     }}>
                         <Mail size={28} color="white" />
                     </div>
-                    <h2>¡Enlace Enviado!</h2>
+                    <h2>{t('auth.passwordReset.linkSent.title')}</h2>
                     <p className="subtitle" style={{ marginBottom: '16px' }}>
-                        Hemos enviado un enlace de restablecimiento a:
+                        {t('auth.passwordReset.linkSent.subtitle')}
                     </p>
                     <p style={{
                         fontWeight: '600',
@@ -249,7 +262,7 @@ export default function PremiumPasswordReset({ onNavigateToAuth, initialStep }: 
                         color: 'var(--pl-gray-text)',
                         marginBottom: '32px'
                     }}>
-                        Revisa tu bandeja de entrada y sigue las instrucciones. Si no lo ves, revisa tu carpeta de spam.
+                        {t('auth.passwordReset.linkSent.checkInbox')}
                     </p>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -258,16 +271,21 @@ export default function PremiumPasswordReset({ onNavigateToAuth, initialStep }: 
                             className="btn-primary-pl"
                             onClick={onNavigateToAuth}
                         >
-                            Volver al inicio de sesión
+                            {t('auth.passwordReset.linkSent.backToLogin')}
                         </button>
                         <button
                             type="button"
                             className="social-btn-pl"
                             onClick={handleResend}
-                            disabled={loading}
+                            disabled={loading || cooldown > 0}
                             style={{ justifyContent: 'center' }}
                         >
-                            {loading ? "Reenviando..." : "Reenviar enlace"}
+                            {loading
+                                ? t('auth.passwordReset.linkSent.resending')
+                                : cooldown > 0
+                                    ? `${t('auth.passwordReset.linkSent.resend')} (${cooldown}s)`
+                                    : t('auth.passwordReset.linkSent.resend')
+                            }
                         </button>
                     </div>
                 </div>
@@ -368,7 +386,7 @@ export default function PremiumPasswordReset({ onNavigateToAuth, initialStep }: 
                         disabled={loading || !newPassword || !confirmPassword || newPassword !== confirmPassword}
                     >
                         {loading && <span className="spinner-pl"></span>}
-                        {loading ? "Restableciendo..." : t('auth.passwordReset.buttons.reset')}
+                        {loading ? t('auth.passwordReset.resetting') : t('auth.passwordReset.buttons.reset')}
                     </button>
                 </form>
             )}

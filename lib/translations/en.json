@@ -90,6 +90,17 @@
       "alts": {
         "securityShield": "Security shield"
       },
+      "linkSent": {
+        "title": "Link Sent!",
+        "subtitle": "We've sent a reset link to:",
+        "checkInbox": "Check your inbox and follow the instructions. If you don't see it, check your spam folder.",
+        "backToLogin": "Back to login",
+        "resend": "Resend link",
+        "resending": "Resending..."
+      },
+      "sending": "Sending...",
+      "resetting": "Resetting...",
+      "sendError": "Error sending email",
       "passwordsNoMatchAlert": "Passwords do not match.",
       "resetSuccess": "Password reset successfully! You will be redirected to login.",
       "resetError": "An error occurred while resetting the password.",

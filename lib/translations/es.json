@@ -91,6 +91,17 @@
       "alts": {
         "securityShield": "Escudo de seguridad"
       },
+      "linkSent": {
+        "title": "¡Enlace Enviado!",
+        "subtitle": "Hemos enviado un enlace de restablecimiento a:",
+        "checkInbox": "Revisa tu bandeja de entrada y sigue las instrucciones. Si no lo ves, revisa tu carpeta de spam.",
+        "backToLogin": "Volver al inicio de sesión",
+        "resend": "Reenviar enlace",
+        "resending": "Reenviando..."
+      },
+      "sending": "Enviando...",
+      "resetting": "Restableciendo...",
+      "sendError": "Error al enviar el email",
       "passwordsNoMatchAlert": "Las contraseñas no coinciden.",
       "resetSuccess": "¡Contraseña restablecida exitosamente! Serás redirigido al inicio de sesión.",
       "resetError": "Ocurrió un error al restablecer la contraseña.",
