@@ -73,8 +73,8 @@
         min-height: 100vh;
         height: auto;
         align-items: center;
-        padding-top: 0.5rem;
-        padding-bottom: 0.5rem;
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
         overflow-y: auto;
     }
 
@@ -84,103 +84,126 @@
     }
 
     .login-card {
-        max-width: 320px;
-        padding: 20px;
-        transform: scale(0.95);
+        max-width: 300px;
+        padding: 16px;
+        transform: scale(0.9);
         transform-origin: top center;
     }
 
     .login-card h2 {
-        font-size: 1.15rem;
-        margin-bottom: 0.15rem;
+        font-size: 1.1rem;
+        margin-bottom: 0.1rem;
     }
 
     .login-card .subtitle {
-        font-size: 0.75rem;
-        margin-bottom: 0.75rem;
+        font-size: 0.7rem;
+        margin-bottom: 0.5rem;
     }
 
     .auth-tabs-pl {
-        margin-bottom: 12px;
+        margin-bottom: 10px;
         padding: 2px;
     }
 
     .auth-tab-pl {
-        padding: 6px 8px;
-        font-size: 11px;
+        padding: 5px 6px;
+        font-size: 10px;
     }
 
     .pl-form-label {
-        font-size: 12px;
-        margin-bottom: 4px;
+        font-size: 11px;
+        margin-bottom: 3px;
     }
 
     .pl-form-input {
-        padding: 8px 10px;
-        font-size: 12px;
-        border-radius: 8px;
+        padding: 6px 8px;
+        font-size: 11px;
+        border-radius: 6px;
+    }
+
+    .password-container-pl .pl-form-input {
+        padding-right: 32px;
+    }
+
+    .password-toggle-pl {
+        right: 8px;
+    }
+
+    .password-toggle-pl svg {
+        width: 14px;
+        height: 14px;
     }
 
     .btn-primary-pl {
-        padding: 8px 14px;
-        font-size: 12px;
-        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 11px;
+        border-radius: 6px;
     }
 
     .social-btn-pl {
-        padding: 6px;
-        font-size: 10px;
-        border-radius: 8px;
+        padding: 5px;
+        font-size: 9px;
+        border-radius: 6px;
     }
 
     .separator-pl {
-        margin: 10px 0;
-        font-size: 9px;
+        margin: 8px 0;
+        font-size: 8px;
     }
 
     .link-secondary-pl {
-        font-size: 11px;
+        font-size: 10px;
     }
 
     .hero-title {
-        font-size: 28px;
+        font-size: 26px;
     }
 
     .hero-subtitle {
-        font-size: 13px;
-        margin-bottom: 1rem !important;
-    }
-
-    .feature-benefit-pl {
-        gap: 10px;
-    }
-
-    .feature-benefit-pl h4 {
-        font-size: 13px;
-    }
-
-    .feature-benefit-pl p {
-        font-size: 11px;
-    }
-
-    .feature-benefit-icon-pl {
-        padding: 8px;
-    }
-
-    .logo-image-pl {
-        max-width: 200px !important;
-    }
-
-    .space-y-4>*+* {
-        margin-top: 0.75rem !important;
-    }
-
-    .mb-6 {
+        font-size: 12px;
         margin-bottom: 0.75rem !important;
     }
 
+    .feature-benefit-pl {
+        gap: 8px;
+    }
+
+    .feature-benefit-pl h4 {
+        font-size: 12px;
+    }
+
+    .feature-benefit-pl p {
+        font-size: 10px;
+    }
+
+    .feature-benefit-icon-pl {
+        padding: 6px;
+    }
+
+    .feature-benefit-icon-pl svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .logo-image-pl {
+        max-width: 180px !important;
+    }
+
+    .space-y-4>*+* {
+        margin-top: 0.5rem !important;
+    }
+
+    .mb-6 {
+        margin-bottom: 0.5rem !important;
+    }
+
     .mb-8 {
-        margin-bottom: 1rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+
+    /* Espaciado más compacto entre campos del formulario */
+    .login-card form>div {
+        margin-bottom: 8px !important;
     }
 }
 
