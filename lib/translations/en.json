@@ -33,7 +33,13 @@
       "passwordMustBeNormal": "Password must be at least 'Normal' to register.",
       "passwordMustBeVeryStrong": "Password must be 'Very Strong' to continue.",
       "animationLoadError": "Could not load animation",
-      "registerAnimationLoadError": "Could not load register animation"
+      "registerAnimationLoadError": "Could not load register animation",
+      "orContinueWith": "or continue with",
+      "noAccount": "Don't have an account?",
+      "createAccount": "Create account",
+      "alreadyHaveAccount": "Already have an account?",
+      "nameRequired": "Name is required",
+      "emailRequired": "Email is required"
     },
     "login": {
       "title": "Login",

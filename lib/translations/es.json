@@ -34,7 +34,13 @@
       "passwordMustBeNormal": "La contraseña debe ser al menos \"Normal\" para registrarse.",
       "passwordMustBeVeryStrong": "La contraseña debe ser \"Muy Fuerte\" para continuar.",
       "animationLoadError": "No se pudo cargar la animación",
-      "registerAnimationLoadError": "No se pudo cargar la animación de registro"
+      "registerAnimationLoadError": "No se pudo cargar la animación de registro",
+      "orContinueWith": "o continúa con",
+      "noAccount": "¿No tienes cuenta?",
+      "createAccount": "Crear cuenta",
+      "alreadyHaveAccount": "¿Ya tienes cuenta?",
+      "nameRequired": "El nombre es requerido",
+      "emailRequired": "El correo es requerido"
     },
     "login": {
       "title": "Iniciar Sesión",

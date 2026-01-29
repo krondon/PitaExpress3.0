@@ -34,7 +34,13 @@
       "passwordMustBeNormal": "密码至少需要达到‘一般’强度才能注册。",
       "passwordMustBeVeryStrong": "密码需要达到‘非常强’才能继续。",
       "animationLoadError": "无法加载动画",
-      "registerAnimationLoadError": "无法加载注册动画"
+      "registerAnimationLoadError": "无法加载注册动画",
+      "orContinueWith": "或继续使用",
+      "noAccount": "还没有账户？",
+      "createAccount": "创建账户",
+      "alreadyHaveAccount": "已有账户？",
+      "nameRequired": "姓名是必填项",
+      "emailRequired": "电子邮件是必填项"
     },
     "login": {
       "title": "登录",
