@@ -873,16 +873,17 @@
 
     .login-card {
         max-width: 340px;
-        padding: 24px;
+        padding: 1.25rem;
     }
 
     .login-card h2 {
-        font-size: 1.3rem;
+        font-size: 1.2rem;
+        margin-bottom: 0.25rem;
     }
 
     .login-card .subtitle {
-        font-size: 0.8rem;
-        margin-bottom: 1.5rem;
+        font-size: 0.75rem;
+        margin-bottom: 0.75rem;
     }
 
     .section-title-pl {
@@ -890,22 +891,32 @@
     }
 
     .auth-tab-pl {
-        padding: 10px 12px;
-        font-size: 13px;
+        padding: 8px 10px;
+        font-size: 12px;
     }
 
     .pl-form-input {
-        padding: 12px;
+        padding: 10px;
         font-size: 13px;
     }
 
+    .pl-form-label {
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
     .btn-primary-pl {
-        padding: 12px 20px;
+        padding: 10px 16px;
         font-size: 13px;
     }
 
     .social-btn-pl {
-        padding: 8px;
+        padding: 6px;
+        font-size: 10px;
+    }
+
+    .separator-pl {
+        margin: 12px 0;
         font-size: 11px;
     }
 }
@@ -914,7 +925,7 @@
 @media (max-width: 900px) {
     .hero-section .flex {
         flex-direction: column;
-        gap: 2rem;
+        gap: 1rem;
     }
 
     .hero-title {
@@ -946,8 +957,9 @@
         overflow: hidden !important;
         display: flex !important;
         align-items: center !important;
-        padding-top: 20px;
-        padding-bottom: 20px;
+        justify-content: center !important;
+        padding-top: 10px;
+        padding-bottom: 10px;
     }
 
     .section-pl {
