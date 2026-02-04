@@ -153,82 +153,81 @@ export default function LandingSecciones() {
                 </div>
             </section>
 
-            {/* Ethics Section */}
-            <section className="section-pl section-dark-pl stacking-section">
-                <div className="container mx-auto px-4">
-                    <div className="text-center mb-16">
+            {/* Last Section Group (Ethics + Footer) */}
+            <div className="stacking-section last-section-group-pl section-dark-pl">
+                <section className="container mx-auto px-4 py-8 md:py-12 flex flex-col flex-1 justify-center">
+                    <div className="text-center mb-8 md:mb-12">
                         <h2 className="section-title-pl">Nuestro Compromiso Ético</h2>
                         <p className="section-subtitle-pl">Como parte de nuestro Código de Ética, garantizamos:</p>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 max-w-4xl mx-auto">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 max-w-4xl mx-auto mb-12">
                         <div className="text-center animate-on-scroll-pl animate-delay-1">
-                            <div className="ethics-circle-pl">
+                            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <Users size={32} color="white" />
                             </div>
-                            <h3 className="text-lg font-bold mb-2">Respeto</h3>
+                            <h3 className="text-lg font-bold mb-2 text-white">Respeto</h3>
                             <p className="text-white/70 text-sm">Por tu negocio y tus necesidades</p>
                         </div>
 
                         <div className="text-center animate-on-scroll-pl animate-delay-2">
-                            <div className="ethics-circle-pl">
+                            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <BadgeCheck size={32} color="white" />
                             </div>
-                            <h3 className="text-lg font-bold mb-2">Integridad</h3>
+                            <h3 className="text-lg font-bold mb-2 text-white">Integridad</h3>
                             <p className="text-white/70 text-sm">En cada transacción y comunicación</p>
                         </div>
 
                         <div className="text-center col-span-2 md:col-span-1 animate-on-scroll-pl animate-delay-3">
-                            <div className="ethics-circle-pl">
+                            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
                                 <ShieldCheck size={32} color="white" />
                             </div>
-                            <h3 className="text-lg font-bold mb-2">Confianza</h3>
+                            <h3 className="text-lg font-bold mb-2 text-white">Confianza</h3>
                             <p className="text-white/70 text-sm">A través del cumplimiento de compromisos</p>
                         </div>
                     </div>
-                </div>
-            </section>
+                </section>
 
-            {/* Footer */}
-            <footer className="footer-pl">
-                <div className="container mx-auto px-4">
-                    <div className="text-center mb-8">
-                        <div className="mb-4">
-                            <div style={{ background: 'rgba(255,255,255,0.92)', padding: '8px 14px 4px', borderRadius: '10px', display: 'inline-block' }}>
-                                <Image
-                                    src="/images/LOGO PITA LOGISTICA.png"
-                                    alt="Pita Logística Internacional"
-                                    width={200}
-                                    height={67}
-                                    className="logo-image-pl"
-                                    style={{ maxWidth: '200px' }}
-                                />
+                <footer className="footer-pl w-full">
+                    <div className="container mx-auto px-4">
+                        <div className="text-center mb-6">
+                            <div className="mb-4">
+                                <div style={{ background: 'rgba(255,255,255,0.92)', padding: '6px 12px 3px', borderRadius: '10px', display: 'inline-block' }}>
+                                    <Image
+                                        src="/images/LOGO PITA LOGISTICA.png"
+                                        alt="Pita Logística Internacional"
+                                        width={160}
+                                        height={53}
+                                        className="logo-image-pl"
+                                        style={{ maxWidth: '160px' }}
+                                    />
+                                </div>
                             </div>
+                            <p className="text-white/70 max-w-md mx-auto text-xs md:text-sm">
+                                El puente que conecta personas y organizaciones con soluciones claras e innovadoras.
+                            </p>
                         </div>
-                        <p className="text-white/70 max-w-xl mx-auto">
-                            El puente que conecta personas y organizaciones con soluciones claras e innovadoras.
-                        </p>
-                    </div>
 
-                    <div className="flex flex-wrap justify-center gap-4 md:gap-8 mb-8 text-sm">
-                        <a href="#" className="flex items-center gap-2">
-                            <span>🔗</span> Política de Privacidad
-                        </a>
-                        <span className="text-white/30 hidden md:inline">|</span>
-                        <a href="#" className="flex items-center gap-2">
-                            <span>🔗</span> Términos de Servicio
-                        </a>
-                        <span className="text-white/30 hidden md:inline">|</span>
-                        <a href="#" className="flex items-center gap-2">
-                            <span>🔗</span> Código de Ética Completo
-                        </a>
-                    </div>
+                        <div className="flex flex-wrap justify-center gap-3 md:gap-6 mb-6 text-xs text-white/80">
+                            <a href="#" className="flex items-center gap-1 hover:text-white transition-colors">
+                                Política de Privacidad
+                            </a>
+                            <span className="text-white/20">|</span>
+                            <a href="#" className="flex items-center gap-1 hover:text-white transition-colors">
+                                Términos de Servicio
+                            </a>
+                            <span className="text-white/20">|</span>
+                            <a href="#" className="flex items-center gap-1 hover:text-white transition-colors">
+                                Código de Ética
+                            </a>
+                        </div>
 
-                    <div className="text-center text-white/50 text-sm border-t border-white/10 pt-6">
-                        © 2024 Pita Logística, C.A. - Todos los derechos reservados
+                        <div className="text-center text-white/40 text-[10px] md:text-xs border-t border-white/10 pt-4">
+                            © 2024 Pita Logística, C.A. - Todos los derechos reservados
+                        </div>
                     </div>
-                </div>
-            </footer>
+                </footer>
+            </div>
         </>
     );
 }

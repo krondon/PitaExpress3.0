@@ -490,6 +490,15 @@
     box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
 }
 
+/* Modificador para la última sección que incluye el footer */
+.stacking-section.last-section-group-pl {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    padding-bottom: 0 !important;
+    overflow: hidden !important;
+}
+
 .stacking-section:first-child {
     border-radius: 0;
     box-shadow: none;
@@ -613,9 +622,9 @@
 .footer-pl {
     background: var(--pl-primary);
     color: white;
-    padding: 40px 0 20px;
+    padding: 20px 0;
     position: relative;
-    z-index: 10;
+    z-index: 2;
 }
 
 .footer-pl a {
