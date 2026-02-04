@@ -5,11 +5,13 @@ import Image from "next/image";
 import PremiumLoginCard from "./PremiumLoginCard";
 import PremiumPasswordReset from "./PremiumPasswordReset";
 import { Shield, MapPin } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 type AuthView = "auth" | "password-reset";
 
 export default function HeroSection() {
     const [currentView, setCurrentView] = useState<AuthView>("auth");
+    const { t } = useTranslation();
 
     const navigateToPasswordReset = (): void => setCurrentView("password-reset");
     const navigateToAuth = (): void => setCurrentView("auth");
@@ -36,16 +38,16 @@ export default function HeroSection() {
                                 </div>
                             </div>
                         </div>
-                        <h1 className="hero-title mb-3 md:mb-6 text-xl md:text-3xl lg:text-5xl">El puente que conecta tus ideas con soluciones reales.</h1>
-                        <p className="hero-subtitle mb-4 md:mb-8 text-sm md:text-base opacity-95">Importaciones desde China a Venezuela con transparencia, compromiso y adaptabilidad.</p>
+                        <h1 className="hero-title mb-3 md:mb-6 text-xl md:text-3xl lg:text-5xl">{t('loginInfo.hero.title')}</h1>
+                        <p className="hero-subtitle mb-4 md:mb-8 text-sm md:text-base opacity-95">{t('loginInfo.hero.subtitle')}</p>
                         <div className="hero-benefits-container flex-col space-y-4 mt-6 items-center lg:items-start">
                             <div className="flex items-start gap-4">
                                 <div className="p-3 bg-white/20 backdrop-blur rounded-lg flex-shrink-0">
                                     <Shield size={24} color="white" />
                                 </div>
                                 <div>
-                                    <h4 className="font-bold text-white">Proveedores Verificados</h4>
-                                    <p className="text-sm text-white/70">Red de proveedores confiables en China.</p>
+                                    <h4 className="font-bold text-white">{t('loginInfo.hero.benefits.verifiedSuppliers.title')}</h4>
+                                    <p className="text-sm text-white/70">{t('loginInfo.hero.benefits.verifiedSuppliers.description')}</p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-4">
@@ -53,8 +55,8 @@ export default function HeroSection() {
                                     <MapPin size={24} color="white" />
                                 </div>
                                 <div>
-                                    <h4 className="font-bold text-white">Seguimiento Total</h4>
-                                    <p className="text-sm text-white/70">Monitorea tu carga en tiempo real.</p>
+                                    <h4 className="font-bold text-white">{t('loginInfo.hero.benefits.totalTracking.title')}</h4>
+                                    <p className="text-sm text-white/70">{t('loginInfo.hero.benefits.totalTracking.description')}</p>
                                 </div>
                             </div>
                         </div>

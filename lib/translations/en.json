@@ -111,66 +111,90 @@
     }
   },
   "loginInfo": {
+    "hero": {
+      "title": "The bridge that connects your ideas with real solutions.",
+      "subtitle": "Imports from China to Venezuela with transparency, commitment and adaptability.",
+      "benefits": {
+        "verifiedSuppliers": {
+          "title": "Verified Suppliers",
+          "description": "Network of reliable suppliers in China."
+        },
+        "totalTracking": {
+          "title": "Total Tracking",
+          "description": "Monitor your cargo in real time."
+        }
+      }
+    },
     "portalFeatures": {
       "title": "What can you do on our portal?",
+      "subtitle": "Everything you need for your imports in one place",
       "features": {
         "quotes": {
           "title": "Request Quotes",
-          "description": "Get competitive prices for your imports"
+          "description": "Get competitive prices for your imports quickly and easily."
         },
         "buy": {
           "title": "Buy Directly",
-          "description": "Select products from verified suppliers"
+          "description": "Select products from verified suppliers with total confidence."
         },
         "tracking": {
           "title": "Real-time Tracking",
-          "description": "Monitor your merchandise from China to Venezuela"
+          "description": "Monitor your merchandise from China to Venezuela step by step."
         },
         "payments": {
           "title": "Secure Payments",
-          "description": "Multiple payment methods adapted to Venezuela"
+          "description": "Multiple payment methods adapted to Venezuela for your convenience."
         },
         "support": {
           "title": "Personalized Support",
-          "description": "Advice at every step of the process"
+          "description": "Expert advice at every step of the import process."
         }
       }
     },
     "servicePhilosophy": {
       "title": "Our Service Philosophy",
-      "slogan": "We Analyze Possibilities. We Generate Solutions. We Build Opportunities.",
+      "slogan": "\"We Analyze Possibilities. We Generate Solutions. We Build Opportunities.\"",
       "intro": "At Pita Logística we connect people and organizations with clear solutions, guided by our fundamental values:",
       "values": {
         "transparency": {
           "title": "Transparency",
-          "description": "Clear communication at every stage"
+          "description": "Clear communication at every stage of the process."
         },
         "commitment": {
           "title": "Commitment",
-          "description": "With you, your orders and your objectives"
+          "description": "With you, your orders and your business objectives."
         },
         "adaptability": {
           "title": "Adaptability",
-          "description": "Flexible solutions to your specific needs"
+          "description": "Flexible solutions to your specific needs."
         }
       }
     },
     "ethicalCommitment": {
       "title": "Our Ethical Commitment",
-      "intro": "As part of our **Code of Ethics**, we guarantee:",
+      "intro": "As part of our Code of Ethics, we guarantee:",
       "guarantees": {
-        "respect": "Respect for your business and your needs",
-        "integrity": "Integrity in every transaction and communication",
-        "trust": "Trust through the fulfillment of commitments"
+        "respect": {
+          "title": "Respect",
+          "description": "For your business and your needs"
+        },
+        "integrity": {
+          "title": "Integrity",
+          "description": "In every transaction and communication"
+        },
+        "trust": {
+          "title": "Trust",
+          "description": "Through the fulfillment of commitments"
+        }
       }
     },
     "footer": {
-      "companyName": "Pita Logística, C.A.",
-      "tagline": "The bridge that connects people and organizations with clear and innovative solutions",
+      "companyName": "Pita Logística Internacional",
+      "tagline": "The bridge that connects people and organizations with clear and innovative solutions.",
       "links": {
         "privacy": "Privacy Policy",
         "terms": "Terms of Service",
-        "ethics": "Full Code of Ethics"
+        "ethics": "Code of Ethics"
       },
       "copyright": "© 2023 Pita Logística, C.A. - All rights reserved"
     }

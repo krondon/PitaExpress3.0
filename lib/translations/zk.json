@@ -114,66 +114,90 @@
     }
   },
   "loginInfo": {
+    "hero": {
+      "title": "连接您创意与实际解决方案的桥梁。",
+      "subtitle": "从中国到委内瑞拉的进口服务，以透明、承诺和灵活性为核心。",
+      "benefits": {
+        "verifiedSuppliers": {
+          "title": "认证供应商",
+          "description": "中国可信赖的供应商网络。"
+        },
+        "totalTracking": {
+          "title": "全程追踪",
+          "description": "实时监控您的货物。"
+        }
+      }
+    },
     "portalFeatures": {
       "title": "您可以在我们的门户网站上做什么？",
+      "subtitle": "一站式满足您所有进口需求",
       "features": {
         "quotes": {
           "title": "请求报价",
-          "description": "为您的进口获得有竞争力的价格"
+          "description": "快速便捷地获取有竞争力的进口价格。"
         },
         "buy": {
           "title": "直接购买",
-          "description": "从经过验证的供应商中选择产品"
+          "description": "放心选购认证供应商的产品。"
         },
         "tracking": {
           "title": "实时跟踪",
-          "description": "监控您的商品从中国到委内瑞拉"
+          "description": "全程监控您的货物从中国到委内瑞拉。"
         },
         "payments": {
           "title": "安全支付",
-          "description": "适应委内瑞拉的多种支付方式"
+          "description": "多种支付方式，为您提供便利。"
         },
         "support": {
           "title": "个性化支持",
-          "description": "在流程的每一步提供建议"
+          "description": "进口过程每一步都有专家指导。"
         }
       }
     },
     "servicePhilosophy": {
       "title": "我们的服务理念",
-      "slogan": "我们分析可能性。我们产生解决方案。我们创造机会。",
-      "intro": "在 Pita Logística，我们以我们的基本价值观为指导，将人员和组织与清晰的解决方案联系起来：",
+      "slogan": "\"分析可能性。创造解决方案。构建机遇。\"",
+      "intro": "在 Pita Logística，我们以核心价值观为指导，为个人和组织提供清晰的解决方案：",
       "values": {
         "transparency": {
           "title": "透明度",
-          "description": "在每个阶段进行清晰的沟通"
+          "description": "在每个流程阶段进行清晰沟通。"
         },
         "commitment": {
           "title": "承诺",
-          "description": "与您、您的订单和您的目标同在"
+          "description": "与您、您的订单和您的商业目标同在。"
         },
         "adaptability": {
           "title": "适应性",
-          "description": "针对您的特定需求的灵活解决方案"
+          "description": "针对您的特定需求提供灵活解决方案。"
         }
       }
     },
     "ethicalCommitment": {
       "title": "我们的道德承诺",
-      "intro": "作为我们**道德准则**的一部分，我们保证：",
+      "intro": "作为我们道德准则的一部分，我们保证：",
       "guarantees": {
-        "respect": "尊重您的业务和需求",
-        "integrity": "在每次交易和沟通中保持诚信",
-        "trust": "通过履行承诺建立信任"
+        "respect": {
+          "title": "尊重",
+          "description": "尊重您的业务和需求"
+        },
+        "integrity": {
+          "title": "诚信",
+          "description": "在每次交易和沟通中保持诚信"
+        },
+        "trust": {
+          "title": "信任",
+          "description": "通过履行承诺建立信任"
+        }
       }
     },
     "footer": {
-      "companyName": "Pita Logística, C.A.",
-      "tagline": "连接人员和组织与清晰创新解决方案的桥梁",
+      "companyName": "Pita Logística 国际",
+      "tagline": "连接个人和组织与清晰创新解决方案的桥梁。",
       "links": {
         "privacy": "隐私政策",
         "terms": "服务条款",
-        "ethics": "完整道德准则"
+        "ethics": "道德准则"
       },
       "copyright": "© 2023 Pita Logística, C.A. - 保留所有权利"
     }
