@@ -19,22 +19,39 @@ import { useTranslation } from "@/hooks/useTranslation";
 
 export default function LandingSecciones() {
     const observerRef = useRef<IntersectionObserver | null>(null);
+    const lastScrollY = useRef<number>(0);
+    const scrollDirection = useRef<'up' | 'down'>('down');
     const { t } = useTranslation();
 
     useEffect(() => {
-        // Animación en scroll estilo login.html
-        // Observamos las secciones en lugar de tarjetas individuales para mayor fiabilidad con sticky sections
+        // Track scroll direction
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+            scrollDirection.current = currentScrollY > lastScrollY.current ? 'down' : 'up';
+            lastScrollY.current = currentScrollY;
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+
+        // Animación en scroll - reproduce al entrar bajando
         observerRef.current = new IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {
                     const elements = entry.target.querySelectorAll(".animate-on-scroll-pl");
 
                     if (entry.isIntersecting) {
-                        // Al entrar en vista, añadimos la clase visible a todos los elementos internos
-                        elements.forEach((el) => el.classList.add("visible"));
+                        // Al entrar en vista bajando, añadimos la clase visible
+                        if (scrollDirection.current === 'down') {
+                            elements.forEach((el) => el.classList.add("visible"));
+                        }
                     } else {
-                        // Opcional: Resetear la animación al salir de vista (estilo login.html)
-                        // elements.forEach((el) => el.classList.remove("visible"));
+                        // Al salir de vista hacia arriba (la sección queda abajo), resetear
+                        // Esto permite que al bajar de nuevo se reproduzca la animación
+                        const rect = entry.boundingClientRect;
+                        if (rect.top > 0) {
+                            // La sección está debajo del viewport, resetear para re-animar al bajar
+                            elements.forEach((el) => el.classList.remove("visible"));
+                        }
                     }
                 });
             },
@@ -45,9 +62,11 @@ export default function LandingSecciones() {
         sections.forEach((section) => observerRef.current?.observe(section));
 
         return () => {
+            window.removeEventListener('scroll', handleScroll);
             observerRef.current?.disconnect();
         };
     }, []);
+
 
     return (
         <>
