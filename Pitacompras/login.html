@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicia Sesión | Pita Logística</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary: #222839;          /* Azul Oscuro - Fondo principal */
+            --accent: #E53D27;           /* Naranja - Acento/énfasis */
+            --accent-gradient: linear-gradient(135deg, #E53D27, #FF5A45);
+            --secondary: #113E9F;        /* Azul Real - Logo */
+            --bg-input: #EBEBEB;         /* Gris Claro - Inputs */
+            --white-snow: #F7F9FB;       /* Blanco Nieve - Fondo panel */
+            --gray-text: #757575;        /* Gris Texto - Placeholders */
+            --error: #EF4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--white-snow);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Video Background */
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .video-background video {
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            object-fit: cover;
+        }
+
+        .video-background::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(34, 40, 57, 0.7) 0%, rgba(17, 62, 159, 0.5) 50%, rgba(34, 40, 57, 0.8) 100%);
+        }
+
+        /* Hero Section */
+        .hero-section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: sticky;
+            padding: 2rem;
+            background: transparent;
+        }
+
+        .hero-section.stacking-section {
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        .hero-title {
+            font-size: 48px;
+            font-weight: 800;
+            color: white;
+            line-height: 1.2;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .hero-subtitle {
+            font-size: 18px;
+            font-weight: 400;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .login-card {
+            background: var(--white-snow);
+            border-radius: 28px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 32px;
+            max-width: 380px;
+            width: 100%;
+            animation: cardEntrance 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            opacity: 0;
+        }
+
+        @keyframes cardEntrance {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .form-label {
+            color: var(--gray-text);
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 0.3px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .form-input {
+            background: var(--bg-input);
+            border-radius: 12px;
+            padding: 14px;
+            width: 100%;
+            border: 2px solid transparent;
+            transition: all 150ms ease;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 4px rgba(17, 62, 159, 0.1);
+            background: #fff;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            border-radius: 12px;
+            padding: 14px 24px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(34, 40, 57, 0.25);
+            transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.02) translateY(-2px);
+            box-shadow: 0 12px 40px rgba(34, 40, 57, 0.35);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        /* Ripple Effect */
+        .ripple {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: scale(0);
+            animation: ripple-effect 0.6s linear;
+            pointer-events: none;
+        }
+
+        @keyframes ripple-effect {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        .separator {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: var(--gray-text);
+            margin: 24px 0;
+        }
+
+        .separator::before, .separator::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        .separator:not(:empty)::before { margin-right: .5em; }
+        .separator:not(:empty)::after { margin-left: .5em; }
+
+        .social-btn {
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            cursor: pointer;
+            background: white;
+        }
+
+        .social-btn:hover {
+            background: #F9FAFB;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading .spinner { display: inline-block; }
+        .loading .btn-text { display: none; }
+
+        .link-secondary { color: var(--secondary); transition: 0.2s; }
+        .link-secondary:hover { text-decoration: underline; }
+
+        .link-accent { color: var(--accent); font-weight: 600; transition: 0.2s; }
+        .link-accent:hover { opacity: 0.8; }
+
+        .password-toggle {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-text);
+            cursor: pointer;
+        }
+
+        /* Stacking Sections Effect */
+        .stacking-container {
+            position: relative;
+        }
+
+        .stacking-section {
+            position: sticky;
+            top: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            transform-origin: center top;
+            transition: transform 0.1s ease-out, opacity 0.1s ease-out;
+            border-radius: 24px 24px 0 0;
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .stacking-section:first-child {
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        .stacking-section:nth-child(1) { z-index: 1; }
+        .stacking-section:nth-child(2) { z-index: 2; }
+        .stacking-section:nth-child(3) { z-index: 3; }
+        .stacking-section:nth-child(4) { z-index: 4; }
+        .stacking-section:nth-child(5) { z-index: 5; }
+
+        /* Shadow effect for stacking depth */
+        .stacking-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.3), transparent);
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .stacking-section.show-shadow::before {
+            opacity: 1;
+        }
+
+        /* Content Sections */
+        .section {
+            padding: 80px 0;
+            width: 100%;
+        }
+
+        .section-dark {
+            background: var(--primary);
+            color: white;
+        }
+
+        .section-light {
+            background: var(--white-snow);
+        }
+
+        .section-gradient {
+            background: linear-gradient(135deg, var(--primary) 0%, #2d3548 100%);
+            color: white;
+        }
+
+        .section-title {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+
+        .section-subtitle {
+            font-size: 18px;
+            opacity: 0.8;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .feature-card-light {
+            background: white;
+            border: 1px solid rgba(17, 62, 159, 0.1);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .feature-icon-blue {
+            background: rgba(17, 62, 159, 0.15);
+            color: var(--secondary);
+        }
+
+        .feature-icon-orange {
+            background: rgba(229, 61, 39, 0.15);
+            color: var(--accent);
+        }
+
+        .feature-icon-dark {
+            background: rgba(34, 40, 57, 0.15);
+            color: var(--primary);
+        }
+
+        /* Value Cards */
+        .value-card {
+            background: white;
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 10px 40px rgba(34, 40, 57, 0.1);
+            border-left: 4px solid var(--secondary);
+            transition: transform 0.3s;
+        }
+
+        .value-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* Footer */
+        footer {
+            background: var(--primary);
+            color: white;
+            padding: 40px 0 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        footer a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        footer a:hover {
+            color: white;
+        }
+
+        /* Scroll indicator */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+            40% { transform: translateX(-50%) translateY(-10px); }
+            60% { transform: translateX(-50%) translateY(-5px); }
+        }
+
+        /* Logo Styles */
+        .logo-image {
+            object-fit: contain;
+            width: 100%;
+            height: auto;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .logo-p { color: var(--secondary); }
+        .logo-arrow { color: var(--accent); }
+
+        /* Anime.js text animation styles */
+        .hero-title .char-clip {
+            display: inline-block;
+            overflow: hidden;
+            vertical-align: bottom;
+        }
+        .hero-title .char-clip span {
+            display: inline-block;
+        }
+
+        /* Scroll animation styles */
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translateY(50px);
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Video Background -->
+    <div class="video-background">
+        <video autoplay muted loop playsinline>
+            <source src="127303-738105472_medium.mp4" type="video/mp4">
+        </video>
+    </div>
+
+    <!-- Stacking Sections Container -->
+    <div class="stacking-container">
+
+    <!-- Hero Section with Login -->
+    <section class="hero-section stacking-section">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-24">
+
+                <!-- Left Column: Hero Text -->
+                <div class="w-full lg:w-1/2 text-center lg:text-left max-w-xl order-2 lg:order-1">
+                    <div class="mb-6">
+                        <div style="padding: 10px 16px 6px; border-radius: 12px;">
+                            <img src="LOGO PITA LOGISTICA.png" alt="Pita Logística Internacional" class="logo-image" style="max-width: 300px; height: auto; margin: auto;">
+                        </div>
+                    </div>
+                    <h1 class="hero-title mb-6">El puente que conecta tus ideas con soluciones reales.</h1>
+                    <p class="hero-subtitle mb-8">Importaciones desde China a Venezuela con transparencia, compromiso y adaptabilidad.</p>
+
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-4 justify-center lg:justify-start">
+                            <div class="p-3 bg-white/20 backdrop-blur rounded-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-white">Proveedores Verificados</h4>
+                                <p class="text-sm text-white/70">Red de proveedores confiables en China.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-4 justify-center lg:justify-start">
+                            <div class="p-3 bg-white/20 backdrop-blur rounded-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-white">Seguimiento Total</h4>
+                                <p class="text-sm text-white/70">Monitorea tu carga en tiempo real.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Login Card -->
+                <div class="w-full lg:w-auto flex justify-center order-1 lg:order-2">
+                    <div class="login-card">
+                        <h2 class="text-2xl font-bold mb-2 text-[#222839]">Bienvenido</h2>
+                        <p class="text-[#757575] text-sm mb-8">Por favor, introduce tus credenciales</p>
+
+                        <form id="loginForm" onsubmit="handleLogin(event)">
+                            <div class="mb-5">
+                                <label class="form-label" for="email">Correo electrónico</label>
+                                <input type="email" id="email" class="form-input" placeholder="tu@email.com" required>
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label" for="password">Contraseña</label>
+                                <div class="relative">
+                                    <input type="password" id="password" class="form-input" placeholder="••••••••" required>
+                                    <span class="password-toggle" onclick="togglePassword()">
+                                        <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end mb-8">
+                                <a href="#" class="text-xs link-secondary font-medium">¿Olvidaste tu contraseña?</a>
+                            </div>
+
+                            <button type="submit" class="btn-primary" id="loginBtn">
+                                <span class="btn-text">Iniciar Sesión</span>
+                                <div class="spinner"></div>
+                            </button>
+                        </form>
+
+                        <div class="separator text-xs uppercase font-bold tracking-widest">o continúa con</div>
+
+                        <div class="grid grid-cols-2 gap-4 mb-8">
+                            <button class="social-btn">
+                                <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                                <span class="text-xs font-semibold text-gray-600">Google</span>
+                            </button>
+                            <button class="social-btn">
+                                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm3 8h-1.35c-.538 0-.65.221-.65.778v1.222h2l-.209 2h-1.791v7h-3v-7h-2v-2h2v-2.308c0-1.769.931-2.692 3.029-2.692h1.971v3z"/></svg>
+                                <span class="text-xs font-semibold text-gray-600">Facebook</span>
+                            </button>
+                        </div>
+
+                        <p class="text-center text-sm text-[#757575]">
+                            ¿No tienes cuenta? <a href="#" class="link-accent">Crear cuenta</a>
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Scroll Indicator -->
+        <div class="scroll-indicator">
+            <a href="#servicios">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                </svg>
+            </a>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="servicios" class="section section-gradient stacking-section">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="section-title">¿Qué puedes hacer en nuestro portal?</h2>
+                <p class="section-subtitle">Todo lo que necesitas para tus importaciones en un solo lugar</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                <!-- Service 1 -->
+                <div class="feature-card animate-on-scroll">
+                    <div class="feature-icon" style="background: rgba(17, 62, 159, 0.3);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Solicitar Cotizaciones</h3>
+                    <p class="text-white/70">Obtén precios competitivos para tus importaciones de forma rápida y sencilla.</p>
+                </div>
+
+                <!-- Service 2 -->
+                <div class="feature-card animate-on-scroll">
+                    <div class="feature-icon" style="background: rgba(229, 61, 39, 0.3);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Comprar Directamente</h3>
+                    <p class="text-white/70">Selecciona productos de proveedores verificados con total confianza.</p>
+                </div>
+
+                <!-- Service 3 -->
+                <div class="feature-card animate-on-scroll">
+                    <div class="feature-icon" style="background: rgba(255, 255, 255, 0.2);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Seguimiento en Tiempo Real</h3>
+                    <p class="text-white/70">Monitorea tu mercancía desde China hasta Venezuela paso a paso.</p>
+                </div>
+
+                <!-- Service 4 -->
+                <div class="feature-card animate-on-scroll">
+                    <div class="feature-icon" style="background: rgba(17, 62, 159, 0.3);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Pagos Seguros</h3>
+                    <p class="text-white/70">Múltiples métodos de pago adaptados a Venezuela para tu comodidad.</p>
+                </div>
+
+                <!-- Service 5 -->
+                <div class="feature-card lg:col-span-2 lg:max-w-md lg:mx-auto">
+                    <div class="feature-icon" style="background: rgba(229, 61, 39, 0.3);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Soporte Personalizado</h3>
+                    <p class="text-white/70">Asesoría experta en cada paso del proceso de importación.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Philosophy Section -->
+    <section class="section section-light stacking-section" id="filosofia">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="section-title text-[#222839]">Nuestra Filosofía de Servicio</h2>
+                <p class="section-subtitle text-[#757575] italic text-xl">"Analizamos Posibilidades. Generamos Soluciones. Construimos Oportunidades."</p>
+            </div>
+
+            <div class="max-w-4xl mx-auto mb-12">
+                <p class="text-center text-lg text-[#757575]">
+                    En Pita Logística conectamos personas y organizaciones con soluciones claras, guiados por nuestros valores fundamentales:
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                <!-- Value 1 -->
+                <div class="value-card animate-on-scroll">
+                    <div class="feature-icon feature-icon-blue mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-[#222839]">Transparencia</h3>
+                    <p class="text-[#757575]">Comunicación clara en cada etapa del proceso.</p>
+                </div>
+
+                <!-- Value 2 -->
+                <div class="value-card" style="border-left-color: var(--accent);">
+                    <div class="feature-icon feature-icon-orange mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-[#222839]">Compromiso</h3>
+                    <p class="text-[#757575]">Contigo, tus pedidos y tus objetivos comerciales.</p>
+                </div>
+
+                <!-- Value 3 -->
+                <div class="value-card" style="border-left-color: var(--primary);">
+                    <div class="feature-icon feature-icon-dark mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-[#222839]">Adaptabilidad</h3>
+                    <p class="text-[#757575]">Soluciones flexibles a tus necesidades específicas.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Ethics Section -->
+    <section class="section section-dark stacking-section">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="section-title">Nuestro Compromiso Ético</h2>
+                <p class="section-subtitle">Como parte de nuestro Código de Ética, garantizamos:</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+                <div class="text-center animate-on-scroll">
+                    <div class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">Respeto</h3>
+                    <p class="text-white/70 text-sm">Por tu negocio y tus necesidades</p>
+                </div>
+
+                <div class="text-center animate-on-scroll">
+                    <div class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">Integridad</h3>
+                    <p class="text-white/70 text-sm">En cada transacción y comunicación</p>
+                </div>
+
+                <div class="text-center animate-on-scroll">
+                    <div class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">Confianza</h3>
+                    <p class="text-white/70 text-sm">A través del cumplimiento de compromisos</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    </div><!-- End Stacking Container -->
+
+    <!-- Footer -->
+    <footer>
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-8">
+                <div class="mb-4">
+                    <div style="background: rgba(255,255,255,0.92); padding: 8px 14px 4px; border-radius: 10px; display: inline-block;">
+                        <img src="LOGO PITA LOGISTICA.png" alt="Pita Logística Internacional" class="logo-image" style="max-width: 200px;">
+                    </div>
+                </div>
+                <p class="text-white/70 max-w-xl mx-auto">
+                    El puente que conecta personas y organizaciones con soluciones claras e innovadoras.
+                </p>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-4 md:gap-8 mb-8 text-sm">
+                <a href="#" class="flex items-center gap-2">
+                    <span>🔗</span> Política de Privacidad
+                </a>
+                <span class="text-white/30 hidden md:inline">|</span>
+                <a href="#" class="flex items-center gap-2">
+                    <span>🔗</span> Términos de Servicio
+                </a>
+                <span class="text-white/30 hidden md:inline">|</span>
+                <a href="#" class="flex items-center gap-2">
+                    <span>🔗</span> Código de Ética Completo
+                </a>
+            </div>
+
+            <div class="text-center text-white/50 text-sm border-t border-white/10 pt-6">
+                © 2023 Pita Logística, C.A. - Todos los derechos reservados
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function togglePassword() {
+            const input = document.getElementById('password');
+            const icon = document.getElementById('eye-icon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.888 9.888L2 2m20 20L14.111 14.111" />';
+            } else {
+                input.type = 'password';
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />';
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            btn.classList.add('loading');
+            btn.disabled = true;
+
+            // Simulación de carga
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            btn.classList.remove('loading');
+            btn.disabled = false;
+            btn.style.background = '#113E9F'; // Color éxito (Azul Real)
+            btn.querySelector('.btn-text').innerText = '¡Bienvenido!';
+        }
+
+        // Ripple Effect Implementation
+        document.querySelectorAll('.btn-primary').forEach(button => {
+            button.addEventListener('click', function(e) {
+                let x = e.clientX - e.target.getBoundingClientRect().left;
+                let y = e.clientY - e.target.getBoundingClientRect().top;
+
+                let ripple = document.createElement('span');
+                ripple.classList.add('ripple');
+                ripple.style.left = x + 'px';
+                ripple.style.top = y + 'px';
+                this.appendChild(ripple);
+
+                setTimeout(() => {
+                    ripple.remove();
+                }, 600);
+            });
+        });
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    </script>
+
+    <!-- Anime.js Text Animation -->
+    <script type="module">
+        import { animate, splitText, stagger, utils } from 'https://esm.sh/animejs';
+
+        const heroTitle = document.querySelector('.hero-title');
+        let chars = null;
+        let hasLeftViewport = false;
+
+        function initSplitText() {
+            const result = splitText('.hero-title', {
+                chars: { wrap: 'clip' },
+            });
+            chars = result.chars;
+        }
+
+        function playAnimation() {
+            if (!chars) return;
+
+            // Reset position before animating
+            chars.forEach(char => {
+                char.style.transform = 'translateY(100%)';
+            });
+
+            animate(chars, {
+                y: ['100%', '0%'],
+                duration: 750,
+                ease: 'out(3)',
+                delay: stagger(50),
+            });
+        }
+
+        // Initialize and play on first load
+        initSplitText();
+        playAnimation();
+
+        // Intersection Observer to detect when hero comes back into view
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) {
+                    // User scrolled away from hero
+                    hasLeftViewport = true;
+                } else if (entry.isIntersecting && hasLeftViewport) {
+                    // User scrolled back to hero
+                    playAnimation();
+                }
+            });
+        }, {
+            threshold: 0.3
+        });
+
+        observer.observe(heroTitle);
+
+        // Scroll animations for sections below
+        const sections = document.querySelectorAll('#servicios, .section-light, .section-dark:not(.hero-section)');
+
+        const scrollObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const elements = entry.target.querySelectorAll('.animate-on-scroll');
+
+                if (entry.isIntersecting) {
+                    // Animate in
+                    animate(elements, {
+                        opacity: [0, 1],
+                        y: (_, i) => [50 + (-25 * i), 0],
+                        scale: (_, i, l) => [0.8 + ((l - i) * 0.05), 1],
+                        rotate: () => [utils.random(-5, 5), 0],
+                        duration: () => utils.random(1200, 1800),
+                        delay: () => utils.random(0, 400),
+                        ease: 'outElastic(1, .5)',
+                    });
+                } else {
+                    // Reset when out of view
+                    elements.forEach(el => {
+                        el.style.opacity = '0';
+                        el.style.transform = 'translateY(50px)';
+                    });
+                }
+            });
+        }, {
+            threshold: 0.2
+        });
+
+        sections.forEach(section => scrollObserver.observe(section));
+
+        // Icon animation for Philosophy section (value-cards)
+        const philosophySection = document.querySelector('#filosofia');
+        const valueIcons = philosophySection.querySelectorAll('.value-card .feature-icon');
+
+        const iconObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    animate(valueIcons, {
+                        x: ['-1rem', '0rem'],
+                        rotate: ['-.25turn', '0turn'],
+                        duration: 1200,
+                        ease: 'outCubic',
+                        delay: stagger(150),
+                    });
+                } else {
+                    // Reset when out of view
+                    valueIcons.forEach(icon => {
+                        icon.style.transform = 'translateX(0) rotate(0)';
+                    });
+                }
+            });
+        }, {
+            threshold: 0.3
+        });
+
+        iconObserver.observe(philosophySection);
+
+        // Stacking sections shadow effect
+        const stackingSections = document.querySelectorAll('.stacking-section');
+
+        const stackingObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && entry.intersectionRatio < 0.95) {
+                    entry.target.classList.add('show-shadow');
+                } else {
+                    entry.target.classList.remove('show-shadow');
+                }
+            });
+        }, {
+            threshold: [0, 0.5, 0.95, 1],
+            rootMargin: '-10% 0px -10% 0px'
+        });
+
+        stackingSections.forEach(section => stackingObserver.observe(section));
+
+        // Parallax-like scale effect for stacking sections
+        window.addEventListener('scroll', () => {
+            stackingSections.forEach((section, index) => {
+                const rect = section.getBoundingClientRect();
+                const windowHeight = window.innerHeight;
+
+                // Calculate how much this section is being covered by the next one
+                if (rect.top < 0 && index < stackingSections.length - 1) {
+                    const progress = Math.min(Math.abs(rect.top) / windowHeight, 1);
+                    const scale = 1 - (progress * 0.05); // Scale down to 95%
+                    const opacity = 1 - (progress * 0.3); // Fade to 70%
+
+                    section.style.transform = `scale(${scale})`;
+                    section.style.opacity = opacity;
+                } else {
+                    section.style.transform = 'scale(1)';
+                    section.style.opacity = 1;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -50,7 +50,7 @@ export default function LandingSecciones() {
                         <p className="section-subtitle-pl">Todo lo que necesitas para tus importaciones en un solo lugar</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                    <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 max-w-6xl mx-auto">
                         {/* Service 1 */}
                         <div className="feature-card-pl animate-on-scroll-pl">
                             <div className="feature-icon-pl" style={{ background: 'rgba(17, 62, 159, 0.3)' }}>
@@ -88,7 +88,7 @@ export default function LandingSecciones() {
                         </div>
 
                         {/* Service 5 */}
-                        <div className="feature-card-pl lg:col-span-2 lg:max-w-md lg:mx-auto animate-on-scroll-pl">
+                        <div className="feature-card-pl col-span-2 md:col-span-2 lg:col-span-2 lg:max-w-md lg:mx-auto animate-on-scroll-pl">
                             <div className="feature-icon-pl" style={{ background: 'rgba(229, 61, 39, 0.3)' }}>
                                 <Headphones size={28} color="white" />
                             </div>
@@ -115,7 +115,7 @@ export default function LandingSecciones() {
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 max-w-5xl mx-auto">
                         {/* Value 1 */}
                         <div className="value-card-pl animate-on-scroll-pl">
                             <div className="feature-icon-pl mb-4" style={{ background: 'rgba(17, 62, 159, 0.15)' }}>
@@ -135,7 +135,7 @@ export default function LandingSecciones() {
                         </div>
 
                         {/* Value 3 */}
-                        <div className="value-card-pl animate-on-scroll-pl" style={{ borderLeftColor: 'var(--pl-primary)' }}>
+                        <div className="value-card-pl col-span-2 md:col-span-1 animate-on-scroll-pl" style={{ borderLeftColor: 'var(--pl-primary)' }}>
                             <div className="feature-icon-pl mb-4" style={{ background: 'rgba(34, 40, 57, 0.15)' }}>
                                 <RefreshCw size={28} color="var(--pl-primary)" />
                             </div>
@@ -154,7 +154,7 @@ export default function LandingSecciones() {
                         <p className="section-subtitle-pl">Como parte de nuestro Código de Ética, garantizamos:</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 max-w-4xl mx-auto">
                         <div className="text-center animate-on-scroll-pl">
                             <div className="ethics-circle-pl">
                                 <Users size={32} color="white" />
@@ -171,7 +171,7 @@ export default function LandingSecciones() {
                             <p className="text-white/70 text-sm">En cada transacción y comunicación</p>
                         </div>
 
-                        <div className="text-center animate-on-scroll-pl">
+                        <div className="text-center col-span-2 md:col-span-1 animate-on-scroll-pl">
                             <div className="ethics-circle-pl">
                                 <ShieldCheck size={32} color="white" />
                             </div>
