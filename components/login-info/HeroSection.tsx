@@ -23,37 +23,38 @@ export default function HeroSection() {
                     <div className="w-full lg:w-1/2 text-center lg:text-left max-w-xl order-2 lg:order-1 lg:self-center mt-4 lg:mt-0">
                         <div className="mb-4 lg:mb-6">
                             <div className="p-2 lg:p-4 rounded-xl">
-                                <Image
-                                    src="/images/LOGO PITA LOGISTICA.png"
-                                    alt="Pita Logística Internacional"
-                                    width={240}
-                                    height={80}
-                                    className="logo-image-pl"
-                                    style={{ maxWidth: '240px', height: 'auto', margin: 'auto' }}
-                                    priority
-                                />
+                                <div className="max-w-[200px] md:max-w-[320px] lg:max-w-[400px] mx-auto lg:mx-0">
+                                    <Image
+                                        src="/images/LOGO PITA LOGISTICA.png"
+                                        alt="Pita Logística Internacional"
+                                        width={400}
+                                        height={120}
+                                        className="logo-image-pl"
+                                        style={{ width: '100%', height: 'auto' }}
+                                        priority
+                                    />
+                                </div>
                             </div>
                         </div>
                         <h1 className="hero-title mb-3 md:mb-6 text-xl md:text-3xl lg:text-5xl">El puente que conecta tus ideas con soluciones reales.</h1>
-                        <p className="hero-subtitle mb-4 md:mb-8 text-sm md:text-base opacity-90">Importaciones desde China a Venezuela con transparencia, compromiso y adaptabilidad.</p>
-
-                        <div className="hidden md:block space-y-4">
-                            <div className="feature-benefit-pl justify-center lg:justify-start">
-                                <div className="feature-benefit-icon-pl">
+                        <p className="hero-subtitle mb-4 md:mb-8 text-sm md:text-base opacity-95">Importaciones desde China a Venezuela con transparencia, compromiso y adaptabilidad.</p>
+                        <div className="hero-benefits-container flex-col space-y-4 mt-6 items-center lg:items-start">
+                            <div className="flex items-start gap-4">
+                                <div className="p-3 bg-white/20 backdrop-blur rounded-lg flex-shrink-0">
                                     <Shield size={24} color="white" />
                                 </div>
                                 <div>
-                                    <h4>Proveedores Verificados</h4>
-                                    <p>Red de proveedores confiables en China.</p>
+                                    <h4 className="font-bold text-white">Proveedores Verificados</h4>
+                                    <p className="text-sm text-white/70">Red de proveedores confiables en China.</p>
                                 </div>
                             </div>
-                            <div className="feature-benefit-pl justify-center lg:justify-start">
-                                <div className="feature-benefit-icon-pl">
+                            <div className="flex items-start gap-4">
+                                <div className="p-3 bg-white/20 backdrop-blur rounded-lg flex-shrink-0">
                                     <MapPin size={24} color="white" />
                                 </div>
                                 <div>
-                                    <h4>Seguimiento Total</h4>
-                                    <p>Monitorea tu carga en tiempo real.</p>
+                                    <h4 className="font-bold text-white">Seguimiento Total</h4>
+                                    <p className="text-sm text-white/70">Monitorea tu carga en tiempo real.</p>
                                 </div>
                             </div>
                         </div>

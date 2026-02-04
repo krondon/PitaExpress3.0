@@ -226,6 +226,17 @@
     color: rgba(255, 255, 255, 0.9);
 }
 
+/* Hero Benefits - visible on PC, hidden on mobile */
+.hero-benefits-container {
+    display: flex !important;
+}
+
+@media (max-width: 639px) {
+    .hero-benefits-container {
+        display: none !important;
+    }
+}
+
 /* =========================================
    LOGIN CARD
    ========================================= */

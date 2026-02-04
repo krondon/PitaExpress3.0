@@ -54,11 +54,6 @@ export default function VenezuelaTicketsPage() {
     const [printModalOpen, setPrintModalOpen] = useState(false);
     const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 
-    useEffect(() => {
-        setMounted(true);
-        fetchTickets();
-    }, [fetchTickets]);
-
     const fetchTickets = useCallback(async () => {
         setIsLoading(true);
         try {
@@ -77,6 +72,11 @@ export default function VenezuelaTicketsPage() {
             setIsLoading(false);
         }
     }, [t]);
+
+    useEffect(() => {
+        setMounted(true);
+        fetchTickets();
+    }, [fetchTickets]);
 
     // Format date for display
     const formatDate = (dateString: string) => {
