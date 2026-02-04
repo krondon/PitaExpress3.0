@@ -1,5 +1,5 @@
 {
-  "name": "Pita Express - Admin Panel",
+  "name": "Pita Express",
   "short_name": "Pita Express",
   "description": "Sistema de administración para Pita Express",
   "start_url": "/",
@@ -14,4 +14,4 @@
       "purpose": "any maskable"
     }
   ]
-} 
+}
