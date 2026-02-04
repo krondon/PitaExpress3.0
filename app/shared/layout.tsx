@@ -7,7 +7,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Pita Express - Admin Panel',
+  title: 'Pita Express',
   description: 'Sistema de administración para Pita Express',
   icons: {
     icon: '/pita_icon.svg',

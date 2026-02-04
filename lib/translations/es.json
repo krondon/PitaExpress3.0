@@ -112,66 +112,90 @@
     }
   },
   "loginInfo": {
+    "hero": {
+      "title": "El puente que conecta tus ideas con soluciones reales.",
+      "subtitle": "Importaciones desde China a Venezuela con transparencia, compromiso y adaptabilidad.",
+      "benefits": {
+        "verifiedSuppliers": {
+          "title": "Proveedores Verificados",
+          "description": "Red de proveedores confiables en China."
+        },
+        "totalTracking": {
+          "title": "Seguimiento Total",
+          "description": "Monitorea tu carga en tiempo real."
+        }
+      }
+    },
     "portalFeatures": {
       "title": "¿Qué puedes hacer en nuestro portal?",
+      "subtitle": "Todo lo que necesitas para tus importaciones en un solo lugar",
       "features": {
         "quotes": {
           "title": "Solicitar Cotizaciones",
-          "description": "Obtén precios competitivos para tus importaciones"
+          "description": "Obtén precios competitivos para tus importaciones de forma rápida y sencilla."
         },
         "buy": {
           "title": "Comprar Directamente",
-          "description": "Selecciona productos de proveedores verificados"
+          "description": "Selecciona productos de proveedores verificados con total confianza."
         },
         "tracking": {
           "title": "Seguimiento en Tiempo Real",
-          "description": "Monitorea tu mercancía desde China hasta Venezuela"
+          "description": "Monitorea tu mercancía desde China hasta Venezuela paso a paso."
         },
         "payments": {
           "title": "Pagos Seguros",
-          "description": "Múltiples métodos de pago adaptados a Venezuela"
+          "description": "Múltiples métodos de pago adaptados a Venezuela para tu comodidad."
         },
         "support": {
           "title": "Soporte Personalizado",
-          "description": "Asesoría en cada paso del proceso"
+          "description": "Asesoría experta en cada paso del proceso de importación."
         }
       }
     },
     "servicePhilosophy": {
       "title": "Nuestra Filosofía de Servicio",
-      "slogan": "Analizamos Posibilidades. Generamos Soluciones. Construimos Oportunidades.",
+      "slogan": "\"Analizamos Posibilidades. Generamos Soluciones. Construimos Oportunidades.\"",
       "intro": "En Pita Logística conectamos personas y organizaciones con soluciones claras, guiados por nuestros valores fundamentales:",
       "values": {
         "transparency": {
           "title": "Transparencia",
-          "description": "Comunicación clara en cada etapa"
+          "description": "Comunicación clara en cada etapa del proceso."
         },
         "commitment": {
           "title": "Compromiso",
-          "description": "Contigo, tus pedidos y tus objetivos"
+          "description": "Contigo, tus pedidos y tus objetivos comerciales."
         },
         "adaptability": {
           "title": "Adaptabilidad",
-          "description": "Soluciones flexibles a tus necesidades específicas"
+          "description": "Soluciones flexibles a tus necesidades específicas."
         }
       }
     },
     "ethicalCommitment": {
       "title": "Nuestro Compromiso Ético",
-      "intro": "Como parte de nuestro **Código de Ética**, garantizamos:",
+      "intro": "Como parte de nuestro Código de Ética, garantizamos:",
       "guarantees": {
-        "respect": "Respeto por tu negocio y tus necesidades",
-        "integrity": "Integridad en cada transacción y comunicación",
-        "trust": "Confianza a través del cumplimiento de compromisos"
+        "respect": {
+          "title": "Respeto",
+          "description": "Por tu negocio y tus necesidades"
+        },
+        "integrity": {
+          "title": "Integridad",
+          "description": "En cada transacción y comunicación"
+        },
+        "trust": {
+          "title": "Confianza",
+          "description": "A través del cumplimiento de compromisos"
+        }
       }
     },
     "footer": {
-      "companyName": "Pita Logística, C.A.",
-      "tagline": "El puente que conecta personas y organizaciones con soluciones claras e innovadoras",
+      "companyName": "Pita Logística Internacional",
+      "tagline": "El puente que conecta personas y organizaciones con soluciones claras e innovadoras.",
       "links": {
         "privacy": "Política de Privacidad",
         "terms": "Términos de Servicio",
-        "ethics": "Código de Ética Completo"
+        "ethics": "Código de Ética"
       },
       "copyright": "© 2023 Pita Logística, C.A. - Todos los derechos reservados"
     }
