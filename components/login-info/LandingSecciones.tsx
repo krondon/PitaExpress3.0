@@ -20,20 +20,27 @@ export default function LandingSecciones() {
     const observerRef = useRef<IntersectionObserver | null>(null);
 
     useEffect(() => {
-        // Animación en scroll
+        // Animación en scroll estilo login.html
+        // Observamos las secciones en lugar de tarjetas individuales para mayor fiabilidad con sticky sections
         observerRef.current = new IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {
+                    const elements = entry.target.querySelectorAll(".animate-on-scroll-pl");
+
                     if (entry.isIntersecting) {
-                        entry.target.classList.add("visible");
+                        // Al entrar en vista, añadimos la clase visible a todos los elementos internos
+                        elements.forEach((el) => el.classList.add("visible"));
+                    } else {
+                        // Opcional: Resetear la animación al salir de vista (estilo login.html)
+                        // elements.forEach((el) => el.classList.remove("visible"));
                     }
                 });
             },
-            { threshold: 0.1 }
+            { threshold: 0.2 } // Umbral del 20% de la sección
         );
 
-        const elements = document.querySelectorAll(".animate-on-scroll-pl");
-        elements.forEach((el) => observerRef.current?.observe(el));
+        const sections = document.querySelectorAll(".stacking-section");
+        sections.forEach((section) => observerRef.current?.observe(section));
 
         return () => {
             observerRef.current?.disconnect();
@@ -52,7 +59,7 @@ export default function LandingSecciones() {
 
                     <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 max-w-6xl mx-auto">
                         {/* Service 1 */}
-                        <div className="feature-card-pl animate-on-scroll-pl">
+                        <div className="feature-card-pl animate-on-scroll-pl animate-delay-1">
                             <div className="feature-icon-pl" style={{ background: 'rgba(17, 62, 159, 0.3)' }}>
                                 <FileText size={28} color="white" />
                             </div>
@@ -61,7 +68,7 @@ export default function LandingSecciones() {
                         </div>
 
                         {/* Service 2 */}
-                        <div className="feature-card-pl animate-on-scroll-pl">
+                        <div className="feature-card-pl animate-on-scroll-pl animate-delay-2">
                             <div className="feature-icon-pl" style={{ background: 'rgba(229, 61, 39, 0.3)' }}>
                                 <ShoppingCart size={28} color="white" />
                             </div>
@@ -70,7 +77,7 @@ export default function LandingSecciones() {
                         </div>
 
                         {/* Service 3 */}
-                        <div className="feature-card-pl animate-on-scroll-pl">
+                        <div className="feature-card-pl animate-on-scroll-pl animate-delay-3">
                             <div className="feature-icon-pl" style={{ background: 'rgba(255, 255, 255, 0.2)' }}>
                                 <MapPin size={28} color="white" />
                             </div>
@@ -79,7 +86,7 @@ export default function LandingSecciones() {
                         </div>
 
                         {/* Service 4 */}
-                        <div className="feature-card-pl animate-on-scroll-pl">
+                        <div className="feature-card-pl animate-on-scroll-pl animate-delay-4">
                             <div className="feature-icon-pl" style={{ background: 'rgba(17, 62, 159, 0.3)' }}>
                                 <Shield size={28} color="white" />
                             </div>
@@ -88,7 +95,7 @@ export default function LandingSecciones() {
                         </div>
 
                         {/* Service 5 */}
-                        <div className="feature-card-pl col-span-2 md:col-span-2 lg:col-span-2 lg:max-w-md lg:mx-auto animate-on-scroll-pl">
+                        <div className="feature-card-pl col-span-2 md:col-span-2 lg:col-span-2 lg:max-w-md lg:mx-auto animate-on-scroll-pl animate-delay-5">
                             <div className="feature-icon-pl" style={{ background: 'rgba(229, 61, 39, 0.3)' }}>
                                 <Headphones size={28} color="white" />
                             </div>
@@ -117,7 +124,7 @@ export default function LandingSecciones() {
 
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 max-w-5xl mx-auto">
                         {/* Value 1 */}
-                        <div className="value-card-pl animate-on-scroll-pl">
+                        <div className="value-card-pl animate-on-scroll-pl animate-delay-1">
                             <div className="feature-icon-pl mb-4" style={{ background: 'rgba(17, 62, 159, 0.15)' }}>
                                 <Eye size={28} color="var(--pl-secondary)" />
                             </div>
@@ -126,7 +133,7 @@ export default function LandingSecciones() {
                         </div>
 
                         {/* Value 2 */}
-                        <div className="value-card-pl animate-on-scroll-pl" style={{ borderLeftColor: 'var(--pl-accent)' }}>
+                        <div className="value-card-pl animate-on-scroll-pl animate-delay-2" style={{ borderLeftColor: 'var(--pl-accent)' }}>
                             <div className="feature-icon-pl mb-4" style={{ background: 'rgba(229, 61, 39, 0.15)' }}>
                                 <Heart size={28} color="var(--pl-accent)" />
                             </div>
@@ -135,7 +142,7 @@ export default function LandingSecciones() {
                         </div>
 
                         {/* Value 3 */}
-                        <div className="value-card-pl col-span-2 md:col-span-1 animate-on-scroll-pl" style={{ borderLeftColor: 'var(--pl-primary)' }}>
+                        <div className="value-card-pl col-span-2 md:col-span-1 animate-on-scroll-pl animate-delay-3" style={{ borderLeftColor: 'var(--pl-primary)' }}>
                             <div className="feature-icon-pl mb-4" style={{ background: 'rgba(34, 40, 57, 0.15)' }}>
                                 <RefreshCw size={28} color="var(--pl-primary)" />
                             </div>
@@ -155,7 +162,7 @@ export default function LandingSecciones() {
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 max-w-4xl mx-auto">
-                        <div className="text-center animate-on-scroll-pl">
+                        <div className="text-center animate-on-scroll-pl animate-delay-1">
                             <div className="ethics-circle-pl">
                                 <Users size={32} color="white" />
                             </div>
@@ -163,7 +170,7 @@ export default function LandingSecciones() {
                             <p className="text-white/70 text-sm">Por tu negocio y tus necesidades</p>
                         </div>
 
-                        <div className="text-center animate-on-scroll-pl">
+                        <div className="text-center animate-on-scroll-pl animate-delay-2">
                             <div className="ethics-circle-pl">
                                 <BadgeCheck size={32} color="white" />
                             </div>
@@ -171,7 +178,7 @@ export default function LandingSecciones() {
                             <p className="text-white/70 text-sm">En cada transacción y comunicación</p>
                         </div>
 
-                        <div className="text-center col-span-2 md:col-span-1 animate-on-scroll-pl">
+                        <div className="text-center col-span-2 md:col-span-1 animate-on-scroll-pl animate-delay-3">
                             <div className="ethics-circle-pl">
                                 <ShieldCheck size={32} color="white" />
                             </div>

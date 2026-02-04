@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from 'next-themes';
 import { useVzlaLayoutContext } from '@/lib/VzlaLayoutContext';
 import Header from '@/components/layout/Header';
@@ -57,9 +57,9 @@ export default function VenezuelaTicketsPage() {
     useEffect(() => {
         setMounted(true);
         fetchTickets();
-    }, []);
+    }, [fetchTickets]);
 
-    const fetchTickets = async () => {
+    const fetchTickets = useCallback(async () => {
         setIsLoading(true);
         try {
             const response = await fetch('/api/admin/tickets');
@@ -76,7 +76,7 @@ export default function VenezuelaTicketsPage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [t]);
 
     // Format date for display
     const formatDate = (dateString: string) => {
