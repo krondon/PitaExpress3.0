@@ -25,7 +25,7 @@ export default function HeroSection() {
                     <div className="w-full lg:w-1/2 text-center lg:text-left max-w-xl order-2 lg:order-1 lg:self-center mt-4 lg:mt-0">
                         <div className="mb-4 lg:mb-6">
                             <div className="p-2 lg:p-4 rounded-xl">
-                                <div className="max-w-[200px] md:max-w-[320px] lg:max-w-[400px] mx-auto lg:mx-0">
+                                <div className="max-w-[200px] md:max-w-[320px] lg:max-w-[320px] mx-auto">
                                     <Image
                                         src="/images/LOGO PITA LOGISTICA.png"
                                         alt="Pita Logística Internacional"
