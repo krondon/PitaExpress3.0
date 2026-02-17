@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServiceRoleClient } from '@/lib/supabase/server';
 import { NotificationsFactory } from '@/lib/notifications';
+import { shouldSendEmail, sendOrderStateEmail } from '@/lib/email-notifications';
 
 export const revalidate = 0;
 
@@ -121,6 +122,11 @@ export async function PUT(request: NextRequest) {
                     }]);
                 }
                 // Add other notifications if needed (like China state 2/3/5) - keeping it minimal for "Payment" context (State 4) logic mainly
+
+                // ── Email al cliente (fire-and-forget) ──
+                if (currentOrder.client_id && shouldSendEmail(state)) {
+                    sendOrderStateEmail(String(orderId), state, currentOrder.client_id).catch(() => { });
+                }
             } catch (e) {
                 console.error(`Notification error for order ${orderId}`, e);
             }
