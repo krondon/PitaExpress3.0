@@ -1,11 +1,7 @@
 import { getSupabaseServiceRoleClient } from '@/lib/supabase/server';
 import { sendEmail } from '@/lib/email';
-import {
-    orderQuotedEmail,
-    paymentConfirmedEmail,
-    orderShippedEmail,
-    orderArrivedVenezuelaEmail,
-} from '@/lib/email-templates';
+import { getClientNotificationSettings } from '@/lib/client-notification-lang';
+import { getOrderStateEmailByLang, getProductAlternativeEmailByLang } from '@/lib/email-templates-i18n';
 
 // Estados que disparan email al cliente
 const EMAIL_STATES = [3, 5, 9, 11] as const;
@@ -50,25 +46,16 @@ export async function sendOrderStateEmail(
         const productName = order?.productName || '';
         const orderIdStr = String(orderId);
 
-        // 3. Generar e enviar email según estado
-        let emailData: { subject: string; html: string };
-
-        switch (state) {
-            case 3:
-                emailData = orderQuotedEmail(orderIdStr, productName, clientName);
-                break;
-            case 5:
-                emailData = paymentConfirmedEmail(orderIdStr, productName, clientName);
-                break;
-            case 9:
-                emailData = orderShippedEmail(orderIdStr, productName, clientName);
-                break;
-            case 11:
-                emailData = orderArrivedVenezuelaEmail(orderIdStr, productName, clientName);
-                break;
-            default:
-                return;
+        // 3. Preferencias del cliente (idioma y si acepta notificaciones por correo)
+        const settings = await getClientNotificationSettings(supabase, clientId);
+        if (!settings.notifications_email) {
+            console.log(`[Email] Cliente ${clientId} tiene notificaciones por correo desactivadas, omitiendo pedido #${orderIdStr}`);
+            return;
         }
+        if (settings.lang !== 'es') {
+            console.log(`[Email] Idioma del cliente ${clientId}: ${settings.lang} (pedido #${orderIdStr}, estado ${state})`);
+        }
+        const emailData = getOrderStateEmailByLang(settings.lang, state, orderIdStr, productName, clientName ?? undefined);
 
         const result = await sendEmail({
             to: clientEmail,
@@ -83,5 +70,61 @@ export async function sendOrderStateEmail(
         }
     } catch (err) {
         console.error(`[Email] Excepción en sendOrderStateEmail (pedido #${orderId}, estado ${state}):`, err);
+    }
+}
+
+/**
+ * Enviar email al cliente cuando China propone una alternativa de producto.
+ * Fire-and-forget.
+ */
+export async function sendProductAlternativeEmail(
+    orderId: string | number,
+    clientId: string,
+    originalProductName: string,
+    alternativeProductName: string
+): Promise<void> {
+    try {
+        const supabase = getSupabaseServiceRoleClient();
+
+        const { data: userData, error: userError } = await supabase.auth.admin.getUserById(clientId);
+        if (userError || !userData?.user?.email) {
+            console.warn(`[Email] No se pudo obtener email para clientId=${clientId}:`, userError?.message);
+            return;
+        }
+
+        const clientEmail = userData.user.email;
+        const clientName = userData.user.user_metadata?.full_name
+            || userData.user.user_metadata?.name
+            || undefined;
+
+        const settings = await getClientNotificationSettings(supabase, clientId);
+        if (!settings.notifications_email) {
+            console.log(`[Email] Cliente ${clientId} tiene notificaciones por correo desactivadas, omitiendo alternativa pedido #${orderId}`);
+            return;
+        }
+        if (settings.lang !== 'es') {
+            console.log(`[Email] Idioma del cliente ${clientId}: ${settings.lang} (email alternativa, pedido #${orderId})`);
+        }
+        const emailData = getProductAlternativeEmailByLang(
+            settings.lang,
+            String(orderId),
+            originalProductName || '',
+            alternativeProductName,
+            clientName
+        );
+
+        const result = await sendEmail({
+            to: clientEmail,
+            subject: emailData.subject,
+            html: emailData.html,
+        });
+
+        if (result.success) {
+            console.log(`[Email] ✅ Email de alternativa enviado a ${clientEmail} — Pedido #${orderId}`);
+        } else {
+            console.warn(`[Email] ⚠️ Error enviando email de alternativa a ${clientEmail}:`, result.error);
+        }
+    } catch (err) {
+        console.error(`[Email] Excepción en sendProductAlternativeEmail (pedido #${orderId}):`, err);
     }
 }

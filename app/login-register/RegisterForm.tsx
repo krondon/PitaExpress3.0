@@ -6,9 +6,11 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import Lottie from "react-lottie";
 import { Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useLanguage } from "@/lib/LanguageContext";
 
 export default function RegisterForm() {
   const { t } = useTranslation();
+  const { language } = useLanguage();
   const [registerAnim, setRegisterAnim] = useState<any | null>(null);
   const [successAnim, setSuccessAnim] = useState<any | null>(null);
   const [registerAnimError, setRegisterAnimError] = useState<boolean>(false);
@@ -213,7 +215,11 @@ export default function RegisterForm() {
           const res = await fetch("/api/auth/after-signup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId, userLevel: "Client" }),
+            body: JSON.stringify({
+              userId,
+              userLevel: "Client",
+              preferredLanguage: ["es", "en", "zh"].includes(language) ? language : "es",
+            }),
           });
           if (!res.ok) {
             const payload = await res.json().catch(() => ({}));

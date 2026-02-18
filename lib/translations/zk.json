@@ -469,6 +469,9 @@
           "phone": "+1 555-123-4567",
           "selectLanguage": "选择语言"
         },
+        "notificationsSectionTitle": "通知偏好",
+        "notificationsByEmail": "通过邮件接收通知",
+        "notificationsByWhatsApp": "通过 WhatsApp 接收通知",
         "profilePicture": {
           "title": "头像",
           "altText": "头像",
@@ -925,6 +928,10 @@
           "phone": "+1 555-123-4567",
           "selectLanguage": "选择语言"
         },
+        "saveChangesHint": "请确认数据正确后点击「保存更改」以应用修改。",
+        "notificationsSectionTitle": "通知偏好",
+        "notificationsByEmail": "通过邮件接收通知",
+        "notificationsByWhatsApp": "通过 WhatsApp 接收通知",
         "profilePicture": {
           "title": "头像",
           "subtitle": "更新你的个人头像",

@@ -50,7 +50,8 @@ const resend = new Resend(RESEND_API_KEY);
 
 // ── Templates (duplicados simplificados para el script standalone) ──────
 
-const BRAND_COLOR = '#7f1f2b';
+const HEADER_BG = '#e2e8f0';
+const HEADER_TEXT = '#1e293b';
 const BRAND_NAME = 'Pita Express';
 const LOGO_URL = 'https://pitacompra.com/images/logos/pita_logo.png';
 
@@ -69,9 +70,9 @@ function baseLayout(title, content) {
       <td align="center">
         <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
           <tr>
-            <td style="background-color:${BRAND_COLOR};padding:24px 32px;text-align:center;">
+            <td style="background-color:${HEADER_BG};padding:24px 32px;text-align:center;">
               <img src="${LOGO_URL}" alt="${BRAND_NAME}" width="40" height="40" style="display:inline-block;vertical-align:middle;margin-right:12px;" />
-              <span style="color:#ffffff;font-size:22px;font-weight:700;vertical-align:middle;">${BRAND_NAME}</span>
+              <span style="color:${HEADER_TEXT};font-size:22px;font-weight:700;vertical-align:middle;">${BRAND_NAME}</span>
             </td>
           </tr>
           <tr>

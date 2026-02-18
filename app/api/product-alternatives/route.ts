@@ -1,5 +1,7 @@
 import { getSupabaseServiceRoleClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { sendProductAlternativeEmail } from '@/lib/email-notifications';
+import { sendProductAlternativeWhatsApp } from '@/lib/whatsapp-notifications';
 
 function getSupabaseClient() {
     return getSupabaseServiceRoleClient();
@@ -116,7 +118,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Crear notificación para el cliente
+        // Crear notificación in-app para el cliente
         try {
             await supabase.from('notifications').insert({
                 user_id: order.client_id,
@@ -134,6 +136,22 @@ export async function POST(request: NextRequest) {
         } catch (notifError) {
             console.error('Error creating notification:', notifError);
             // No fallar si la notificación falla
+        }
+
+        // Notificar al cliente por email y WhatsApp (fire-and-forget)
+        if (order.client_id) {
+            sendProductAlternativeEmail(
+                order_id,
+                order.client_id,
+                order.productName || '',
+                alternative_product_name
+            ).catch(() => {});
+            sendProductAlternativeWhatsApp(
+                order_id,
+                order.client_id,
+                order.productName || '',
+                alternative_product_name
+            ).catch(() => {});
         }
 
         return NextResponse.json(alternative, { status: 201 });

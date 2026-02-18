@@ -16,12 +16,14 @@ const translations = {
 };
 
 export function useTranslation() {
-  const { language } = useLanguage();
+  const { language, mounted } = useLanguage();
+  // Evitar hydration mismatch: servidor y primer paint en cliente usan siempre 'es'.
+  const effectiveLanguage = mounted ? language : 'es';
 
   const t = (key: TranslationKey, options?: TranslationOptions): string => {
     const keys = key.split('.');
-    let current: any = translations[language];
-    let usedLanguage = language;
+    let current: any = translations[effectiveLanguage];
+    let usedLanguage = effectiveLanguage;
 
     for (const k of keys) {
       if (current && typeof current === 'object' && k in current) {
@@ -63,5 +65,5 @@ export function useTranslation() {
     return result;
   };
 
-  return { t, language };
+  return { t, language: effectiveLanguage };
 }

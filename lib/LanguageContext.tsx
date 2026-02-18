@@ -5,17 +5,13 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 export type Language = 'es' | 'en' | 'zh';
 
 export type LanguageContextType = {
-  // Idioma mostrado actualmente (puede incluir cambios en preview no confirmados)
   language: Language;
-  // Último idioma confirmado y persistido
   committedLanguage: Language;
-  // Cambia el idioma solo en memoria (preview) sin persistir
+  /** Mientras sea false, usar 'es' para evitar hydration mismatch (servidor y primer paint en cliente iguales). */
+  mounted: boolean;
   previewLanguage: (lang: Language) => void;
-  // Confirma y persiste el idioma
   commitLanguage: (lang: Language) => void;
-  // Revertir a committedLanguage descartando preview
   revertLanguage: () => void;
-  // Alias legacy (compatibilidad): setLanguage = commitLanguage
   setLanguage: (lang: Language) => void;
 };
 
@@ -34,15 +30,20 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [committedLanguage, setCommittedLanguage] = useState<Language>('es');
   const [mounted, setMounted] = useState(false);
 
-  // Cargar idioma desde localStorage al montar el componente
+  // 1) Marcar como montado después del primer paint para que la hidratación vea siempre mounted=false.
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // 2) Solo después de montar, leer localStorage y actualizar idioma (evita mismatch en Strict Mode).
+  useEffect(() => {
+    if (!mounted) return;
     const savedLanguage = localStorage.getItem('pita-language') as Language;
     if (savedLanguage && ['es', 'en', 'zh'].includes(savedLanguage)) {
       setLanguageState(savedLanguage);
       setCommittedLanguage(savedLanguage);
     }
-    setMounted(true);
-  }, []);
+  }, [mounted]);
   // Preview (no persistir)
   const previewLanguage = (lang: Language) => {
 
@@ -85,7 +86,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [mounted, language]);
 
   return (
-    <LanguageContext.Provider value={{ language, committedLanguage, previewLanguage, commitLanguage, revertLanguage, setLanguage: commitLanguage }}>
+    <LanguageContext.Provider value={{ language, committedLanguage, mounted, previewLanguage, commitLanguage, revertLanguage, setLanguage: commitLanguage }}>
       {children}
     </LanguageContext.Provider>
   );

@@ -37,7 +37,7 @@ import {
   MoreHorizontal
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useLanguage } from '@/lib/LanguageContext';
+import { useLanguage, type Language } from '@/lib/LanguageContext';
 import { useFontSize } from '@/lib/FontSizeContext';
 import { useClientContext } from '@/lib/ClientContext';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
@@ -53,6 +53,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Switch } from '@/components/ui/switch';
 
 export type ConfigurationRole = 'admin' | 'china' | 'venezuela' | 'client' | 'pagos';
 
@@ -99,6 +100,8 @@ export default function ConfigurationContent({ role, onUserImageUpdate, layoutMo
     email: '',
     telefono: '',
     idioma: language,
+    notifications_email: true,
+    notifications_whatsapp: false,
     fotoPerfil: null as File | null,
     fotoPreview: null as string | null,
     fotoVersion: 0
@@ -108,7 +111,9 @@ export default function ConfigurationContent({ role, onUserImageUpdate, layoutMo
     nombre: '',
     email: '',
     telefono: '',
-    idioma: language as string
+    idioma: language as string,
+    notifications_email: true,
+    notifications_whatsapp: false
   });
 
   // Estados de contraseña
@@ -143,14 +148,19 @@ export default function ConfigurationContent({ role, onUserImageUpdate, layoutMo
       const { data: { user } } = await supabase.auth.getUser();
 
       if (user) {
-        // 1. Cargar imagen (común para todos)
+        // 1. Cargar imagen, idioma y preferencias de notificaciones (común; clientes usan todo)
         const { data: levelData } = await supabase
           .from('userlevel')
-          .select('user_image')
+          .select('user_image, preferred_language, notifications_email, notifications_whatsapp')
           .eq('id', user.id)
           .single();
 
         const userImage = levelData?.user_image || null;
+        const dbPreferredLang = levelData?.preferred_language && ['es', 'en', 'zh'].includes(String(levelData.preferred_language))
+          ? String(levelData.preferred_language)
+          : null;
+        const dbNotificationsEmail = levelData?.notifications_email !== false;
+        const dbNotificationsWhatsapp = levelData?.notifications_whatsapp === true;
 
         // 2. Cargar datos personales según rol
         let name = '';
@@ -182,13 +192,19 @@ export default function ConfigurationContent({ role, onUserImageUpdate, layoutMo
           name = (user.user_metadata?.full_name as string) || (user.user_metadata?.name as string) || '';
         }
 
+        // Para clientes, el idioma y preferencias de notificación vienen de la BD
+        const initialIdioma = role === 'client' && dbPreferredLang ? dbPreferredLang : language;
+        const initialNotificationsEmail = role === 'client' ? dbNotificationsEmail : true;
+        const initialNotificationsWhatsapp = role === 'client' ? dbNotificationsWhatsapp : false;
         const initialData = {
           nombre: name,
           email: user.email || '',
           telefono: phone,
-          idioma: language,
-          fotoPerfil: null,
-          fotoPreview: userImage,
+          idioma: initialIdioma as Language,
+          notifications_email: initialNotificationsEmail,
+          notifications_whatsapp: initialNotificationsWhatsapp,
+          fotoPerfil: null as File | null,
+          fotoPreview: userImage as string | null,
           fotoVersion: 0
         };
 
@@ -197,8 +213,13 @@ export default function ConfigurationContent({ role, onUserImageUpdate, layoutMo
           nombre: name,
           email: user.email || '',
           telefono: phone,
-          idioma: language as string
+          idioma: initialIdioma as string,
+          notifications_email: initialNotificationsEmail,
+          notifications_whatsapp: initialNotificationsWhatsapp
         });
+        if (role === 'client' && dbPreferredLang && dbPreferredLang !== committedLanguage) {
+          commitLanguage(dbPreferredLang as 'es' | 'en' | 'zh');
+        }
 
         // Actualizar security con fecha real
         if (user.created_at) {
@@ -465,10 +486,21 @@ export default function ConfigurationContent({ role, onUserImageUpdate, layoutMo
         setClient({ clientPhone: formData.telefono });
       }
 
-      if (formData.idioma && ['es', 'en', 'zh'].includes(formData.idioma) && formData.idioma !== committedLanguage) {
-
+      if (role === 'client') {
+        const supabase = getSupabaseBrowserClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id) {
+          const updates: Record<string, unknown> = {};
+          if (formData.idioma && ['es', 'en', 'zh'].includes(formData.idioma) && formData.idioma !== committedLanguage) {
+            commitLanguage(formData.idioma as any);
+            updates.preferred_language = formData.idioma;
+          }
+          updates.notifications_email = formData.notifications_email;
+          updates.notifications_whatsapp = formData.notifications_whatsapp;
+          await supabase.from('userlevel').update(updates).eq('id', user.id);
+        }
+      } else if (formData.idioma && ['es', 'en', 'zh'].includes(formData.idioma) && formData.idioma !== committedLanguage) {
         commitLanguage(formData.idioma as any);
-
       }
       toast({ title: t('admin.configuration.messages.profileUpdated'), description: t('admin.configuration.messages.profileUpdatedDesc'), variant: 'default', duration: 5000 });
       // Actualizar baseline tras guardar
@@ -476,7 +508,9 @@ export default function ConfigurationContent({ role, onUserImageUpdate, layoutMo
         nombre: formData.nombre,
         email: formData.email,
         telefono: formData.telefono,
-        idioma: language as string
+        idioma: language as string,
+        notifications_email: formData.notifications_email,
+        notifications_whatsapp: formData.notifications_whatsapp
       });
       didSaveRef.current = true;
     } catch (error) {
@@ -490,7 +524,9 @@ export default function ConfigurationContent({ role, onUserImageUpdate, layoutMo
     formData.nombre !== profileBaseline.nombre ||
     formData.email !== profileBaseline.email ||
     formData.telefono !== profileBaseline.telefono ||
-    formData.idioma !== profileBaseline.idioma;
+    formData.idioma !== profileBaseline.idioma ||
+    formData.notifications_email !== profileBaseline.notifications_email ||
+    formData.notifications_whatsapp !== profileBaseline.notifications_whatsapp;
 
   const hasPasswordChanges =
     passwordData.currentPassword.length > 0 ||
@@ -692,6 +728,42 @@ export default function ConfigurationContent({ role, onUserImageUpdate, layoutMo
                           </Select>
                         </div>
                       </div>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-3 mb-2">
+                        {t('admin.configuration.profile.saveChangesHint')}
+                      </p>
+                      {role === 'client' && (
+                        <div className="space-y-4 mt-4 mb-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                          <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                            {t('admin.configuration.profile.notificationsSectionTitle')}
+                          </h4>
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-2">
+                              <Mail className="w-4 h-4 text-slate-500" />
+                              <Label htmlFor="notif-email" className="text-sm font-normal cursor-pointer">
+                                {t('admin.configuration.profile.notificationsByEmail')}
+                              </Label>
+                            </div>
+                            <Switch
+                              id="notif-email"
+                              checked={formData.notifications_email}
+                              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, notifications_email: checked }))}
+                            />
+                          </div>
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-2">
+                              <MessageCircle className="w-4 h-4 text-slate-500" />
+                              <Label htmlFor="notif-whatsapp" className="text-sm font-normal cursor-pointer">
+                                {t('admin.configuration.profile.notificationsByWhatsApp')}
+                              </Label>
+                            </div>
+                            <Switch
+                              id="notif-whatsapp"
+                              checked={formData.notifications_whatsapp}
+                              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, notifications_whatsapp: checked }))}
+                            />
+                          </div>
+                        </div>
+                      )}
                       <div className="flex justify-end">
                         <Button onClick={handleSaveProfile} disabled={!hasProfileChanges}>
                           <Save className="w-4 h-4 mr-2" />

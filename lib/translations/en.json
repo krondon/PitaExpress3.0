@@ -473,6 +473,9 @@
           "phone": "+1 555-123-4567",
           "selectLanguage": "Select a language"
         },
+        "notificationsSectionTitle": "Notification preferences",
+        "notificationsByEmail": "Receive notifications by email",
+        "notificationsByWhatsApp": "Receive notifications by WhatsApp",
         "profilePicture": {
           "title": "Profile Picture",
           "altText": "Profile picture",
@@ -936,6 +939,10 @@
           "phone": "+1 555-123-4567",
           "selectLanguage": "Select a language"
         },
+        "saveChangesHint": "Verify that the data is correct and click \"Save changes\" to apply the modifications.",
+        "notificationsSectionTitle": "Notification preferences",
+        "notificationsByEmail": "Receive notifications by email",
+        "notificationsByWhatsApp": "Receive notifications by WhatsApp",
         "profilePicture": {
           "title": "Profile Picture",
           "subtitle": "Update your profile image",

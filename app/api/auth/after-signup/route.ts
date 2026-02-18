@@ -8,6 +8,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const userId: string | undefined = body?.userId;
     const userLevel: string = body?.userLevel ?? "Client";
+    const preferredLanguage: string | undefined = body?.preferredLanguage;
     if (!userId) {
       return NextResponse.json({ error: "userId es requerido" }, { status: 400 });
     }
@@ -20,10 +21,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Service role no configurado" }, { status: 500 });
     }
 
-    // upsert en tabla userlevel: columnas id (uuid) y user_level (text)
+    const payload: { id: string; user_level: string; preferred_language?: string } = {
+      id: userId,
+      user_level: userLevel,
+    };
+    if (userLevel === "Client" && preferredLanguage && ["es", "en", "zh"].includes(preferredLanguage)) {
+      payload.preferred_language = preferredLanguage;
+    }
+
     const { error } = await supabase
       .from("userlevel")
-      .upsert({ id: userId, user_level: userLevel }, { onConflict: "id" });
+      .upsert(payload, { onConflict: "id" });
 
     if (error) {
       console.error("[after-signup] Error upsert userlevel:", error);

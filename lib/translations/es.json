@@ -780,6 +780,9 @@
           "phone": "+58 412-123-4567",
           "selectLanguage": "Selecciona un idioma"
         },
+        "notificationsSectionTitle": "Preferencias de notificaciones",
+        "notificationsByEmail": "Recibir notificaciones por correo",
+        "notificationsByWhatsApp": "Recibir notificaciones por WhatsApp",
         "profilePicture": {
           "title": "Foto de Perfil",
           "altText": "Foto de perfil",
@@ -1399,6 +1402,10 @@
           "phone": "+58 412-123-4567",
           "selectLanguage": "Selecciona un idioma"
         },
+        "saveChangesHint": "Verifica que los datos sean correctos y haz clic en \"Guardar cambios\" para aplicar las modificaciones.",
+        "notificationsSectionTitle": "Preferencias de notificaciones",
+        "notificationsByEmail": "Recibir notificaciones por correo",
+        "notificationsByWhatsApp": "Recibir notificaciones por WhatsApp",
         "profilePicture": {
           "title": "Foto de Perfil",
           "subtitle": "Actualiza tu imagen de perfil",
