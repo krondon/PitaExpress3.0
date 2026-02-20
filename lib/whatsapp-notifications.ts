@@ -51,47 +51,63 @@ export async function sendOrderWhatsApp(
     state: WhatsAppState,
     clientId: string
 ): Promise<void> {
+    console.log(`\n[WhatsApp DEBUG] Iniciando sendOrderWhatsApp para pedido #${orderId}, state: ${state}, client: ${clientId}`);
     const token = process.env.SUPERAPI_TOKEN;
     if (!token) {
-        console.warn('[WhatsApp] SUPERAPI_TOKEN no configurado, omitiendo envío');
+        console.warn('[WhatsApp DEBUG] SUPERAPI_TOKEN no configurado, omitiendo envío');
         return;
     }
 
     try {
         const supabase = getSupabaseServiceRoleClient();
 
-        // 1. Obtener teléfono del cliente desde la vista user_phones
+        console.log(`[WhatsApp DEBUG] Buscando teléfono del cliente ${clientId} en user_phones...`);
         const { data: phoneData, error: phoneError } = await supabase
             .from('user_phones')
             .select('phone')
             .eq('id', clientId)
             .single();
 
-        if (phoneError || !phoneData?.phone) {
-            console.warn(`[WhatsApp] No se encontró teléfono para clientId=${clientId}:`, phoneError?.message);
+        if (phoneError) {
+            console.warn(`[WhatsApp DEBUG] Error BD al buscar teléfono:`, phoneError.message);
             return;
         }
+        if (!phoneData?.phone) {
+            console.warn(`[WhatsApp DEBUG] Cliente ${clientId} no tiene un teléfono válido en user_phones (encontró: ${phoneData?.phone})`);
+            return;
+        }
+        console.log(`[WhatsApp DEBUG] Teléfono encontrado: ${phoneData.phone}`);
 
-        // 2. Obtener info del pedido
-        const { data: order } = await supabase
+        console.log(`[WhatsApp DEBUG] Buscando información del pedido #${orderId}...`);
+        const { data: order, error: orderErr } = await supabase
             .from('orders')
             .select('id, productName')
             .eq('id', Number(orderId))
             .single();
 
+        if (orderErr) {
+            console.warn(`[WhatsApp DEBUG] Error al cargar pedido:`, orderErr.message);
+        }
+
         const productName = order?.productName || '';
         const orderIdStr = String(orderId);
 
+        console.log(`[WhatsApp DEBUG] Obteniendo preferencias de notificación del cliente ${clientId}...`);
         const settings = await getClientNotificationSettings(supabase, clientId);
+        console.log(`[WhatsApp DEBUG] Preferencias obtenidas:`, JSON.stringify(settings));
+
         if (!settings.notifications_whatsapp) {
-            console.log(`[WhatsApp] Cliente ${clientId} tiene notificaciones por WhatsApp desactivadas, omitiendo pedido #${orderIdStr}`);
+            console.log(`[WhatsApp DEBUG] 🔴 Cliente ${clientId} tiene notificaciones_whatsapp en FALSE o ausente. CANCELANDO envío.`);
             return;
         }
+
         const message = getOrderMessageByLang(settings.lang, state, productName, orderIdStr);
 
-        // 4. Enviar vía Superapi
-        const chatId = `${phoneData.phone}@c.us`;
+        // SuperAPI requiere el formato: 58XXXXXXXXXX@c.us (SIN el signo +)
+        const cleanPhone = phoneData.phone.replace(/^\+/, '').replace(/\s+/g, '');
+        const chatId = `${cleanPhone}@c.us`;
 
+        console.log(`[WhatsApp DEBUG] 🟢 Enviando payload a SuperAPI para ${chatId}...`);
         const response = await fetch(SUPERAPI_URL, {
             method: 'POST',
             headers: {
@@ -102,14 +118,15 @@ export async function sendOrderWhatsApp(
         });
 
         const result = await response.json();
+        console.log(`[WhatsApp DEBUG] Respuesta HTTP status: ${response.status}`);
 
         if (result.statusCode === 200 || response.ok) {
-            console.log(`[WhatsApp] ✅ Mensaje enviado a ${phoneData.phone} — Estado ${state}, Pedido #${orderId}`);
+            console.log(`[WhatsApp DEBUG] ✅ Mensaje enviado exitosamente a ${phoneData.phone} (Pedido #${orderIdStr})`);
         } else {
-            console.warn(`[WhatsApp] ⚠️ Error enviando a ${phoneData.phone}:`, result);
+            console.warn(`[WhatsApp DEBUG] ⚠️ Fallo al enviar a ${phoneData.phone}:`, JSON.stringify(result));
         }
     } catch (err) {
-        console.error(`[WhatsApp] Excepción en sendOrderWhatsApp (pedido #${orderId}, estado ${state}):`, err);
+        console.error(`[WhatsApp DEBUG] 🚨 Excepción crítica en sendOrderWhatsApp:`, err);
     }
 }
 

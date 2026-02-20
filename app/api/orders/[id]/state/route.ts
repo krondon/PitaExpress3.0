@@ -290,8 +290,14 @@ export async function PUT(
       }
 
       // ── WhatsApp al cliente (fire-and-forget) ──
+      console.log(`[API order/state] Evaluando envío WhatsApp para pedido ${orderId}, state: ${state}, client: ${updatedOrder?.client_id}`);
       if (updatedOrder?.client_id && shouldSendWhatsApp(state)) {
-        sendOrderWhatsApp(String(orderId), state, updatedOrder.client_id).catch(() => { });
+        console.log(`[API order/state] 🟢 Llamando sendOrderWhatsApp...`);
+        sendOrderWhatsApp(String(orderId), state, updatedOrder.client_id).catch((err) => {
+          console.error(`[API order/state] Error en promesa fire-and-forget:`, err);
+        });
+      } else {
+        console.log(`[API order/state] 🟡 Omitiendo WhatsApp. shouldSendWhatsApp=${shouldSendWhatsApp(state)}`);
       }
     } catch (notifyErr) {
       console.error('Order state notification error:', notifyErr);
