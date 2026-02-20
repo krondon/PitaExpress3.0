@@ -471,9 +471,30 @@ export default function ConfigurationContent({ role, onUserImageUpdate, layoutMo
     if (!hasProfileChanges) return; // Nada que guardar
 
     try {
+      const supabase = getSupabaseBrowserClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({ title: t('common.error'), description: 'Usuario no autenticado.', variant: 'destructive', duration: 5000 });
+        return;
+      }
+
+      let emailChangeRequested = false;
+
+      // Actualizar email si cambió (requiere confirmación por email)
+      if (formData.email && formData.email !== profileBaseline.email) {
+        const { error: emailError } = await supabase.auth.updateUser({
+          email: formData.email,
+        });
+        if (emailError) {
+          console.error('Error updating email:', emailError);
+          toast({ title: t('admin.configuration.messages.emailChangeError'), description: emailError.message, variant: 'destructive', duration: 5000 });
+          return;
+        }
+        emailChangeRequested = true;
+      }
+
       // Guardar teléfono en user_metadata si es cliente y cambió
       if (role === 'client' && formData.telefono !== profileBaseline.telefono) {
-        const supabase = getSupabaseBrowserClient();
         const { error } = await supabase.auth.updateUser({
           data: { phone: formData.telefono }
         });
@@ -487,8 +508,6 @@ export default function ConfigurationContent({ role, onUserImageUpdate, layoutMo
       }
 
       if (role === 'client') {
-        const supabase = getSupabaseBrowserClient();
-        const { data: { user } } = await supabase.auth.getUser();
         if (user?.id) {
           const updates: Record<string, unknown> = {};
           if (formData.idioma && ['es', 'en', 'zh'].includes(formData.idioma) && formData.idioma !== committedLanguage) {
@@ -502,11 +521,24 @@ export default function ConfigurationContent({ role, onUserImageUpdate, layoutMo
       } else if (formData.idioma && ['es', 'en', 'zh'].includes(formData.idioma) && formData.idioma !== committedLanguage) {
         commitLanguage(formData.idioma as any);
       }
-      toast({ title: t('admin.configuration.messages.profileUpdated'), description: t('admin.configuration.messages.profileUpdatedDesc'), variant: 'default', duration: 5000 });
-      // Actualizar baseline tras guardar
+
+      if (emailChangeRequested) {
+        toast({
+          title: t('admin.configuration.messages.emailConfirmationSent'),
+          description: t('admin.configuration.messages.emailConfirmationSentDesc'),
+          variant: 'default',
+          duration: 8000,
+        });
+        // Revertir email en el form al actual, ya que el cambio es pendiente de confirmación
+        setFormData(prev => ({ ...prev, email: profileBaseline.email }));
+      } else {
+        toast({ title: t('admin.configuration.messages.profileUpdated'), description: t('admin.configuration.messages.profileUpdatedDesc'), variant: 'default', duration: 5000 });
+      }
+
+      // Actualizar baseline tras guardar (el email NO se actualiza porque está pendiente de confirmación)
       setProfileBaseline({
         nombre: formData.nombre,
-        email: formData.email,
+        email: profileBaseline.email, // Mantener email actual hasta que se confirme
         telefono: formData.telefono,
         idioma: language as string,
         notifications_email: formData.notifications_email,

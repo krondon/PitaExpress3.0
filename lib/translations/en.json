@@ -1132,6 +1132,9 @@
       "messages": {
         "profileUpdated": "Profile updated",
         "profileUpdatedDesc": "Changes have been saved successfully.",
+        "emailConfirmationSent": "📧 Confirmation sent",
+        "emailConfirmationSentDesc": "A confirmation link has been sent to your new email. Check your inbox (and spam folder) to complete the change.",
+        "emailChangeError": "Error changing email",
         "passwordUpdated": "Password updated",
         "passwordUpdatedDesc": "Your password has been changed successfully.",
         "passwordMismatch": "Passwords do not match.",
