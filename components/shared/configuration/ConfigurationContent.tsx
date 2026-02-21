@@ -815,6 +815,7 @@ export default function ConfigurationContent({ role, onUserImageUpdate, layoutMo
                             </div>
                             <Switch
                               id="notif-whatsapp"
+                              disabled={!formData.telefono.trim()}
                               checked={formData.notifications_whatsapp}
                               onCheckedChange={(checked) => setFormData(prev => ({ ...prev, notifications_whatsapp: checked }))}
                             />
