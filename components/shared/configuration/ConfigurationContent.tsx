@@ -253,7 +253,17 @@ export default function ConfigurationContent({ role, onUserImageUpdate, layoutMo
     let processed = limitedValue;
     if (field === 'telefono') {
       // Permitir + dígitos, espacios y guiones. Longitud máxima 20 para soportar formatos internacionales.
-      processed = processed.replace(/[^+0-9\-\s]/g, '').slice(0, 20);
+      processed = processed.replace(/[^\+0-9\-\s]/g, '').slice(0, 20);
+
+      // Auto-formateo para Venezuela si escriben "0412" o "412" en lugar de "+58"
+      const numbersOnly = processed.replace(/\D/g, '');
+      if (numbersOnly.length >= 10 && !processed.startsWith('+')) {
+        if (numbersOnly.startsWith('0')) {
+          processed = `+58 ${numbersOnly.slice(1, 4)} ${numbersOnly.slice(4)}`;
+        } else if (numbersOnly.startsWith('4') && numbersOnly.length === 10) {
+          processed = `+58 ${numbersOnly.slice(0, 3)} ${numbersOnly.slice(3)}`;
+        }
+      }
     }
     setFormData(prev => ({ ...prev, [field]: processed }));
 
@@ -463,6 +473,16 @@ export default function ConfigurationContent({ role, onUserImageUpdate, layoutMo
   };
 
   const handleSaveProfile = async () => {
+    // Validaciones de campos obligatorios
+    if (!formData.nombre.trim()) {
+      toast({ title: t('common.error'), description: t('admin.configuration.profile.errors.nameRequired') || 'El nombre es obligatorio.', variant: 'destructive', duration: 5000 });
+      return;
+    }
+    if (!formData.email.trim()) {
+      toast({ title: t('common.error'), description: t('admin.configuration.profile.errors.emailRequired') || 'El correo electrónico es obligatorio.', variant: 'destructive', duration: 5000 });
+      return;
+    }
+
     // Validaciones de longitud solo al guardar (el input ya está limitado, esto es por seguridad extra)
     if (formData.nombre.length > MAX_FIELD_LENGTH || formData.email.length > MAX_FIELD_LENGTH) {
       toast({ title: t('common.error'), description: `Nombre y correo no pueden exceder ${MAX_FIELD_LENGTH} caracteres.`, variant: 'destructive', duration: 5000 });
@@ -515,8 +535,17 @@ export default function ConfigurationContent({ role, onUserImageUpdate, layoutMo
             updates.preferred_language = formData.idioma;
           }
           updates.notifications_email = formData.notifications_email;
-          updates.notifications_whatsapp = formData.notifications_whatsapp;
+
+          // Desactivar WhatsApp automáticamente si el teléfono está vacío
+          const finalWhatsappPref = !formData.telefono.trim() ? false : formData.notifications_whatsapp;
+          updates.notifications_whatsapp = finalWhatsappPref;
+
           await supabase.from('userlevel').update(updates).eq('id', user.id);
+
+          // Actualizamos el form para que el switch UI se apague si estaba prendido
+          if (finalWhatsappPref !== formData.notifications_whatsapp) {
+            setFormData(prev => ({ ...prev, notifications_whatsapp: finalWhatsappPref }));
+          }
         }
       } else if (formData.idioma && ['es', 'en', 'zh'].includes(formData.idioma) && formData.idioma !== committedLanguage) {
         commitLanguage(formData.idioma as any);
