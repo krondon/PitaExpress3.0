@@ -1497,7 +1497,33 @@ export default function PedidosChina() {
       const boxIds = (boxRows || []).map((r: any) => r.box_id).filter((v: any) => v != null);
       if (boxIds.length > 0) {
         await supabase.from('boxes').update({ state: 4 }).in('box_id', boxIds as any);
-        await supabase.from('orders').update({ state: 9 }).in('box_id', boxIds as any);
+
+        // Obtener todos los pedidos asociados a estas cajas
+        const { data: orderRows } = await supabase.from('orders').select('id').in('box_id', boxIds as any);
+        const orderIds = (orderRows || []).map((r: any) => r.id);
+
+        if (orderIds.length > 0) {
+          // Usar la API en lugar de actualizar directamente para gatillar notificaciones (WhatsApp/Email)
+          try {
+            const batchRes = await fetch('/api/orders/batch-state', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                orderIds: orderIds,
+                state: 9,
+                notes: `Contenedor ${containerId} enviado`
+              })
+            });
+            if (!batchRes.ok) {
+              console.error('Error al actualizar estado de pedidos en batch (notificaciones fallidas)', await batchRes.text());
+              // Fallback: Si falla la API por alguna razón, igual forzar el estado en la BD para no romper el flujo
+              await supabase.from('orders').update({ state: 9 }).in('box_id', boxIds as any);
+            }
+          } catch (err) {
+            console.error('Exception calling batch-state:', err);
+            await supabase.from('orders').update({ state: 9 }).in('box_id', boxIds as any);
+          }
+        }
       }
 
       toast({ title: t('chinese.ordersPage.toasts.containerSentTitle') });
