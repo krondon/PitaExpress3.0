@@ -1406,6 +1406,10 @@
         "notificationsSectionTitle": "Preferencias de notificaciones",
         "notificationsByEmail": "Recibir notificaciones por correo",
         "notificationsByWhatsApp": "Recibir notificaciones por WhatsApp",
+        "errors": {
+          "nameRequired": "El nombre es obligatorio.",
+          "emailRequired": "El correo electrónico es obligatorio."
+        },
         "profilePicture": {
           "title": "Foto de Perfil",
           "subtitle": "Actualiza tu imagen de perfil",

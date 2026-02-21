@@ -932,6 +932,10 @@
         "notificationsSectionTitle": "通知偏好",
         "notificationsByEmail": "通过邮件接收通知",
         "notificationsByWhatsApp": "通过 WhatsApp 接收通知",
+        "errors": {
+          "nameRequired": "姓名是必填项。",
+          "emailRequired": "电子邮件地址是必填项。"
+        },
         "profilePicture": {
           "title": "头像",
           "subtitle": "更新你的个人头像",

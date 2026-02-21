@@ -943,6 +943,10 @@
         "notificationsSectionTitle": "Notification preferences",
         "notificationsByEmail": "Receive notifications by email",
         "notificationsByWhatsApp": "Receive notifications by WhatsApp",
+        "errors": {
+          "nameRequired": "Name is required.",
+          "emailRequired": "Email address is required."
+        },
         "profilePicture": {
           "title": "Profile Picture",
           "subtitle": "Update your profile image",
