@@ -264,7 +264,18 @@ export default function ConfigurationContent({ role, onUserImageUpdate, layoutMo
           processed = `+58 ${numbersOnly.slice(0, 3)} ${numbersOnly.slice(3)}`;
         }
       }
+
+      // UX: Activar WhatsApp automáticamente si pasamos de vacío a tener texto
+      if (!formData.telefono.trim() && processed.trim()) {
+        setFormData(prev => ({
+          ...prev,
+          [field]: processed,
+          notifications_whatsapp: true
+        }));
+        return;
+      }
     }
+
     setFormData(prev => ({ ...prev, [field]: processed }));
 
     // Cambio de idioma diferido hasta guardar
@@ -481,6 +492,15 @@ export default function ConfigurationContent({ role, onUserImageUpdate, layoutMo
     if (!formData.email.trim()) {
       toast({ title: t('common.error'), description: t('admin.configuration.profile.errors.emailRequired') || 'El correo electrónico es obligatorio.', variant: 'destructive', duration: 5000 });
       return;
+    }
+
+    // Validación de longitud mínima para el teléfono (si se decide ingresar uno)
+    if (formData.telefono.trim()) {
+      const numbersOnly = formData.telefono.replace(/\D/g, '');
+      if (numbersOnly.length < 10) {
+        toast({ title: t('common.error'), description: 'El número de teléfono debe tener al menos 10 dígitos.', variant: 'destructive', duration: 5000 });
+        return;
+      }
     }
 
     // Validaciones de longitud solo al guardar (el input ya está limitado, esto es por seguridad extra)
