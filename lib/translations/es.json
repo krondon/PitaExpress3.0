@@ -1408,7 +1408,8 @@
         "notificationsByWhatsApp": "Recibir notificaciones por WhatsApp",
         "errors": {
           "nameRequired": "El nombre es obligatorio.",
-          "emailRequired": "El correo electrónico es obligatorio."
+          "emailRequired": "El correo electrónico es obligatorio.",
+          "phoneMinLength": "El número de teléfono debe tener al menos 10 dígitos."
         },
         "profilePicture": {
           "title": "Foto de Perfil",

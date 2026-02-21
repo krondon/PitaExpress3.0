@@ -945,7 +945,8 @@
         "notificationsByWhatsApp": "Receive notifications by WhatsApp",
         "errors": {
           "nameRequired": "Name is required.",
-          "emailRequired": "Email address is required."
+          "emailRequired": "Email address is required.",
+          "phoneMinLength": "The phone number must have at least 10 digits."
         },
         "profilePicture": {
           "title": "Profile Picture",

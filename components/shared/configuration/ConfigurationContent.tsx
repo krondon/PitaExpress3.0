@@ -498,7 +498,7 @@ export default function ConfigurationContent({ role, onUserImageUpdate, layoutMo
     if (formData.telefono.trim()) {
       const numbersOnly = formData.telefono.replace(/\D/g, '');
       if (numbersOnly.length < 10) {
-        toast({ title: t('common.error'), description: 'El número de teléfono debe tener al menos 10 dígitos.', variant: 'destructive', duration: 5000 });
+        toast({ title: t('common.error'), description: t('admin.configuration.profile.errors.phoneMinLength') || 'El número de teléfono debe tener al menos 10 dígitos.', variant: 'destructive', duration: 5000 });
         return;
       }
     }

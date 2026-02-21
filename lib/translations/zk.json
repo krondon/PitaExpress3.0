@@ -934,7 +934,8 @@
         "notificationsByWhatsApp": "通过 WhatsApp 接收通知",
         "errors": {
           "nameRequired": "姓名是必填项。",
-          "emailRequired": "电子邮件地址是必填项。"
+          "emailRequired": "电子邮件地址是必填项。",
+          "phoneMinLength": "电话号码必须至少包含 10 位数字。"
         },
         "profilePicture": {
           "title": "头像",
