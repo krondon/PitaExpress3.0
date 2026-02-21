@@ -744,10 +744,6 @@ export default function ConfigurationContent({ role, onUserImageUpdate, layoutMo
                           <Label htmlFor="idioma">{t('admin.configuration.profile.fields.language')}</Label>
                           <Select value={String(formData.idioma)} onValueChange={(value) => {
                             handleInputChange('idioma', value);
-                            if (value === 'es' || value === 'en' || value === 'zh') {
-                              // Preview inmediato sin persistir
-                              previewLanguage(value as any);
-                            }
                           }}>
                             <SelectTrigger>
                               <SelectValue placeholder={t('admin.configuration.profile.placeholders.selectLanguage')} />
