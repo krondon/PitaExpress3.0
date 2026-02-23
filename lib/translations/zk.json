@@ -469,6 +469,9 @@
           "phone": "+1 555-123-4567",
           "selectLanguage": "选择语言"
         },
+        "notificationsSectionTitle": "通知偏好",
+        "notificationsByEmail": "通过邮件接收通知",
+        "notificationsByWhatsApp": "通过 WhatsApp 接收通知",
         "profilePicture": {
           "title": "头像",
           "altText": "头像",
@@ -925,6 +928,15 @@
           "phone": "+1 555-123-4567",
           "selectLanguage": "选择语言"
         },
+        "saveChangesHint": "请确认数据正确后点击「保存更改」以应用修改。",
+        "notificationsSectionTitle": "通知偏好",
+        "notificationsByEmail": "通过邮件接收通知",
+        "notificationsByWhatsApp": "通过 WhatsApp 接收通知",
+        "errors": {
+          "nameRequired": "姓名是必填项。",
+          "emailRequired": "电子邮件地址是必填项。",
+          "phoneMinLength": "电话号码必须至少包含 10 位数字。"
+        },
         "profilePicture": {
           "title": "头像",
           "subtitle": "更新你的个人头像",
@@ -1114,6 +1126,9 @@
       "messages": {
         "profileUpdated": "资料已更新",
         "profileUpdatedDesc": "更改已成功保存。",
+        "emailConfirmationSent": "📧 确认邮件已发送",
+        "emailConfirmationSentDesc": "确认链接已发送至您的新邮箱。请检查您的收件箱（和垃圾邮件文件夹）以完成更改。",
+        "emailChangeError": "更改邮箱时出错",
         "passwordUpdated": "密码已更新",
         "passwordUpdatedDesc": "你的密码已成功更改。",
         "passwordMismatch": "密码不匹配。",

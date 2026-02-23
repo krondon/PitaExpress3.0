@@ -1185,7 +1185,6 @@ export default function VenezuelaPedidosPage() {
                                 }`}>
                                 {stateNum === 1 ? t('venezuela.pedidos.boxesBadges.new') : stateNum === 2 ? t('venezuela.pedidos.boxesBadges.ready') : stateNum === 3 ? t('venezuela.pedidos.boxesBadges.inContainer') : stateNum === 4 ? t('venezuela.pedidos.boxesBadges.traveling') : stateNum === 5 ? t('venezuela.pedidos.boxesBadges.received') : stateNum === 6 ? t('venezuela.pedidos.boxesBadges.completed') : t('venezuela.pedidos.boxesBadges.state', { num: stateNum })}
                               </Badge>
-                              {/* Botón Recibido: visible cuando boxes.state === 5 o (state === 4 y tiene pedidos air) */}
                               {(stateNum === 5 || (stateNum === 4 && boxesWithAirShipping[countKey])) && (
                                 <Button
                                   variant="outline"
@@ -1202,18 +1201,7 @@ export default function VenezuelaPedidosPage() {
                                         const err = await res.json().catch(() => ({}));
                                         throw new Error(err.error || t('venezuela.pedidos.errors.updateBox'));
                                       }
-                                      // Actualizar pedidos asociados a estado 11
-                                      const supabase = getSupabaseBrowserClient();
-                                      const { data: ordersData } = await supabase.from('orders').select('id').eq('box_id', box.box_id ?? box.boxes_id ?? box.id ?? id);
-                                      if (ordersData) {
-                                        for (const order of ordersData) {
-                                          await fetch(`/api/admin/orders/${order.id}`, {
-                                            method: 'PATCH',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ state: 11 })
-                                          });
-                                        }
-                                      }
+
                                       await Promise.all([fetchBoxes(), fetchOrders()]);
                                     } catch (e) {
                                       alert((e as Error).message || t('venezuela.pedidos.errors.boxUpdate'));
@@ -1633,7 +1621,6 @@ export default function VenezuelaPedidosPage() {
                             >
                               {stateNum === 1 ? t('venezuela.pedidos.boxesBadges.new') : stateNum === 2 ? t('venezuela.pedidos.boxesBadges.ready') : stateNum === 5 ? t('venezuela.pedidos.boxesBadges.received') : stateNum === 6 ? t('venezuela.pedidos.boxesBadges.completed') : t('venezuela.pedidos.boxesBadges.state', { num: stateNum })}
                             </Badge>
-                            {/* Botón Recibido en modal: visible cuando boxes.state === 5 o (state === 4 y tiene pedidos air) */}
                             {(stateNum === 5 || (stateNum === 4 && boxesWithAirShipping[id as any])) && (
                               <Button
                                 variant="outline"
@@ -1651,18 +1638,7 @@ export default function VenezuelaPedidosPage() {
                                       const err = await res.json().catch(() => ({}));
                                       throw new Error(err.error || t('venezuela.pedidos.errors.updateBox'));
                                     }
-                                    // Actualizar pedidos asociados a estado 11
-                                    const supabase = getSupabaseBrowserClient();
-                                    const { data: ordersData } = await supabase.from('orders').select('id').eq('box_id', box.box_id ?? box.boxes_id ?? box.id ?? id);
-                                    if (ordersData) {
-                                      for (const order of ordersData) {
-                                        await fetch(`/api/admin/orders/${order.id}`, {
-                                          method: 'PATCH',
-                                          headers: { 'Content-Type': 'application/json' },
-                                          body: JSON.stringify({ state: 11 })
-                                        });
-                                      }
-                                    }
+
                                     await Promise.all([
                                       modalVerCajas.containerId ? fetchBoxesByContainerId(modalVerCajas.containerId) : Promise.resolve(),
                                       fetchOrders()

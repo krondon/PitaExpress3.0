@@ -473,6 +473,9 @@
           "phone": "+1 555-123-4567",
           "selectLanguage": "Select a language"
         },
+        "notificationsSectionTitle": "Notification preferences",
+        "notificationsByEmail": "Receive notifications by email",
+        "notificationsByWhatsApp": "Receive notifications by WhatsApp",
         "profilePicture": {
           "title": "Profile Picture",
           "altText": "Profile picture",
@@ -936,6 +939,15 @@
           "phone": "+1 555-123-4567",
           "selectLanguage": "Select a language"
         },
+        "saveChangesHint": "Verify that the data is correct and click \"Save changes\" to apply the modifications.",
+        "notificationsSectionTitle": "Notification preferences",
+        "notificationsByEmail": "Receive notifications by email",
+        "notificationsByWhatsApp": "Receive notifications by WhatsApp",
+        "errors": {
+          "nameRequired": "Name is required.",
+          "emailRequired": "Email address is required.",
+          "phoneMinLength": "The phone number must have at least 10 digits."
+        },
         "profilePicture": {
           "title": "Profile Picture",
           "subtitle": "Update your profile image",
@@ -1125,6 +1137,9 @@
       "messages": {
         "profileUpdated": "Profile updated",
         "profileUpdatedDesc": "Changes have been saved successfully.",
+        "emailConfirmationSent": "📧 Confirmation sent",
+        "emailConfirmationSentDesc": "A confirmation link has been sent to your new email. Check your inbox (and spam folder) to complete the change.",
+        "emailChangeError": "Error changing email",
         "passwordUpdated": "Password updated",
         "passwordUpdatedDesc": "Your password has been changed successfully.",
         "passwordMismatch": "Passwords do not match.",

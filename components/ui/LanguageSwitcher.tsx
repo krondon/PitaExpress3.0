@@ -46,7 +46,15 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ position = '
       <select
         id="lang-switch"
         value={language}
-        onChange={(e) => setLanguage(e.target.value as any)}
+        onChange={(e) => {
+          const value = e.target.value as 'es' | 'en' | 'zh';
+          setLanguage(value);
+          fetch('/api/profile/preferred-language', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ language: value }),
+          }).catch(() => {});
+        }}
         className={selectClasses}
       >
         <option value="es">🇪🇸 Español</option>

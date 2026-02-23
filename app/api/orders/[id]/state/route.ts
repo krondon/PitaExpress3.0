@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServiceRoleClient } from '@/lib/supabase/server';
 import { NotificationsFactory } from '@/lib/notifications';
+import { shouldSendEmail, sendOrderStateEmail } from '@/lib/email-notifications';
+import { shouldSendWhatsApp, sendOrderWhatsApp } from '@/lib/whatsapp-notifications';
 
 export const revalidate = 0;
 
@@ -20,7 +22,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const orderId = parseInt(id);
-    
+
     if (isNaN(orderId)) {
       return NextResponse.json(
         { error: 'ID de pedido inválido' },
@@ -76,13 +78,13 @@ export async function PUT(
     }
 
     // Obtener información del request
-    const clientIP = ip_address || 
-      request.headers.get('x-forwarded-for') || 
-      request.headers.get('x-real-ip') || 
+    const clientIP = ip_address ||
+      request.headers.get('x-forwarded-for') ||
+      request.headers.get('x-real-ip') ||
       'unknown';
-    
-    const clientUserAgent = user_agent || 
-      request.headers.get('user-agent') || 
+
+    const clientUserAgent = user_agent ||
+      request.headers.get('user-agent') ||
       'unknown';
 
     // Actualizar estado del pedido
@@ -141,7 +143,7 @@ export async function PUT(
         .eq('id', orderId)
         .single();
 
-  const stateName = getStateName(state);
+      const stateName = getStateName(state);
 
       if (updatedOrder?.client_id) {
         // Para state===3, la notificación específica se envía más abajo en el bloque de estado 3
@@ -281,6 +283,22 @@ export async function PUT(
           ]);
         }
       }
+
+      // ── Email al cliente (fire-and-forget) ──
+      if (updatedOrder?.client_id && shouldSendEmail(state)) {
+        sendOrderStateEmail(String(orderId), state, updatedOrder.client_id).catch(() => { });
+      }
+
+      // ── WhatsApp al cliente (fire-and-forget) ──
+      console.log(`[API order/state] Evaluando envío WhatsApp para pedido ${orderId}, state: ${state}, client: ${updatedOrder?.client_id}`);
+      if (updatedOrder?.client_id && shouldSendWhatsApp(state)) {
+        console.log(`[API order/state] 🟢 Llamando sendOrderWhatsApp...`);
+        sendOrderWhatsApp(String(orderId), state, updatedOrder.client_id).catch((err) => {
+          console.error(`[API order/state] Error en promesa fire-and-forget:`, err);
+        });
+      } else {
+        console.log(`[API order/state] 🟡 Omitiendo WhatsApp. shouldSendWhatsApp=${shouldSendWhatsApp(state)}`);
+      }
     } catch (notifyErr) {
       console.error('Order state notification error:', notifyErr);
     }
@@ -298,9 +316,9 @@ export async function PUT(
   } catch (error: any) {
     console.error('Error in state update API:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Error interno del servidor',
-        details: error.message 
+        details: error.message
       },
       { status: 500 }
     );
@@ -315,7 +333,7 @@ export async function GET(
   try {
     const { id } = await params;
     const orderId = parseInt(id);
-    
+
     if (isNaN(orderId)) {
       return NextResponse.json(
         { error: 'ID de pedido inválido' },
@@ -362,9 +380,9 @@ export async function GET(
   } catch (error: any) {
     console.error('Error in get state API:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Error interno del servidor',
-        details: error.message 
+        details: error.message
       },
       { status: 500 }
     );

@@ -24,6 +24,7 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useClientContext } from '@/lib/ClientContext';
 import { useTranslation } from '@/hooks/useTranslation';
+import { randomUUID } from '@/lib/utils';
 import { useNotifications } from '@/hooks/use-notifications';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -1889,7 +1890,7 @@ export default function MisPedidosPage() {
     // Generar un ID único para este lote (UUID v4-like simple)
 
     // Generar un ID de lote único para este envío
-    const batchId = crypto.randomUUID();
+    const batchId = randomUUID();
     const results = [];
 
     for (const order of orderQueue) {

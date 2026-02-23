@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseServiceRoleClient } from '@/lib/supabase/server';
 import { NotificationsFactory } from '@/lib/notifications';
+import { shouldSendEmail, sendOrderStateEmail } from '@/lib/email-notifications';
+import { shouldSendWhatsApp, sendOrderWhatsApp } from '@/lib/whatsapp-notifications';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -208,6 +210,14 @@ export async function PATCH(
               },
             ]);
           }
+        }
+
+        // Email y WhatsApp al cliente cuando el estado es 3, 5, 9 o 11
+        if (orderFull?.client_id && shouldSendEmail(stateNum)) {
+          sendOrderStateEmail(orderId, stateNum, orderFull.client_id).catch(() => {});
+        }
+        if (orderFull?.client_id && shouldSendWhatsApp(stateNum)) {
+          sendOrderWhatsApp(orderId, stateNum, orderFull.client_id).catch(() => {});
         }
       }
     } catch (notifyErr) {
