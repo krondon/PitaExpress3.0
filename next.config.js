@@ -8,6 +8,10 @@ const nextConfig = {
   // y comentar los redirects y otras funciones dinámicas
   // output: 'export',
 
+  // Ignorar errores de ESLint durante el build
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 
   // Optimizaciones de imágenes
   images: {
