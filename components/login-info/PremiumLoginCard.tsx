@@ -388,10 +388,6 @@ export default function PremiumLoginCard({ onNavigateToPasswordReset }: Props) {
                 provider,
                 options: {
                     redirectTo: `${siteUrl}/auth/callback`,
-                    queryParams: {
-                        access_type: 'offline',
-                        prompt: 'consent',
-                    },
                 },
             });
 

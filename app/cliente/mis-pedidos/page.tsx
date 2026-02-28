@@ -2175,14 +2175,14 @@ export default function MisPedidosPage() {
                   {/* Enhanced Progress Bar */}
                   <div className={`space-y-4 mb-8 transition-all duration-300 ${isTransitioning ? 'opacity-75' : 'opacity-100'}`}>
                     <div className="flex items-center justify-between text-sm">
-                      <span className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('client.recentOrders.newOrder.step', { current: currentStep, total: 3 })}</span>
-                      <span className={`font-bold ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>{t('client.recentOrders.newOrder.percentComplete', { percent: Math.round((currentStep / 3) * 100) })}</span>
+                      <span className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('client.recentOrders.newOrder.step', { current: currentStep, total: 4 })}</span>
+                      <span className={`font-bold ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>{t('client.recentOrders.newOrder.percentComplete', { percent: Math.min(100, Math.round((currentStep / 4) * 100)) })}</span>
                     </div>
                     <div className="relative">
                       <div className={`w-full rounded-full h-3 overflow-hidden ${mounted && theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`}>
                         <div
                           className="h-full bg-gradient-to-r from-blue-500 to-orange-500 rounded-full transition-all duration-500 ease-out relative"
-                          style={{ width: `${(currentStep / 3) * 100}%` }}
+                          style={{ width: `${Math.min(100, (currentStep / 4) * 100)}%` }}
                         >
                           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
                         </div>
