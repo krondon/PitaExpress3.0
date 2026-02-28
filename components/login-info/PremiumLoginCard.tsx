@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { MAX_EMAIL, MAX_PASSWORD, MAX_NAME } from "@/lib/constants/validation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Eye, EyeOff } from "lucide-react";
@@ -23,6 +23,7 @@ export default function PremiumLoginCard({ onNavigateToPasswordReset }: Props) {
     const [passwordError, setPasswordError] = useState("");
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
+    const [socialLoading, setSocialLoading] = useState<'google' | 'facebook' | null>(null);
 
     // Register state
     const [fullName, setFullName] = useState("");
@@ -32,6 +33,81 @@ export default function PremiumLoginCard({ onNavigateToPasswordReset }: Props) {
     const [passwordMatchError, setPasswordMatchError] = useState(false);
     const [successMsg, setSuccessMsg] = useState("");
     const [passwordStrength, setPasswordStrength] = useState<"none" | "low" | "medium" | "strong" | "very-strong">("none");
+
+    // Detectar si el usuario llega con tokens de OAuth (hash fragment o sesión activa)
+    useEffect(() => {
+        const handleOAuthReturn = async () => {
+            try {
+                const supabase = getSupabaseBrowserClient();
+
+                // Verificar si hay hash con access_token (flujo implícito)
+                const hash = window.location.hash;
+                if (!hash || !hash.includes('access_token')) return;
+
+                // Supabase auto-detecta y procesa los tokens del hash
+                const { data: { session }, error } = await supabase.auth.getSession();
+
+                if (error || !session?.user) return;
+
+                const userId = session.user.id;
+                const userFullName = session.user.user_metadata?.full_name || session.user.user_metadata?.name || '';
+
+                // Verificar/asignar userlevel
+                const { data: existingLevel } = await supabase
+                    .from('userlevel')
+                    .select('user_level')
+                    .eq('id', userId)
+                    .maybeSingle();
+
+                const alreadyHasLevel = !!(existingLevel?.user_level && existingLevel.user_level.trim() !== '');
+
+                if (!alreadyHasLevel) {
+                    // Asignar nivel Client via API
+                    await fetch('/api/auth/after-signup', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId, userLevel: 'Client' }),
+                    }).catch(() => { });
+
+                    // Insertar en clients
+                    try {
+                        await supabase
+                            .from('clients')
+                            .insert([{ user_id: userId, name: userFullName || session.user.email || '' }]);
+                    } catch { /* ignorar error si ya existe */ }
+                }
+
+                // Obtener nivel para redirect
+                const { data: ul } = await supabase
+                    .from('userlevel')
+                    .select('user_level')
+                    .eq('id', userId)
+                    .maybeSingle();
+
+                const normalized = (ul?.user_level ?? '').toString().trim().toLowerCase();
+
+                let role = '';
+                let redirectPath = '/gestion';
+
+                if (['cliente', 'client'].includes(normalized)) { role = 'client'; redirectPath = '/cliente'; }
+                else if (['vzla', 'venezuela'].includes(normalized)) { role = 'venezuela'; redirectPath = '/venezuela'; }
+                else if (['china'].includes(normalized)) { role = 'china'; redirectPath = '/china'; }
+                else if (['pagos', 'payments', 'payment', 'validador', 'validator'].includes(normalized)) { role = 'pagos'; redirectPath = '/pagos'; }
+                else if (['admin', 'administrador', 'administrator'].includes(normalized)) { role = 'admin'; redirectPath = '/admin'; }
+
+                if (role) {
+                    document.cookie = `role=${role}; Path=/; Max-Age=${60 * 60 * 12}; SameSite=Lax`;
+                }
+
+                localStorage.setItem('currentUserId', userId);
+                window.location.href = redirectPath;
+            } catch (err) {
+                console.error('Error procesando OAuth return:', err);
+            }
+        };
+
+        handleOAuthReturn();
+    }, []);
 
     const validateEmail = (value: string) => {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -300,6 +376,36 @@ export default function PremiumLoginCard({ onNavigateToPasswordReset }: Props) {
         onNavigateToPasswordReset?.();
     };
 
+    const handleSocialLogin = async (provider: 'google' | 'facebook') => {
+        try {
+            setSocialLoading(provider);
+            setErrorMsg("");
+            const supabase = getSupabaseBrowserClient();
+
+            const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider,
+                options: {
+                    redirectTo: `${siteUrl}/auth/callback`,
+                    queryParams: {
+                        access_type: 'offline',
+                        prompt: 'consent',
+                    },
+                },
+            });
+
+            if (error) {
+                throw error;
+            }
+            // El navegador será redirigido automáticamente por Supabase
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            setErrorMsg(message || t('auth.login.errorFallback'));
+            setSocialLoading(null);
+        }
+    };
+
     const currentStrengthInfo = getPasswordStrengthInfo(password);
 
     return (
@@ -389,19 +495,37 @@ export default function PremiumLoginCard({ onNavigateToPasswordReset }: Props) {
                     <div className="separator-pl">{t('auth.common.orContinueWith') || 'o continúa con'}</div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-                        <button type="button" className="social-btn-pl">
-                            <svg className="w-5 h-5" viewBox="0 0 24 24" style={{ width: '20px', height: '20px' }}>
-                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
-                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                            </svg>
+                        <button
+                            type="button"
+                            className="social-btn-pl"
+                            onClick={() => handleSocialLogin('google')}
+                            disabled={socialLoading !== null}
+                        >
+                            {socialLoading === 'google' ? (
+                                <span className="spinner-pl" style={{ width: '20px', height: '20px' }}></span>
+                            ) : (
+                                <svg className="w-5 h-5" viewBox="0 0 24 24" style={{ width: '20px', height: '20px' }}>
+                                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
+                                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                                </svg>
+                            )}
                             Google
                         </button>
-                        <button type="button" className="social-btn-pl">
-                            <svg style={{ width: '20px', height: '20px' }} fill="#1877F2" viewBox="0 0 24 24">
-                                <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm3 8h-1.35c-.538 0-.65.221-.65.778v1.222h2l-.209 2h-1.791v7h-3v-7h-2v-2h2v-2.308c0-1.769.931-2.692 3.029-2.692h1.971v3z" />
-                            </svg>
+                        <button
+                            type="button"
+                            className="social-btn-pl"
+                            onClick={() => handleSocialLogin('facebook')}
+                            disabled={socialLoading !== null}
+                        >
+                            {socialLoading === 'facebook' ? (
+                                <span className="spinner-pl" style={{ width: '20px', height: '20px' }}></span>
+                            ) : (
+                                <svg style={{ width: '20px', height: '20px' }} fill="#1877F2" viewBox="0 0 24 24">
+                                    <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm3 8h-1.35c-.538 0-.65.221-.65.778v1.222h2l-.209 2h-1.791v7h-3v-7h-2v-2h2v-2.308c0-1.769.931-2.692 3.029-2.692h1.971v3z" />
+                                </svg>
+                            )}
                             Facebook
                         </button>
                     </div>

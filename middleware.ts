@@ -24,6 +24,8 @@ const PUBLIC_PATHS = [
   '/login-register',
   // Ruta explícita para recibir links de restablecimiento/confirmación
   '/login-register/reset',
+  // Callback de OAuth (Google, Facebook)
+  '/auth/callback',
   '/manifest.json',
   '/api', // permitir APIs (ajustar si se requiere proteger algunas)
   '/videos',
