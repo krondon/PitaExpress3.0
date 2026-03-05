@@ -434,6 +434,21 @@ export default function Sidebar({ isExpanded, setIsExpanded, isMobileMenuOpen = 
   const [chinaActiveOrders, setChinaActiveOrders] = useState<number | null>(null);
   const [imageError, setImageError] = useState(false);
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [authUserEmail, setAuthUserEmail] = useState<string | null>(null);
+
+  // Email del usuario autenticado (misma fuente que Configuración) para mostrar en el sidebar
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+    const getEmail = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setAuthUserEmail(user?.email ?? null);
+    };
+    getEmail();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      getEmail();
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Helper: refetch China active orders
   const refetchChinaActiveOrders = useCallback(async () => {
@@ -526,6 +541,11 @@ export default function Sidebar({ isExpanded, setIsExpanded, isMobileMenuOpen = 
         userImage: adminCtx.userImage
       };
     }
+  }
+
+  // Siempre preferir el correo del usuario autenticado (misma fuente que Configuración)
+  if (authUserEmail) {
+    userInfo = { ...userInfo, email: authUserEmail };
   }
 
   // Reset image error when user info changes
