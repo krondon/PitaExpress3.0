@@ -538,6 +538,7 @@
         "shipped": "Enviado",
         "cancelled": "Cancelado",
         "paymentValidated": "Pago validado",
+        "paymentRejected": "Pago rechazado",
         "packagingBox": "Empaquetando (caja)",
         "packagingContainer": "Empaquetando (contenedor)",
         "sentFromChina": "Enviada de China",
@@ -550,6 +551,7 @@
         "view": "Ver detalles",
         "track": "Ver seguimiento",
         "pay": "Pagar",
+        "payAgain": "Pagar de nuevo",
         "download": "Descargar PDF"
       },
       "progress": "Progreso del pedido",
@@ -752,6 +754,17 @@
             "title": "Error",
             "description": "Error al borrar historial: {{message}}"
           }
+        }
+      },
+      "reviews": {
+        "error": {
+          "title": "Error",
+          "ratingRequired": "Por favor selecciona una calificación",
+          "submitFailed": "No se pudo enviar la reseña"
+        },
+        "success": {
+          "title": "¡Reseña enviada!",
+          "description": "Gracias por tu calificación"
         }
       }
     },
@@ -1171,12 +1184,21 @@
       "processing": "Procesando",
       "shipped": "Enviado",
       "delivered": "Entregado",
-      "cancelled": "Cancelado"
+      "cancelled": "Cancelado",
+      "paymentValidated": "Pago validado",
+      "paymentRejected": "Pago rechazado",
+      "packagingBox": "Empaque (caja)",
+      "packagingContainer": "Empaque (contenedor)",
+      "sentFromChina": "Enviado desde China",
+      "inCustoms": "En aduana",
+      "arriving": "En camino",
+      "inStore": "Producto en tienda"
     },
     "actions": {
       "view": "Ver detalles",
       "track": "Ver seguimiento",
       "pay": "Pagar",
+      "payAgain": "Pagar de nuevo",
       "download": "Descargar PDF"
     },
     "progress": "Progreso del pedido",

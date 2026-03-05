@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTheme } from 'next-themes';
 import Image from 'next/image';
 import Sidebar from '@/components/layout/Sidebar';
@@ -1277,51 +1277,7 @@ function AdminReviewsSection() {
   const { toast } = useToast();
   const supabase = getSupabaseBrowserClient();
 
-  useEffect(() => {
-    setMounted(true);
-    fetchReviews();
-
-    // Configurar suscripción en tiempo real para nuevas reseñas
-    const channel = supabase
-      .channel('admin-reviews-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Escuchar INSERT, UPDATE, DELETE
-          schema: 'public',
-          table: 'order_reviews'
-        },
-        (payload) => {
-
-
-          // Mostrar notificación si es una nueva reseña (INSERT)
-          if (payload.eventType === 'INSERT') {
-            toast({
-              title: t('admin.configuration.reviews.newReviewNotification', {
-                fallback: 'Nueva reseña recibida'
-              }),
-              description: t('admin.configuration.reviews.refreshingList', {
-                fallback: 'Actualizando lista...'
-              }),
-              duration: 2000,
-            });
-          }
-
-          // Refrescar las reseñas cuando hay cambios
-          fetchReviews(false); // false = no mostrar loading completo
-        }
-      )
-      .subscribe((status) => {
-
-      });
-
-    // Cleanup al desmontar
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [supabase, t, toast]);
-
-  const fetchReviews = async (showFullLoading = true) => {
+  const fetchReviews = useCallback(async (showFullLoading = true) => {
     try {
       if (showFullLoading) {
         setLoading(true);
@@ -1352,7 +1308,46 @@ function AdminReviewsSection() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    setMounted(true);
+    fetchReviews();
+
+    // Configurar suscripción en tiempo real para nuevas reseñas
+    const channel = supabase
+      .channel('admin-reviews-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Escuchar INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'order_reviews'
+        },
+        (payload) => {
+          // Mostrar notificación si es una nueva reseña (INSERT)
+          if (payload.eventType === 'INSERT') {
+            toast({
+              title: t('admin.configuration.reviews.newReviewNotification', {
+                fallback: 'Nueva reseña recibida'
+              }),
+              description: t('admin.configuration.reviews.refreshingList', {
+                fallback: 'Actualizando lista...'
+              }),
+              duration: 2000,
+            });
+          }
+          // Refrescar las reseñas cuando hay cambios
+          fetchReviews(false); // false = no mostrar loading completo
+        }
+      )
+      .subscribe(() => {});
+
+    // Cleanup al desmontar
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, fetchReviews]); // t y toast omitidos a propósito: evitan bucle infinito al cambiar referencia cada render
 
   const handleRefresh = () => {
     fetchReviews(false); // No mostrar loading completo, solo el spinner del botón
