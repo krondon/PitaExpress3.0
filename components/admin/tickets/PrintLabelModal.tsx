@@ -101,7 +101,7 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                             transform: 'scale(0.5)',
                             transformOrigin: 'center center',
                             minWidth: '11.69in',
-                            minHeight: '4.26in',
+                            minHeight: '6in',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center'
@@ -109,13 +109,13 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                             <div style={{ width: '80%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                                 {/* Logo */}
                                 <div style={{ alignSelf: 'flex-start', marginBottom: '10px', marginLeft: '4.5em' }}>
-                                    <img src="/images/logos/tickets.jpg" alt="Logo" style={{ height: '80px' }} />
+                                    <img src="/images/logos/tickets.jpg" alt="Logo" style={{ height: '120px' }} />
                                 </div>
 
                                 {/* Static Code QX304YW */}
                                 <div style={{
                                     fontFamily: "'CustomArial', sans-serif",
-                                    fontSize: '100px',
+                                    fontSize: '150px',
                                     lineHeight: 1,
                                     fontWeight: 'normal',
                                     color: 'black'
@@ -124,23 +124,23 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                                 </div>
 
                                 {/* Separator */}
-                                <div style={{ width: '50%', height: '5px', backgroundColor: 'black', margin: '5px 0' }}></div>
+                                <div style={{ width: '55%', height: '8px', backgroundColor: 'black', margin: '8px 0' }}></div>
 
                                 {/* Real Barcode */}
-                                <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                     <div style={{ transform: 'scaleX(2.5)', transformOrigin: 'center' }}>
                                         <Barcode
                                             value={currentFullCode || ticket.full_code}
                                             format="CODE128"
-                                            width={1}
-                                            height={80}
+                                            width={1.5}
+                                            height={100}
                                             displayValue={false}
                                             margin={0}
                                         />
                                     </div>
                                     <div style={{
                                         fontFamily: "'CustomArial', sans-serif",
-                                        fontSize: '16px',
+                                        fontSize: '22px',
                                         color: '#4b5563',
                                         letterSpacing: '1.2em',
                                         marginTop: '8px',
@@ -178,12 +178,12 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
             <style jsx global>{`
                 @media print {
                     @page {
-                        size: 11.69in 4.26in;
+                        size: 11.69in 6in;
                         margin: 0;
                     }
 
                     html {
-                        height: 4.26in !important;
+                        height: 6in !important;
                         overflow: hidden !important;
                     }
 
@@ -191,7 +191,7 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                         margin: 0 !important;
                         padding: 0 !important;
                         width: 11.69in !important;
-                        height: 4.26in !important;
+                        height: 6in !important;
                         overflow: hidden !important;
                         -webkit-print-color-adjust: exact;
                         print-color-adjust: exact;
@@ -206,7 +206,7 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                         overflow: hidden !important;
                     }
 
-                    /* Show only print label */
+                    /* Show only print label - hoja más alta para que entre toda la etiqueta */
                     #print-label {
                         display: flex !important;
                         visibility: visible !important;
@@ -214,7 +214,7 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                         left: 0 !important;
                         top: 0 !important;
                         width: 11.69in !important;
-                        height: 4.26in !important;
+                        height: 6in !important;
                         align-items: center !important;
                         justify-content: center !important;
                         background: white !important;
@@ -241,18 +241,18 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
-                        gap: '8px',
+                        gap: '10px',
                         maxHeight: '100%'
                     }}>
-                        {/* Logo */}
-                        <div style={{ alignSelf: 'flex-start', marginBottom: '10px', marginLeft: '7.5em' }}>
-                            <img src="/images/logos/tickets.jpg" alt="Logo" style={{ height: '80px' }} />
+                        {/* Logo - más grande al imprimir */}
+                        <div style={{ alignSelf: 'flex-start', marginBottom: '12px', marginLeft: '7.5em' }}>
+                            <img src="/images/logos/tickets.jpg" alt="Logo" style={{ height: '120px' }} />
                         </div>
 
-                        {/* Static Code QX304YW */}
+                        {/* Static Code QX304YW - más grande */}
                         <div style={{
                             fontFamily: "'CustomArial', sans-serif",
-                            fontSize: '100px',
+                            fontSize: '150px',
                             lineHeight: 1,
                             fontWeight: 'normal',
                             color: 'black'
@@ -260,17 +260,17 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                             QX304YW
                         </div>
 
-                        {/* Separator */}
-                        <div style={{ width: '50%', height: '5px', backgroundColor: 'black', margin: '5px 0' }}></div>
+                        {/* Separator - más grueso */}
+                        <div style={{ width: '55%', height: '8px', backgroundColor: 'black', margin: '8px 0' }}></div>
 
-                        {/* Real Barcode */}
+                        {/* Real Barcode - más alto y ancho */}
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                             <div style={{ transform: 'scaleX(2.5)', transformOrigin: 'center' }}>
                                 <Barcode
                                     value={currentFullCode || ticket.full_code}
                                     format="CODE128"
-                                    width={1}
-                                    height={140}
+                                    width={1.5}
+                                    height={190}
                                     displayValue={false}
                                     margin={0}
                                     background="#ffffff"
@@ -278,10 +278,10 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                             </div>
                             <div style={{
                                 fontFamily: "'CustomArial', sans-serif",
-                                fontSize: '20px',
+                                fontSize: '28px',
                                 color: '#4b5563',
                                 letterSpacing: '1.0em',
-                                marginTop: '10px',
+                                marginTop: '12px',
                                 marginLeft: '1.2em'
                             }}>
                                 {currentFullCode || ticket.full_code}

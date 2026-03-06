@@ -413,24 +413,24 @@ export default function MisPedidosPage() {
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [exchangeRateLoading, setExchangeRateLoading] = useState(false);
 
-  // Función para obtener tasa de cambio
-  const fetchExchangeRate = useCallback(async () => {
-    if (exchangeRate) return; // usar caché si existe
+  // Función para obtener tasa de cambio (STABLECOIN/Binance para conversión USD→Bs en pagos)
+  const fetchExchangeRate = useCallback(async (forceRefresh = false) => {
+    if (exchangeRate && !forceRefresh) return; // usar caché si existe
 
     setExchangeRateLoading(true);
     try {
-      const response = await fetch('/api/exchange-rate');
+      const response = await fetch('/api/exchange-rate/binance');
       const data = await response.json();
 
       if (data.success && data.rate) {
         setExchangeRate(data.rate);
       } else {
-        console.error('Error fetching exchange rate:', data.error);
-        setExchangeRate(168.42); // fallback rate
+        console.error('Error fetching Binance exchange rate:', data.error);
+        setExchangeRate(299.51); // fallback tasa USDT/VES aproximada
       }
     } catch (error) {
       console.error('Network error fetching exchange rate:', error);
-      setExchangeRate(168.42); // fallback rate
+      setExchangeRate(299.51); // fallback tasa USDT/VES aproximada
     } finally {
       setExchangeRateLoading(false);
     }
@@ -1453,8 +1453,8 @@ export default function MisPedidosPage() {
     setPaymentStep(1);
     setIsPaymentModalOpen(true);
 
-    // Obtener tasa de cambio actualizada cuando se abre el modal
-    fetchExchangeRate();
+    // Obtener tasa de cambio actualizada (Binance/Stablecoin) cuando se abre el modal
+    fetchExchangeRate(true);
   };
 
   const handleBulkPayment = (group: ClientOrderGroupData) => {
@@ -1469,8 +1469,8 @@ export default function MisPedidosPage() {
     setPaymentStep(1); // Start at selection step
     setIsPaymentModalOpen(true);
 
-    // Obtener tasa de cambio actualizada cuando se abre el modal
-    fetchExchangeRate();
+    // Obtener tasa de cambio actualizada (Binance/Stablecoin) cuando se abre el modal
+    fetchExchangeRate(true);
   };
 
   const handleToggleOrderSelection = (orderId: string) => {
@@ -1762,12 +1762,17 @@ export default function MisPedidosPage() {
       const nombrePDF = `${safeProduct}_${Date.now()}_${safeClient}.pdf`;
       const folder = (orderData.deliveryType as string) === 'doorToDoor' ? 'door-to-door' : (orderData.deliveryType || 'misc');
 
+      let pdfUrl = '';
+      let pdfUploadFailed = false;
       const uploadRes = await supabase.storage.from('orders').upload(`${folder}/${nombrePDF}`, pdfBlob, { contentType: 'application/pdf' });
 
-      if (uploadRes.error) throw uploadRes.error;
-
-      const { data: publicUrlData } = supabase.storage.from('orders').getPublicUrl(`${folder}/${nombrePDF}`);
-      const pdfUrl = publicUrlData?.publicUrl || '';
+      if (uploadRes.error) {
+        console.warn('Error subiendo PDF a Storage (el pedido se creará igual):', uploadRes.error.message);
+        pdfUploadFailed = true;
+      } else {
+        const { data: publicUrlData } = supabase.storage.from('orders').getPublicUrl(`${folder}/${nombrePDF}`);
+        pdfUrl = publicUrlData?.publicUrl || '';
+      }
 
       // Subir imagen si existe
       let imageUrl = '';
@@ -1781,19 +1786,20 @@ export default function MisPedidosPage() {
         }
       }
 
-      // Actualizar pedido
+      // Actualizar pedido (aunque el PDF no se haya subido, el pedido ya existe)
       const updatePayload: any = { pdfRoutes: pdfUrl };
       if (imageUrl) updatePayload.imgs = [imageUrl];
       if (orderData.productUrl) updatePayload.links = [orderData.productUrl];
 
       await supabase.from('orders').update(updatePayload).eq('id', orderIdCreated);
 
-      return { success: true, asignedEChina: createdJson?.data?.asignedEChina };
+      return { success: true, asignedEChina: createdJson?.data?.asignedEChina, pdfUploadFailed };
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error en createOrderInternal:', error);
-      // Si falló y se creó el ID, intentar borrarlo para no dejar basura (opcional)
-      return { success: false };
+      const msg = error?.message || String(error);
+      const isNetworkOrStorage = /name resolution failed|StorageApiError|Failed to fetch|NetworkError/i.test(msg);
+      return { success: false, errorMessage: isNetworkOrStorage ? 'No se pudo conectar con el servidor. Revisa tu conexión a internet y vuelve a intentar.' : undefined };
     }
   };
 
@@ -1803,6 +1809,9 @@ export default function MisPedidosPage() {
     setCreatingOrder(false);
 
     if (result.success) {
+      if ((result as { pdfUploadFailed?: boolean }).pdfUploadFailed) {
+        toast({ title: 'Pedido creado', description: 'No se pudo subir el archivo PDF. Revisa tu conexión a internet; puedes volver a subir el documento más tarde.', variant: 'default' });
+      }
       setShowSuccessAnimation(true);
       setTimeout(() => {
         setIsNewOrderModalOpen(false);
@@ -1810,7 +1819,8 @@ export default function MisPedidosPage() {
         fetchOrders(); // Recargar lista
       }, 2000);
     } else {
-      toast({ title: 'Error', description: 'No se pudo crear el pedido.', variant: 'destructive' });
+      const desc = (result as { errorMessage?: string })?.errorMessage || 'No se pudo crear el pedido.';
+      toast({ title: 'Error', description: desc, variant: 'destructive' });
     }
   };
 
@@ -2175,14 +2185,14 @@ export default function MisPedidosPage() {
                   {/* Enhanced Progress Bar */}
                   <div className={`space-y-4 mb-8 transition-all duration-300 ${isTransitioning ? 'opacity-75' : 'opacity-100'}`}>
                     <div className="flex items-center justify-between text-sm">
-                      <span className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('client.recentOrders.newOrder.step', { current: currentStep, total: 3 })}</span>
-                      <span className={`font-bold ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>{t('client.recentOrders.newOrder.percentComplete', { percent: Math.round((currentStep / 3) * 100) })}</span>
+                      <span className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('client.recentOrders.newOrder.step', { current: currentStep, total: 4 })}</span>
+                      <span className={`font-bold ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>{t('client.recentOrders.newOrder.percentComplete', { percent: Math.min(100, Math.round((currentStep / 4) * 100)) })}</span>
                     </div>
                     <div className="relative">
                       <div className={`w-full rounded-full h-3 overflow-hidden ${mounted && theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`}>
                         <div
                           className="h-full bg-gradient-to-r from-blue-500 to-orange-500 rounded-full transition-all duration-500 ease-out relative"
-                          style={{ width: `${(currentStep / 3) * 100}%` }}
+                          style={{ width: `${Math.min(100, (currentStep / 4) * 100)}%` }}
                         >
                           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
                         </div>
