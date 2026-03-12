@@ -3,7 +3,7 @@
 import { ReactNode, useState, useEffect } from "react";
 import { VzlaProvider } from "@/lib/VzlaContext";
 import { VzlaLayoutProvider, useVzlaLayoutContext } from "@/lib/VzlaLayoutContext";
-// import VzlaContextInitializer from "./VzlaContextInitializer"; // Placeholder if it exists or needs to be created
+import VzlaInit from "./VzlaInit";
 import Sidebar from "@/components/layout/Sidebar";
 import { useTheme } from "next-themes";
 
@@ -37,7 +37,7 @@ export default function VzlaLayout({ children }: { children: ReactNode }) {
     return (
         <VzlaProvider>
             <VzlaLayoutProvider>
-                {/* <VzlaContextInitializer /> */}
+                <VzlaInit />
                 <VzlaLayoutContent>{children}</VzlaLayoutContent>
             </VzlaLayoutProvider>
         </VzlaProvider>
