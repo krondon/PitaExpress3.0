@@ -758,6 +758,10 @@ const PaymentValidationDashboard: React.FC = () => {
         const msg = await resp.json().catch(() => ({ error: 'Error al actualizar estado' }));
         throw new Error(msg?.error || 'Error al actualizar el estado del pedido');
       }
+      // Generar factura (fire-and-forget)
+      fetch(`/api/orders/${id}/invoice`, { method: 'POST' }).catch(err =>
+        console.error('[Invoice] Error generando factura:', err)
+      );
     } catch (e: any) {
       setPayments(prev => prev.map(p =>
         p.id === id ? { ...p, estado: payment.estado } : p

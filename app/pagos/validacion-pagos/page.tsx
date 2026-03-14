@@ -870,6 +870,10 @@ const PaymentValidationDashboard: React.FC = () => {
         const msg = await resp.json().catch(() => ({ error: 'Error al actualizar estado' }));
         throw new Error(msg?.error || 'Error al actualizar el estado del pedido');
       }
+      // Generar factura (fire-and-forget)
+      fetch(`/api/orders/${id}/invoice`, { method: 'POST' }).catch(err =>
+        console.error('[Invoice] Error generando factura:', err)
+      );
       // Notificar al cliente: pago aprobado
       if (payment.clientUserId) {
         const notif = NotificationsFactory.client.paymentReviewed({ orderId: id, paymentId: id, status: 'aprobado' });

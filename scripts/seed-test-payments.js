@@ -103,6 +103,7 @@ async function seedTestPayments(count) {
       sendChina: false,
       archived_by_client: false,
       archived_by_admin: false,
+      pdfRoutes: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
     });
   }
 
