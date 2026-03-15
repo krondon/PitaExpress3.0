@@ -112,35 +112,44 @@ export async function POST(
     };
 
     // ═══════════════════════════════════════
-    // HEADER
+    // HEADER — logo + FACTURA
     // ═══════════════════════════════════════
-    doc.setFillColor(c.navy[0], c.navy[1], c.navy[2]);
-    doc.rect(0, 0, pageWidth, 32, 'F');
 
-    // Logo
+    // Logo a la izquierda (pita_logo.png es cuadrado ~1:1)
     if (logoBase64) {
       try {
-        doc.addImage(logoBase64, 'PNG', margin, 4, 24, 24);
+        doc.addImage(logoBase64, 'PNG', margin, 8, 22, 22);
       } catch { /* skip logo if fails */ }
     }
 
-    const textStartX = logoBase64 ? margin + 27 : margin;
+    // Nombre de empresa junto al logo
+    const textStartX = logoBase64 ? margin + 25 : margin;
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
-    doc.setTextColor(255, 255, 255);
-    doc.text('PITA EXPRESS', textStartX, 15);
+    doc.setFontSize(14);
+    doc.setTextColor(c.navy[0], c.navy[1], c.navy[2]);
+    doc.text('PITA EXPRESS', textStartX, 18);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.text('Importaciones & Logística', textStartX, 22);
+    doc.setFontSize(7);
+    doc.setTextColor(c.medGray[0], c.medGray[1], c.medGray[2]);
+    doc.text('Importaciones & Logística', textStartX, 24);
 
+    // FACTURA a la derecha
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(18);
-    doc.text('FACTURA', pageWidth - margin, 15, { align: 'right' });
+    doc.setFontSize(22);
+    doc.setTextColor(c.navy[0], c.navy[1], c.navy[2]);
+    doc.text('FACTURA', pageWidth - margin, 18, { align: 'right' });
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.text(invoiceNum, pageWidth - margin, 23, { align: 'right' });
+    doc.setTextColor(c.medGray[0], c.medGray[1], c.medGray[2]);
+    doc.text(invoiceNum, pageWidth - margin, 25, { align: 'right' });
+    doc.text(formatDate(invoiceDate), pageWidth - margin, 31, { align: 'right' });
 
-    let y = 42;
+    // Línea navy debajo del header
+    doc.setDrawColor(c.navy[0], c.navy[1], c.navy[2]);
+    doc.setLineWidth(1.5);
+    doc.line(margin, 38, pageWidth - margin, 38);
+
+    let y = 46;
 
     // ═══════════════════════════════════════
     // DATOS DE FACTURA
