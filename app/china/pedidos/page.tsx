@@ -338,7 +338,7 @@ export default function PedidosChina() {
               alternativeStatus: order.alternativeStatus,
               alternativeRejectionReason: order.alternativeRejectionReason,
               batch_id: order.batch_id,
-              description: order.specifications || '',
+              description: order.description || '',
               imgs: order.imgs ?? [],
               links: order.links ?? [],
               estimatedBudget: order.estimatedBudget ?? null,
@@ -3497,7 +3497,7 @@ export default function PedidosChina() {
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300 p-4">
               <div
                 ref={modalDetalleRef}
-                className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto transition-all duration-300 ${isModalDetalleClosing
+                className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-2xl w-full max-w-lg md:max-w-2xl max-h-[85vh] overflow-y-auto transition-all duration-300 ${isModalDetalleClosing
                   ? 'translate-y-full scale-95 opacity-0'
                   : 'animate-in slide-in-from-bottom-4 duration-300'
                 }`}
@@ -3526,19 +3526,24 @@ export default function PedidosChina() {
                 </div>
 
                 <div className="px-5 py-4 space-y-5">
-                  {/* Imagen del producto */}
-                  {productImg && (
-                    <div className={`rounded-xl overflow-hidden border ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
-                      <img
-                        src={productImg}
-                        alt={p.producto}
-                        className="w-full h-48 object-contain bg-white"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                      />
-                    </div>
-                  )}
+                  {/* F-Pattern: Imagen izq + datos der (desktop) / stacked (mobile) */}
+                  <div className="flex flex-col md:flex-row md:items-start gap-5">
+                    {/* Columna izquierda — Imagen + Links */}
+                    {productImg && (
+                      <div className="md:w-2/5 shrink-0">
+                        <div className={`rounded-xl overflow-hidden border ${isDark ? 'border-slate-700 bg-slate-900' : 'border-gray-200 bg-gray-100'}`}>
+                          <img
+                            src={productImg}
+                            alt={p.producto}
+                            className="w-full h-48 md:h-56 object-cover"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
+                        </div>
+                      </div>
+                    )}
 
-                  {/* Info principal */}
+                    {/* Columna derecha — Datos principales */}
+                    <div className={`flex-1 ${!productImg ? 'w-full' : ''}`}>
                   <div className={`rounded-xl border ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-4 space-y-3`}>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
@@ -3571,61 +3576,69 @@ export default function PedidosChina() {
                       </div>
                     </div>
 
-                    {/* Descripción */}
-                    {(p.description || p.especificaciones) && (
-                      <div className={`pt-3 border-t ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
-                        <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                          <FileText className="h-3 w-3 inline mr-1" />Descripción / Especificaciones
-                        </span>
-                        <p className={`text-sm mt-1 ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-                          {p.description || p.especificaciones}
-                        </p>
+                    {/* Envío inline */}
+                    <div className={`pt-3 border-t ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                            <Truck className="h-3 w-3 inline mr-1" />Tipo de envío
+                          </span>
+                          <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                            {shippingLabels[p.shippingType || ''] || p.shippingType || '—'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                            <MapPin className="h-3 w-3 inline mr-1" />Entrega
+                          </span>
+                          <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                            {deliveryLabels[p.deliveryType || ''] || p.deliveryType || '—'}
+                          </p>
+                        </div>
                       </div>
-                    )}
+                    </div>
                   </div>
 
-                  {/* Links */}
+                    </div>
+                  </div>
+
+                  {/* Links — full width debajo del F-pattern */}
                   {p.links && p.links.length > 0 && (
                     <div className={`rounded-xl border ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-4`}>
-                      <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                        🔗 Links del producto
-                      </span>
+                      <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>🔗 Links del producto</span>
                       <div className="mt-2 space-y-1.5">
                         {p.links.map((link, i) => (
-                          <a
-                            key={i}
-                            href={link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block text-sm text-blue-500 hover:text-blue-400 hover:underline truncate"
-                          >
-                            {link}
-                          </a>
+                          <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="block text-sm text-blue-500 hover:text-blue-400 hover:underline truncate">{link}</a>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {/* Envío */}
-                  <div className={`rounded-xl border ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-4`}>
-                    <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                      <Truck className="h-3 w-3 inline mr-1" />Envío y entrega
-                    </span>
-                    <div className="grid grid-cols-2 gap-3 mt-2">
-                      <div>
-                        <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>Tipo de envío</p>
-                        <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                          {shippingLabels[p.shippingType || ''] || p.shippingType || '—'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>Entrega</p>
-                        <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                          {deliveryLabels[p.deliveryType || ''] || p.deliveryType || '—'}
-                        </p>
-                      </div>
+                  {/* Descripción */}
+                  {p.description && (
+                    <div className={`rounded-xl border ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-4`}>
+                      <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                        <FileText className="h-3 w-3 inline mr-1" />Descripción
+                      </span>
+                      <p className={`text-sm mt-1.5 whitespace-pre-wrap ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                        {p.description}
+                      </p>
                     </div>
-                  </div>
+                  )}
+
+                  {/* Especificaciones técnicas */}
+                  {p.especificaciones && (
+                    <div className={`rounded-xl border ${isDark ? 'border-amber-900/40 bg-amber-900/10' : 'border-amber-200 bg-amber-50'} p-4`}>
+                      <span className={`text-xs font-medium ${isDark ? 'text-amber-300' : 'text-amber-700'}`}>
+                        ⚙️ Especificaciones técnicas
+                      </span>
+                      <p className={`text-sm mt-1.5 whitespace-pre-wrap ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
+                        {p.especificaciones}
+                      </p>
+                    </div>
+                  )}
+
+
 
                   {/* Cotización */}
                   {hasQuote && (
