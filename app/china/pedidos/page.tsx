@@ -771,6 +771,8 @@ export default function PedidosChina() {
   // Cerrar modales al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      // Si el lightbox está abierto, no cerrar ningún modal
+      if (lightboxImg) return;
       if (modalCotizar.open && modalCotizarRef.current && !modalCotizarRef.current.contains(event.target as Node)) {
         closeModalCotizar();
       }
@@ -825,6 +827,7 @@ export default function PedidosChina() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [
+    lightboxImg,
     modalCotizar.open,
     modalDetalle.open,
     modalCrearCaja.open,
@@ -2948,9 +2951,7 @@ export default function PedidosChina() {
               {/* Header */}
               <div className={`sticky top-0 z-10 ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border-b px-5 py-4 rounded-t-2xl`}>
                 <div className="flex items-center justify-between">
-                  <h3 className={`text-xl font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                    {t('chinese.ordersPage.modals.quote.title')}{modalCotizar.pedido?.id ? <span className={`font-mono ml-2 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-gray-400'}`}>#ORD-{modalCotizar.pedido.id}</span> : ''}
-                  </h3>
+                  <h3 className={`text-xl font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.modals.quote.title')}</h3>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -2987,35 +2988,55 @@ export default function PedidosChina() {
 
                     {/* Datos del pedido */}
                     <div className={`rounded-xl border ${mounted && theme === 'dark' ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-3.5 space-y-2.5`}>
-                      <h4 className={`text-sm font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{modalCotizar.pedido?.producto || '—'}</h4>
+                      <h4 className={`text-sm font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                        <span className={`font-mono ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-gray-400'}`}>#ORD-{modalCotizar.pedido?.id}</span>{' '}{modalCotizar.pedido?.producto || '—'}
+                      </h4>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>Cliente</span>
+                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>
+                            <User className="h-3 w-3 inline mr-1" />Cliente
+                          </span>
                           <p className={`text-xs font-semibold ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{modalCotizar.pedido?.cliente || '—'}</p>
                         </div>
                         <div>
-                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>Cantidad</span>
+                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>
+                            <Tag className="h-3 w-3 inline mr-1" />Cantidad
+                          </span>
                           <p className={`text-xs font-semibold ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{modalCotizar.pedido?.cantidad}</p>
                         </div>
                         <div>
-                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>Envío</span>
+                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>
+                            <Calendar className="h-3 w-3 inline mr-1" />Fecha
+                          </span>
+                          <p className={`text-xs font-semibold ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
+                            {modalCotizar.pedido?.fecha ? new Date(modalCotizar.pedido.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>
+                            Estado
+                          </span>
+                          <div className="mt-0.5">
+                            <Badge className={getOrderBadge(modalCotizar.pedido?.numericState).className}>{getOrderBadge(modalCotizar.pedido?.numericState).label}</Badge>
+                          </div>
+                        </div>
+                        <div>
+                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>
+                            <Truck className="h-3 w-3 inline mr-1" />Envío
+                          </span>
                           <p className={`text-xs font-semibold ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
                             {({ air: 'Aéreo', maritime: 'Marítimo', doorToDoor: 'Puerta a puerta' } as Record<string, string>)[modalCotizar.pedido?.shippingType || ''] || modalCotizar.pedido?.shippingType || '—'}
                           </p>
                         </div>
                         <div>
-                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>Entrega</span>
+                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>
+                            <MapPin className="h-3 w-3 inline mr-1" />Entrega
+                          </span>
                           <p className={`text-xs font-semibold ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
                             {({ office: 'Oficina', warehouse: 'Almacén', pickup: 'Retiro en tienda', delivery: 'Domicilio' } as Record<string, string>)[modalCotizar.pedido?.deliveryType || ''] || modalCotizar.pedido?.deliveryType || '—'}
                           </p>
                         </div>
                       </div>
-                      {modalCotizar.pedido?.estimatedBudget != null && Number(modalCotizar.pedido.estimatedBudget) > 0 && (
-                        <div className={`pt-2 border-t ${mounted && theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
-                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>Presupuesto del cliente</span>
-                          <p className={`text-xs font-semibold ${mounted && theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`}>${Number(modalCotizar.pedido.estimatedBudget).toFixed(2)}</p>
-                        </div>
-                      )}
                     </div>
 
                     {/* Descripción */}
@@ -3565,7 +3586,7 @@ export default function PedidosChina() {
         {lightboxImg && (
           <div
             className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[60] animate-in fade-in duration-200 cursor-pointer p-6"
-            onClick={() => setLightboxImg(null)}
+            onClick={(e) => { e.stopPropagation(); setLightboxImg(null); }}
             onKeyDown={(e) => { if (e.key === 'Escape') setLightboxImg(null); }}
             tabIndex={0}
           >
@@ -3606,9 +3627,6 @@ export default function PedidosChina() {
                 <div className={`sticky top-0 z-10 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border-b px-5 py-4 rounded-t-2xl`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Badge className={badge.className}>{badge.label}</Badge>
-                      </div>
                       <h3 className={`text-lg font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
                         <span className={`font-mono ${isDark ? 'text-slate-400' : 'text-gray-400'}`}>#ORD-{p.id}</span>{' '}{p.producto || 'Sin nombre'}
                       </h3>
@@ -3673,12 +3691,13 @@ export default function PedidosChina() {
                       </div>
                       <div>
                         <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                          <DollarSign className="h-3 w-3 inline mr-1" />Presupuesto
+                          Estado
                         </span>
-                        <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                          {p.estimatedBudget ? `$${Number(p.estimatedBudget).toFixed(2)}` : '—'}
-                        </p>
+                        <div className="mt-1">
+                          <Badge className={badge.className}>{badge.label}</Badge>
+                        </div>
                       </div>
+
                     </div>
 
                     {/* Envío inline */}
