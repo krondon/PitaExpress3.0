@@ -4290,6 +4290,11 @@ export default function PedidosChina() {
           id: modalPropAlternativa.pedido.id,
           producto: modalPropAlternativa.pedido.producto,
           cliente: modalPropAlternativa.pedido.cliente,
+          imgs: modalPropAlternativa.pedido.imgs,
+          cantidad: modalPropAlternativa.pedido.cantidad,
+          fecha: modalPropAlternativa.pedido.fecha,
+          shippingType: modalPropAlternativa.pedido.shippingType,
+          deliveryType: modalPropAlternativa.pedido.deliveryType,
           alternativeRejectionReason: modalPropAlternativa.pedido.alternativeRejectionReason,
         } : null}
         onSuccess={() => {
