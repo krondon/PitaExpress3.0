@@ -2936,25 +2936,115 @@ export default function PedidosChina() {
 
         {/* Modal Cotizar */}
         {modalCotizar.open && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300 p-4">
             <div
               ref={modalCotizarRef}
-              className={`${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 max-w-2xl mx-4 w-full max-h-[90vh] overflow-y-auto transition-all duration-300 ${isModalCotizarClosing
+              className={`${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} rounded-2xl max-w-lg md:max-w-5xl mx-auto w-full max-h-[90vh] overflow-y-auto transition-all duration-300 ${isModalCotizarClosing
                 ? 'translate-y-full scale-95 opacity-0'
                 : 'animate-in slide-in-from-bottom-4 duration-300'
                 }`}
             >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className={`text-xl font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.modals.quote.title')}</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={closeModalCotizar}
-                  className={`h-8 w-8 p-0 ${mounted && theme === 'dark' ? 'hover:bg-slate-700' : ''}`}
-                >
-                  <span className={`text-2xl ${mounted && theme === 'dark' ? 'text-white' : ''}`}>×</span>
-                </Button>
+              {/* Header */}
+              <div className={`sticky top-0 z-10 ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border-b px-5 py-4 rounded-t-2xl`}>
+                <div className="flex items-center justify-between">
+                  <h3 className={`text-xl font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.modals.quote.title')}</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={closeModalCotizar}
+                    className={`h-8 w-8 p-0 ${mounted && theme === 'dark' ? 'hover:bg-slate-700' : ''}`}
+                  >
+                    <XCircle className="h-5 w-5" />
+                  </Button>
+                </div>
               </div>
+
+              {/* Two-panel layout */}
+              <div className="flex flex-col md:flex-row">
+                {/* Panel izquierdo — Preview del producto */}
+                <div className={`md:w-2/5 shrink-0 p-5 ${mounted && theme === 'dark' ? 'md:border-r md:border-slate-700' : 'md:border-r md:border-gray-200'}`}>
+                  <div className="space-y-4">
+                    {/* Imagen */}
+                    {modalCotizar.pedido?.imgs && modalCotizar.pedido.imgs.length > 0 && (
+                      <div className={`rounded-xl overflow-hidden border ${mounted && theme === 'dark' ? 'border-slate-700 bg-slate-900' : 'border-gray-200 bg-gray-100'}`}>
+                        <img
+                          src={modalCotizar.pedido.imgs[0]}
+                          alt={modalCotizar.pedido?.producto}
+                          className="w-full h-44 object-cover"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Datos del pedido */}
+                    <div className={`rounded-xl border ${mounted && theme === 'dark' ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-3.5 space-y-2.5`}>
+                      <h4 className={`text-sm font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{modalCotizar.pedido?.producto || '—'}</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>Cliente</span>
+                          <p className={`text-xs font-semibold ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{modalCotizar.pedido?.cliente || '—'}</p>
+                        </div>
+                        <div>
+                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>Cantidad</span>
+                          <p className={`text-xs font-semibold ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{modalCotizar.pedido?.cantidad}</p>
+                        </div>
+                        <div>
+                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>Envío</span>
+                          <p className={`text-xs font-semibold ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
+                            {({ air: 'Aéreo', maritime: 'Marítimo', doorToDoor: 'Puerta a puerta' } as Record<string, string>)[modalCotizar.pedido?.shippingType || ''] || modalCotizar.pedido?.shippingType || '—'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>Entrega</span>
+                          <p className={`text-xs font-semibold ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
+                            {({ office: 'Oficina', warehouse: 'Almacén', pickup: 'Retiro en tienda', delivery: 'Domicilio' } as Record<string, string>)[modalCotizar.pedido?.deliveryType || ''] || modalCotizar.pedido?.deliveryType || '—'}
+                          </p>
+                        </div>
+                      </div>
+                      {modalCotizar.pedido?.estimatedBudget != null && Number(modalCotizar.pedido.estimatedBudget) > 0 && (
+                        <div className={`pt-2 border-t ${mounted && theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
+                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>Presupuesto del cliente</span>
+                          <p className={`text-xs font-semibold ${mounted && theme === 'dark' ? 'text-emerald-400' : 'text-emerald-600'}`}>${Number(modalCotizar.pedido.estimatedBudget).toFixed(2)}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Descripción */}
+                    {modalCotizar.pedido?.description && (
+                      <div className={`rounded-xl border ${mounted && theme === 'dark' ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-3.5`}>
+                        <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>
+                          <FileText className="h-3 w-3 inline mr-1" />Descripción
+                        </span>
+                        <p className={`text-xs mt-1 whitespace-pre-wrap leading-relaxed ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>{modalCotizar.pedido.description}</p>
+                      </div>
+                    )}
+
+                    {/* Especificaciones */}
+                    {modalCotizar.pedido?.especificaciones && (
+                      <div className={`rounded-xl border ${mounted && theme === 'dark' ? 'border-amber-900/40 bg-amber-900/10' : 'border-amber-200 bg-amber-50'} p-3.5`}>
+                        <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-amber-400' : 'text-amber-700'}`}>
+                          ⚙️ Especificaciones
+                        </span>
+                        <p className={`text-xs mt-1 whitespace-pre-wrap leading-relaxed ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>{modalCotizar.pedido.especificaciones}</p>
+                      </div>
+                    )}
+
+                    {/* Links */}
+                    {modalCotizar.pedido?.links && modalCotizar.pedido.links.length > 0 && (
+                      <div className={`rounded-xl border ${mounted && theme === 'dark' ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-3.5`}>
+                        <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>🔗 Links</span>
+                        <div className="mt-1 space-y-1">
+                          {modalCotizar.pedido.links.map((link, i) => (
+                            <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="block text-xs text-blue-500 hover:text-blue-400 hover:underline truncate">{link}</a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Panel derecho — Formulario de cotización */}
+                <div className="flex-1 p-5">
               <form onSubmit={e => {
                 e.preventDefault();
                 const precio = Number((e.target as any).precio.value);
@@ -2966,31 +3056,7 @@ export default function PedidosChina() {
                 if (precio > 0 && modalCotizar.pedido) {
                   cotizarPedido(modalCotizar.pedido, precio, precioEnvio, altura, anchura, largo, peso);
                 }
-              }} className="space-y-6">
-                <div className={`p-4 rounded-lg border ${mounted && theme === 'dark' ? 'bg-gradient-to-r from-blue-900/20 to-indigo-900/20 border-blue-700' : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'}`}>
-                  <h4 className={`font-semibold mb-3 flex items-center gap-2 ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                    <Package className="h-4 w-4" />
-                    {t('chinese.ordersPage.modals.quote.summaryTitle')}
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('chinese.ordersPage.modals.quote.client')}</p>
-                      <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>{modalCotizar.pedido?.cliente}</p>
-                    </div>
-                    <div>
-                      <p className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('chinese.ordersPage.modals.quote.product')}</p>
-                      <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>{modalCotizar.pedido?.producto}</p>
-                    </div>
-                    <div>
-                      <p className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('chinese.ordersPage.modals.quote.quantity')}</p>
-                      <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>{modalCotizar.pedido?.cantidad}</p>
-                    </div>
-                    <div>
-                      <p className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('chinese.ordersPage.modals.quote.specifications')}</p>
-                      <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>{modalCotizar.pedido?.especificaciones || t('chinese.ordersPage.modals.quote.specificationsNA')}</p>
-                    </div>
-                  </div>
-                </div>
+              }} className="space-y-5">
                 <div className="space-y-2">
                   <label className={`block text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('chinese.ordersPage.modals.quote.unitPriceLabel')}</label>
                   <div className="relative">
@@ -3194,6 +3260,9 @@ export default function PedidosChina() {
                   </Button>
                 </div>
               </form>
+                </div>
+                {/* Close two-panel layout */}
+              </div>
             </div>
           </div>
         )}

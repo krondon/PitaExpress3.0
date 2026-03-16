@@ -1670,6 +1670,7 @@ export default function MisPedidosPage() {
         client_id: clientId,
         productName: orderData.productName, // Nombre simple
         description: orderData.description,
+        specifications: orderData.specifications,
         quantity: orderData.quantity,
         estimatedBudget: Number(orderData.estimatedBudget),
         deliveryType: orderData.deliveryVenezuela,

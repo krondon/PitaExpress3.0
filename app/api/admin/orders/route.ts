@@ -89,6 +89,7 @@ export async function POST(req: NextRequest) {
       client_id,
       productName,
       description = '',
+      specifications = '',
       quantity,
       estimatedBudget,
       deliveryType, // destino en Venezuela (según implementación actual)
@@ -139,6 +140,7 @@ export async function POST(req: NextRequest) {
       client_id,
       productName,
       description,
+      specifications: specifications || null,
       quantity: Number(quantity),
       estimatedBudget: Number(estimatedBudget),
       deliveryType, // en la BD actual se está usando así desde el cliente
