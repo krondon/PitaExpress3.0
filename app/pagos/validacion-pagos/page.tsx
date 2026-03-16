@@ -751,13 +751,17 @@ const PaymentValidationDashboard: React.FC = () => {
     ));
 
     try {
-      if (type === 'approve') {
-        const idFilter: any = isNaN(Number(paymentId)) ? paymentId : Number(paymentId);
-        const { error } = await supabase
-          .from('orders')
-          .update({ state: 4 })
-          .eq('id', idFilter);
-        if (error) throw error;
+      if (type === 'approve' || type === 'reject') {
+        // Usar endpoint API (service role) para bypass de RLS
+        const resp = await fetch(`/api/orders/${paymentId}/state`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ state: 4, changed_by: 'Undo desde Pagos', notes: `Deshacer ${type}` }),
+        });
+        if (!resp.ok) {
+          const msg = await resp.json().catch(() => ({ error: 'Error al deshacer' }));
+          throw new Error(msg?.error || 'Error al revertir el estado del pedido');
+        }
       }
       toast({
         title: t('venezuela.pagos.toasts.undoTitle'),
@@ -866,6 +870,10 @@ const PaymentValidationDashboard: React.FC = () => {
         const msg = await resp.json().catch(() => ({ error: 'Error al actualizar estado' }));
         throw new Error(msg?.error || 'Error al actualizar el estado del pedido');
       }
+      // Generar factura (fire-and-forget)
+      fetch(`/api/orders/${id}/invoice`, { method: 'POST' }).catch(err =>
+        console.error('[Invoice] Error generando factura:', err)
+      );
       // Notificar al cliente: pago aprobado
       if (payment.clientUserId) {
         const notif = NotificationsFactory.client.paymentReviewed({ orderId: id, paymentId: id, status: 'aprobado' });
@@ -904,7 +912,7 @@ const PaymentValidationDashboard: React.FC = () => {
       title: t('venezuela.pagos.toasts.approvedTitle'),
       description: t('venezuela.pagos.toasts.approvedDesc', { id }),
       variant: 'default',
-      duration: 3000,
+      duration: 8000,
       action: (
         <button
           onClick={(e) => {
@@ -976,10 +984,14 @@ const PaymentValidationDashboard: React.FC = () => {
       title: t('venezuela.pagos.toasts.rejectedTitle'),
       description: t('venezuela.pagos.toasts.rejectedDesc', { id }),
       variant: 'default',
-      duration: 3000,
+      duration: 8000,
       action: (
         <button
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleUndo(); }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleUndoFor(id, payment.estado as any, 'reject');
+          }}
           className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
         >
           <RotateCcw size={14} />

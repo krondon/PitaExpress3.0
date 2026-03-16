@@ -642,6 +642,8 @@
         "addToBox": "Añadir a la Caja",
         "sendRequest": "Enviar Solicitud",
         "processingQueue": "Procesando...",
+        "viewRequest": "Ver solicitud",
+        "viewRequestDescription": "Información de esta solicitud (solo lectura)",
         "removedFromBox": {
           "title": "Eliminado",
           "description": "Item eliminado de la caja."

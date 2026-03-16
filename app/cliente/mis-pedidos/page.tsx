@@ -108,6 +108,7 @@ interface Order {
     date?: string;
   }>;
   pdfRoutes?: string | null;
+  invoiceRoute?: string | null;
   alternativeStatus?: 'pending' | 'accepted' | 'rejected' | null;
   alternativeRejectionReason?: string;
   batch_id?: string | null;
@@ -308,6 +309,7 @@ export default function MisPedidosPage() {
   const [orderQueue, setOrderQueue] = useState<NewOrderData[]>([]);
   const [isQueueDrawerOpen, setIsQueueDrawerOpen] = useState(false);
   const [processingQueue, setProcessingQueue] = useState(false);
+  const [viewingQueueIndex, setViewingQueueIndex] = useState<number | null>(null);
 
   // Obtener el user_id del usuario autenticado
   useEffect(() => {
@@ -558,7 +560,7 @@ export default function MisPedidosPage() {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select('id, productName, description, estimatedBudget, totalQuote, unitQuote, shippingPrice, state, created_at, pdfRoutes, quantity, box_id, imgs, batch_id, shippingType, deliveryType')
+        .select('id, productName, description, estimatedBudget, totalQuote, unitQuote, shippingPrice, state, created_at, pdfRoutes, invoiceRoute, quantity, box_id, imgs, batch_id, shippingType, deliveryType')
         .eq('client_id', clientId)
         .eq('archived_by_client', false) // Filter out archived orders
         .order('id', { ascending: false });
@@ -683,6 +685,7 @@ export default function MisPedidosPage() {
           stateNum: typeof row.state === 'number' ? row.state : (row.state ? Number(row.state) : undefined),
           documents: row.pdfRoutes ? [{ type: 'link', url: row.pdfRoutes, name: 'Resumen PDF', date: row.created_at }] : [],
           pdfRoutes: row.pdfRoutes || null,
+          invoiceRoute: row.invoiceRoute || null,
           tracking_number: tn,
           tracking_company: tc,
           arrive_date: ad,
@@ -2117,6 +2120,7 @@ export default function MisPedidosPage() {
             if (processingQueue && !open) return;
             setIsNewOrderModalOpen(open);
             if (open) resetNewOrderWizard();
+            if (!open) setViewingQueueIndex(null); // Cerrar también el modal "Ver solicitud" si existe
           }}>
             <DialogTrigger asChild>
               <Button className="bg-gradient-to-r from-blue-500 to-orange-500 hover:from-blue-600 hover:to-orange-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
@@ -2577,6 +2581,16 @@ export default function MisPedidosPage() {
                                   <Button
                                     variant="ghost"
                                     size="icon"
+                                    onClick={() => setViewingQueueIndex(index)}
+                                    disabled={processingQueue}
+                                    className="h-8 w-8 sm:h-9 sm:w-9 text-slate-500 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title={t('client.recentOrders.newOrder.viewRequest', { defaultValue: 'Ver solicitud' })}
+                                  >
+                                    <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
                                     onClick={() => handleEditFromQueue(index)}
                                     disabled={processingQueue}
                                     className="h-8 w-8 sm:h-9 sm:w-9 text-blue-500 hover:text-blue-700 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -2604,24 +2618,27 @@ export default function MisPedidosPage() {
                   {/* Enhanced Navigation Buttons - Hide if Success OR Error Animation is showing */}
                   {!showSuccessAnimation && !showErrorAnimation && (
                     <div className={`flex flex-col sm:flex-row justify-between gap-3 pt-4 sm:pt-6 mt-4 border-t ${mounted && theme === 'dark' ? 'border-slate-700' : 'border-slate-200/50'}`}>
-                      <Button
-                        variant="outline"
-                        onClick={handlePrevStep}
-                        disabled={currentStep === 1 || isTransitioning}
-                        className={`w-full sm:w-auto transition-all duration-300 hover:shadow-md transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${mounted && theme === 'dark' ? 'hover:bg-slate-700 border-slate-600' : 'hover:bg-slate-50'}`}
-                      >
-                        {isTransitioning ? (
-                          <div className="flex items-center justify-center">
-                            <div className="w-4 h-4 border-2 border-slate-600 border-t-transparent rounded-full animate-spin mr-2"></div>
-                            {t('client.recentOrders.newOrder.transitioning')}
-                          </div>
-                        ) : (
-                          <>
-                            <ArrowLeft className="w-4 h-4 mr-2" />
-                            {t('client.recentOrders.newOrder.previous')}
-                          </>
-                        )}
-                      </Button>
+                      {/* Ocultar "Anterior" en paso 4 (caja): el pedido ya está en la caja, volver atrás no tiene sentido; para editar se usa el lápiz en cada ítem */}
+                      {currentStep !== 4 && (
+                        <Button
+                          variant="outline"
+                          onClick={handlePrevStep}
+                          disabled={currentStep === 1 || isTransitioning}
+                          className={`w-full sm:w-auto transition-all duration-300 hover:shadow-md transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${mounted && theme === 'dark' ? 'hover:bg-slate-700 border-slate-600' : 'hover:bg-slate-50'}`}
+                        >
+                          {isTransitioning ? (
+                            <div className="flex items-center justify-center">
+                              <div className="w-4 h-4 border-2 border-slate-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                              {t('client.recentOrders.newOrder.transitioning')}
+                            </div>
+                          ) : (
+                            <>
+                              <ArrowLeft className="w-4 h-4 mr-2" />
+                              {t('client.recentOrders.newOrder.previous')}
+                            </>
+                          )}
+                        </Button>
+                      )}
 
                       {/* Botones del Modal */}
                       <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 w-full sm:w-auto">
@@ -2678,6 +2695,81 @@ export default function MisPedidosPage() {
                   )}
                 </>
               )}
+            </DialogContent>
+          </Dialog>
+
+          {/* Modal solo lectura: ver información de una solicitud en la caja */}
+          <Dialog open={viewingQueueIndex !== null} onOpenChange={(open) => !open && setViewingQueueIndex(null)}>
+            <DialogContent className={`max-w-lg max-h-[90vh] overflow-y-auto ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white'}`}>
+              <DialogHeader>
+                <DialogTitle className={mounted && theme === 'dark' ? 'text-white' : ''}>
+                  {t('client.recentOrders.newOrder.viewRequest', { defaultValue: 'Ver solicitud' })}
+                </DialogTitle>
+                <DialogDescription className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>
+                  {t('client.recentOrders.newOrder.viewRequestDescription', { defaultValue: 'Información de esta solicitud (solo lectura)' })}
+                </DialogDescription>
+              </DialogHeader>
+              {viewingQueueIndex !== null && orderQueue[viewingQueueIndex] && (() => {
+                const item = orderQueue[viewingQueueIndex];
+                return (
+                  <div className="space-y-4">
+                    {item.productImage && (
+                      <div className="rounded-lg overflow-hidden border bg-slate-100 max-h-48">
+                        <img src={URL.createObjectURL(item.productImage)} alt="" className="w-full h-full object-contain max-h-48" />
+                      </div>
+                    )}
+                    <div className="grid gap-3 text-sm">
+                      <div>
+                        <p className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{t('client.recentOrders.newOrder.productName')}</p>
+                        <p className={mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}>{item.productName || '—'}</p>
+                      </div>
+                      <div>
+                        <p className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{t('client.recentOrders.newOrder.productDescription')}</p>
+                        <p className={`whitespace-pre-wrap ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`}>{item.description || '—'}</p>
+                      </div>
+                      <div>
+                        <p className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{t('client.recentOrders.newOrder.quantity')}</p>
+                        <p className={mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}>{item.quantity} {t('client.recentOrders.newOrder.units')}</p>
+                      </div>
+                      {item.specifications && (
+                        <div>
+                          <p className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{t('client.recentOrders.newOrder.specifications')}</p>
+                          <p className={`whitespace-pre-wrap ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-700'}`}>{item.specifications}</p>
+                        </div>
+                      )}
+                      {item.productUrl && (
+                        <div>
+                          <p className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{t('client.recentOrders.newOrder.productUrl')}</p>
+                          <a href={item.productUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">{item.productUrl}</a>
+                        </div>
+                      )}
+                      <div>
+                        <p className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{t('client.recentOrders.newOrder.deliveryType')}</p>
+                        <p className={mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}>
+                          {item.deliveryType === 'air' ? t('client.recentOrders.newOrder.air') : item.deliveryType === 'maritime' ? t('client.recentOrders.newOrder.maritime') : '—'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{t('client.recentOrders.newOrder.deliveryVenezuela')}</p>
+                        <p className={mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}>
+                          {item.deliveryVenezuela === 'pickup' ? t('client.recentOrders.newOrder.pickup') : item.deliveryVenezuela === 'delivery' ? t('client.recentOrders.newOrder.delivery') : item.deliveryVenezuela || '—'}
+                        </p>
+                      </div>
+                      {item.estimatedBudget && (
+                        <div>
+                          <p className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>{t('client.recentOrders.newOrder.estimatedBudget')}</p>
+                          <p className={mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}>{item.estimatedBudget} USD</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex justify-end pt-2">
+                      <Button variant="outline" onClick={() => setViewingQueueIndex(null)}>
+                        {t('client.recentOrders.newOrder.error.close', { defaultValue: 'Cerrar' })}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })()}
             </DialogContent>
           </Dialog>
         </div>
@@ -3091,10 +3183,27 @@ export default function MisPedidosPage() {
 
               {/* Acciones */}
               <div className="flex gap-2 pt-4 border-t">
-                <Button variant="outline" className="flex-1">
-                  <Download className="h-4 w-4 mr-2" />
-                  {selectedOrder.pdfRoutes ? t('client.recentOrders.modal.downloadInvoice') : t('client.recentOrders.modal.downloadInvoice')}
-                </Button>
+                {selectedOrder.invoiceRoute ? (
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      try {
+                        window.open(selectedOrder.invoiceRoute as string, '_blank', 'noopener,noreferrer');
+                      } catch (e) {
+                        console.error('No se pudo abrir la factura:', e);
+                      }
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    {t('client.recentOrders.modal.downloadInvoice')}
+                  </Button>
+                ) : (
+                  <div className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm ${mounted && theme === 'dark' ? 'bg-slate-700/50 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
+                    <Clock className="h-4 w-4" />
+                    {t('client.recentOrders.modal.invoiceNotReady', { defaultValue: 'Factura no disponible aún' })}
+                  </div>
+                )}
               </div>
             </div>
           </DialogContent>
