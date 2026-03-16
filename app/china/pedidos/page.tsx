@@ -413,6 +413,7 @@ export default function PedidosChina() {
     pesoInput: '',
   });
   const [modalDetalle, setModalDetalle] = useState<{ open: boolean, pedido?: Pedido }>({ open: false });
+  const [lightboxImg, setLightboxImg] = useState<string | null>(null);
   const { toggleMobileMenu } = useChinaLayoutContext();
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<'pedidos' | 'cajas' | 'contenedores'>('pedidos');
@@ -2947,7 +2948,9 @@ export default function PedidosChina() {
               {/* Header */}
               <div className={`sticky top-0 z-10 ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border-b px-5 py-4 rounded-t-2xl`}>
                 <div className="flex items-center justify-between">
-                  <h3 className={`text-xl font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.modals.quote.title')}</h3>
+                  <h3 className={`text-xl font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                    {t('chinese.ordersPage.modals.quote.title')}{modalCotizar.pedido?.id ? <span className={`font-mono ml-2 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-gray-400'}`}>#ORD-{modalCotizar.pedido.id}</span> : ''}
+                  </h3>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -2966,13 +2969,19 @@ export default function PedidosChina() {
                   <div className="space-y-4">
                     {/* Imagen */}
                     {modalCotizar.pedido?.imgs && modalCotizar.pedido.imgs.length > 0 && (
-                      <div className={`rounded-xl overflow-hidden border ${mounted && theme === 'dark' ? 'border-slate-700 bg-slate-900' : 'border-gray-200 bg-gray-100'}`}>
+                      <div
+                        className={`rounded-xl overflow-hidden border ${mounted && theme === 'dark' ? 'border-slate-700 bg-slate-900' : 'border-gray-200 bg-gray-100'} cursor-pointer group relative`}
+                        onClick={() => setLightboxImg(modalCotizar.pedido!.imgs![0])}
+                      >
                         <img
                           src={modalCotizar.pedido.imgs[0]}
                           alt={modalCotizar.pedido?.producto}
-                          className="w-full h-44 object-cover"
+                          className="w-full h-44 object-cover transition-transform duration-200 group-hover:scale-105"
                           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                         />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <Search className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
                       </div>
                     )}
 
@@ -3552,6 +3561,28 @@ export default function PedidosChina() {
             </div>
           </div>
         )}
+        {/* Lightbox de imagen */}
+        {lightboxImg && (
+          <div
+            className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[60] animate-in fade-in duration-200 cursor-pointer p-6"
+            onClick={() => setLightboxImg(null)}
+            onKeyDown={(e) => { if (e.key === 'Escape') setLightboxImg(null); }}
+            tabIndex={0}
+          >
+            <img
+              src={lightboxImg}
+              alt="Vista ampliada"
+              className="max-w-full max-h-full rounded-xl object-contain shadow-2xl animate-in zoom-in-90 duration-300"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              onClick={() => setLightboxImg(null)}
+              className="absolute top-5 right-5 text-white/70 hover:text-white transition-colors"
+            >
+              <XCircle className="h-8 w-8" />
+            </button>
+          </div>
+        )}
         {/* Modal Detalle del Pedido */}
         {modalDetalle.open && modalDetalle.pedido && (() => {
           const p = modalDetalle.pedido;
@@ -3576,11 +3607,10 @@ export default function PedidosChina() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-xs font-mono ${isDark ? 'text-slate-400' : 'text-gray-400'}`}>#{p.id}</span>
                         <Badge className={badge.className}>{badge.label}</Badge>
                       </div>
                       <h3 className={`text-lg font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                        {p.producto || 'Sin nombre'}
+                        <span className={`font-mono ${isDark ? 'text-slate-400' : 'text-gray-400'}`}>#ORD-{p.id}</span>{' '}{p.producto || 'Sin nombre'}
                       </h3>
                     </div>
                     <Button
@@ -3600,13 +3630,19 @@ export default function PedidosChina() {
                     {/* Columna izquierda — Imagen + Links */}
                     {productImg && (
                       <div className="md:w-2/5 shrink-0">
-                        <div className={`rounded-xl overflow-hidden border ${isDark ? 'border-slate-700 bg-slate-900' : 'border-gray-200 bg-gray-100'}`}>
+                        <div
+                          className={`rounded-xl overflow-hidden border ${isDark ? 'border-slate-700 bg-slate-900' : 'border-gray-200 bg-gray-100'} cursor-pointer group relative`}
+                          onClick={() => setLightboxImg(productImg)}
+                        >
                           <img
                             src={productImg}
                             alt={p.producto}
-                            className="w-full h-48 md:h-56 object-cover"
+                            className="w-full h-48 md:h-56 object-cover transition-transform duration-200 group-hover:scale-105"
                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                           />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                            <Search className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
                         </div>
                       </div>
                     )}
