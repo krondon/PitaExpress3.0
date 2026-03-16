@@ -3774,13 +3774,13 @@ export default function PedidosChina() {
                         {p.unitQuote != null && Number(p.unitQuote) > 0 && (
                           <div className="flex justify-between text-sm">
                             <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Precio unitario</span>
-                            <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>${Number(p.unitQuote).toFixed(2)}</span>
+                            <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>¥{Number(p.unitQuote).toFixed(2)}</span>
                           </div>
                         )}
                         {p.shippingPrice != null && Number(p.shippingPrice) > 0 && (
                           <div className="flex justify-between text-sm">
                             <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Envío</span>
-                            <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>${Number(p.shippingPrice).toFixed(2)}</span>
+                            <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>¥{Number(p.shippingPrice).toFixed(2)}</span>
                           </div>
                         )}
                         {p.totalQuote != null && Number(p.totalQuote) > 0 && (

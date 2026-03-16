@@ -180,9 +180,6 @@ export default function ProposeAlternativeModal({
                                 <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
                                     Proponer Alternativa
                                 </h3>
-                                <p className={`text-sm mt-0.5 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                                    <span className="font-mono">#{`ORD-${pedido?.id}`}</span> · {pedido?.cliente}
-                                </p>
                             </div>
                             <Button variant="ghost" size="sm" onClick={handleClose} className={`h-8 w-8 p-0 shrink-0 ${isDark ? 'hover:bg-slate-700' : ''}`}>
                                 <XCircle className="h-5 w-5" />
@@ -234,7 +231,7 @@ export default function ProposeAlternativeModal({
                             {/* Product info grid (mirrors Ver/Cotizar style) */}
                             <div className={`rounded-xl border ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-3.5 space-y-2.5`}>
                                 <h4 className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                                    {pedido?.producto || '—'}
+                                    <span className="font-mono text-xs">#ORD-{pedido?.id}</span> {pedido?.producto || '—'}
                                 </h4>
                                 <div className="grid grid-cols-2 gap-2">
                                     <div>
