@@ -12,7 +12,7 @@ async function getOrdersWithClientName(page: number = 1, limit: number = 50, emp
   // Cancelados: solo si max_state_reached >= 1 (China ya interactuó con el pedido)
   let query = supabase
     .from('orders')
-    .select('id, quantity, productName, deliveryType, shippingType, state, client_id, asignedEChina, created_at, description, pdfRoutes, totalQuote, batch_id, archived_by_china, max_state_reached', { count: 'exact' })
+    .select('id, quantity, productName, deliveryType, shippingType, state, client_id, asignedEChina, created_at, description, pdfRoutes, totalQuote, batch_id, archived_by_china, max_state_reached, imgs, links, unitQuote, shippingPrice, estimatedBudget', { count: 'exact' })
     .or('and(state.gte.1,state.lte.8),and(state.in.(-2,-1),max_state_reached.gte.1)') // Normal + cancelados que llegaron a China
     .eq('archived_by_china', false); // Excluir los que China ya ocultó
 
@@ -95,6 +95,11 @@ async function getOrdersWithClientName(page: number = 1, limit: number = 50, emp
       alternativeStatus: alternativeStatus,
       alternativeRejectionReason: rejectionReason,
       batch_id: order.batch_id ?? null,
+      imgs: (order as any).imgs ?? [],
+      links: (order as any).links ?? [],
+      unitQuote: (order as any).unitQuote ?? null,
+      shippingPrice: (order as any).shippingPrice ?? null,
+      estimatedBudget: (order as any).estimatedBudget ?? null,
     };
   });
 
