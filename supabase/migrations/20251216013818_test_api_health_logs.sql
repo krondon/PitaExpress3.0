@@ -20,4 +20,3 @@ SELECT COUNT(*) as total_logs FROM api_health_logs;
 
 -- 5. Ver los últimos logs
 SELECT * FROM api_health_logs ORDER BY created_at DESC LIMIT 10;
-

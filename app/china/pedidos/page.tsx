@@ -413,6 +413,7 @@ export default function PedidosChina() {
     pesoInput: '',
   });
   const [modalDetalle, setModalDetalle] = useState<{ open: boolean, pedido?: Pedido }>({ open: false });
+  const [lightboxImg, setLightboxImg] = useState<string | null>(null);
   const { toggleMobileMenu } = useChinaLayoutContext();
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<'pedidos' | 'cajas' | 'contenedores'>('pedidos');
@@ -770,6 +771,8 @@ export default function PedidosChina() {
   // Cerrar modales al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      // Si el lightbox está abierto, no cerrar ningún modal
+      if (lightboxImg) return;
       if (modalCotizar.open && modalCotizarRef.current && !modalCotizarRef.current.contains(event.target as Node)) {
         closeModalCotizar();
       }
@@ -824,6 +827,7 @@ export default function PedidosChina() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [
+    lightboxImg,
     modalCotizar.open,
     modalDetalle.open,
     modalCrearCaja.open,
@@ -2936,25 +2940,141 @@ export default function PedidosChina() {
 
         {/* Modal Cotizar */}
         {modalCotizar.open && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300 p-4">
             <div
               ref={modalCotizarRef}
-              className={`${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} rounded-2xl p-6 max-w-2xl mx-4 w-full max-h-[90vh] overflow-y-auto transition-all duration-300 ${isModalCotizarClosing
+              className={`${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} rounded-2xl max-w-lg md:max-w-5xl mx-auto w-full max-h-[90vh] overflow-y-auto transition-all duration-300 ${isModalCotizarClosing
                 ? 'translate-y-full scale-95 opacity-0'
                 : 'animate-in slide-in-from-bottom-4 duration-300'
                 }`}
             >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className={`text-xl font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.modals.quote.title')}</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={closeModalCotizar}
-                  className={`h-8 w-8 p-0 ${mounted && theme === 'dark' ? 'hover:bg-slate-700' : ''}`}
-                >
-                  <span className={`text-2xl ${mounted && theme === 'dark' ? 'text-white' : ''}`}>×</span>
-                </Button>
+              {/* Header */}
+              <div className={`sticky top-0 z-10 ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border-b px-5 py-4 rounded-t-2xl`}>
+                <div className="flex items-center justify-between">
+                  <h3 className={`text-xl font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.modals.quote.title')}</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={closeModalCotizar}
+                    className={`h-8 w-8 p-0 ${mounted && theme === 'dark' ? 'hover:bg-slate-700' : ''}`}
+                  >
+                    <XCircle className="h-5 w-5" />
+                  </Button>
+                </div>
               </div>
+
+              {/* Two-panel layout */}
+              <div className="flex flex-col md:flex-row">
+                {/* Panel izquierdo — Preview del producto */}
+                <div className={`md:w-2/5 shrink-0 p-5 ${mounted && theme === 'dark' ? 'md:border-r md:border-slate-700' : 'md:border-r md:border-gray-200'}`}>
+                  <div className="space-y-4">
+                    {/* Imagen */}
+                    {modalCotizar.pedido?.imgs && modalCotizar.pedido.imgs.length > 0 && (
+                      <div
+                        className={`rounded-xl overflow-hidden border ${mounted && theme === 'dark' ? 'border-slate-700 bg-slate-900' : 'border-gray-200 bg-gray-100'} cursor-pointer group relative`}
+                        onClick={() => setLightboxImg(modalCotizar.pedido!.imgs![0])}
+                      >
+                        <img
+                          src={modalCotizar.pedido.imgs[0]}
+                          alt={modalCotizar.pedido?.producto}
+                          className="w-full h-44 object-cover transition-transform duration-200 group-hover:scale-105"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <Search className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Datos del pedido */}
+                    <div className={`rounded-xl border ${mounted && theme === 'dark' ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-3.5 space-y-2.5`}>
+                      <h4 className={`text-sm font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                        <span className={`font-mono ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-gray-400'}`}>#ORD-{modalCotizar.pedido?.id}</span>{' '}{modalCotizar.pedido?.producto || '—'}
+                      </h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>
+                            <User className="h-3 w-3 inline mr-1" />Cliente
+                          </span>
+                          <p className={`text-xs font-semibold ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{modalCotizar.pedido?.cliente || '—'}</p>
+                        </div>
+                        <div>
+                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>
+                            <Tag className="h-3 w-3 inline mr-1" />Cantidad
+                          </span>
+                          <p className={`text-xs font-semibold ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{modalCotizar.pedido?.cantidad}</p>
+                        </div>
+                        <div>
+                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>
+                            <Calendar className="h-3 w-3 inline mr-1" />Fecha
+                          </span>
+                          <p className={`text-xs font-semibold ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
+                            {modalCotizar.pedido?.fecha ? new Date(modalCotizar.pedido.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>
+                            Estado
+                          </span>
+                          <div className="mt-0.5">
+                            <Badge className={getOrderBadge(modalCotizar.pedido?.numericState).className}>{getOrderBadge(modalCotizar.pedido?.numericState).label}</Badge>
+                          </div>
+                        </div>
+                        <div>
+                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>
+                            <Truck className="h-3 w-3 inline mr-1" />Envío
+                          </span>
+                          <p className={`text-xs font-semibold ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
+                            {({ air: 'Aéreo', maritime: 'Marítimo', doorToDoor: 'Puerta a puerta' } as Record<string, string>)[modalCotizar.pedido?.shippingType || ''] || modalCotizar.pedido?.shippingType || '—'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>
+                            <MapPin className="h-3 w-3 inline mr-1" />Entrega
+                          </span>
+                          <p className={`text-xs font-semibold ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
+                            {({ office: 'Oficina', warehouse: 'Almacén', pickup: 'Retiro en tienda', delivery: 'Domicilio' } as Record<string, string>)[modalCotizar.pedido?.deliveryType || ''] || modalCotizar.pedido?.deliveryType || '—'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Descripción */}
+                    {modalCotizar.pedido?.description && (
+                      <div className={`rounded-xl border ${mounted && theme === 'dark' ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-3.5`}>
+                        <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>
+                          <FileText className="h-3 w-3 inline mr-1" />Descripción
+                        </span>
+                        <p className={`text-xs mt-1 whitespace-pre-wrap leading-relaxed ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>{modalCotizar.pedido.description}</p>
+                      </div>
+                    )}
+
+                    {/* Especificaciones */}
+                    {modalCotizar.pedido?.especificaciones && (
+                      <div className={`rounded-xl border ${mounted && theme === 'dark' ? 'border-amber-900/40 bg-amber-900/10' : 'border-amber-200 bg-amber-50'} p-3.5`}>
+                        <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-amber-400' : 'text-amber-700'}`}>
+                          ⚙️ Especificaciones
+                        </span>
+                        <p className={`text-xs mt-1 whitespace-pre-wrap leading-relaxed ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>{modalCotizar.pedido.especificaciones}</p>
+                      </div>
+                    )}
+
+                    {/* Links */}
+                    {modalCotizar.pedido?.links && modalCotizar.pedido.links.length > 0 && (
+                      <div className={`rounded-xl border ${mounted && theme === 'dark' ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-3.5`}>
+                        <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>🔗 Links</span>
+                        <div className="mt-1 space-y-1">
+                          {modalCotizar.pedido.links.map((link, i) => (
+                            <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="block text-xs text-blue-500 hover:text-blue-400 hover:underline truncate">{link}</a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Panel derecho — Formulario de cotización */}
+                <div className="flex-1 p-5">
               <form onSubmit={e => {
                 e.preventDefault();
                 const precio = Number((e.target as any).precio.value);
@@ -2966,31 +3086,7 @@ export default function PedidosChina() {
                 if (precio > 0 && modalCotizar.pedido) {
                   cotizarPedido(modalCotizar.pedido, precio, precioEnvio, altura, anchura, largo, peso);
                 }
-              }} className="space-y-6">
-                <div className={`p-4 rounded-lg border ${mounted && theme === 'dark' ? 'bg-gradient-to-r from-blue-900/20 to-indigo-900/20 border-blue-700' : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'}`}>
-                  <h4 className={`font-semibold mb-3 flex items-center gap-2 ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                    <Package className="h-4 w-4" />
-                    {t('chinese.ordersPage.modals.quote.summaryTitle')}
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('chinese.ordersPage.modals.quote.client')}</p>
-                      <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>{modalCotizar.pedido?.cliente}</p>
-                    </div>
-                    <div>
-                      <p className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('chinese.ordersPage.modals.quote.product')}</p>
-                      <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>{modalCotizar.pedido?.producto}</p>
-                    </div>
-                    <div>
-                      <p className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('chinese.ordersPage.modals.quote.quantity')}</p>
-                      <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>{modalCotizar.pedido?.cantidad}</p>
-                    </div>
-                    <div>
-                      <p className={`font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('chinese.ordersPage.modals.quote.specifications')}</p>
-                      <p className={mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>{modalCotizar.pedido?.especificaciones || t('chinese.ordersPage.modals.quote.specificationsNA')}</p>
-                    </div>
-                  </div>
-                </div>
+              }} className="space-y-5">
                 <div className="space-y-2">
                   <label className={`block text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('chinese.ordersPage.modals.quote.unitPriceLabel')}</label>
                   <div className="relative">
@@ -3194,6 +3290,9 @@ export default function PedidosChina() {
                   </Button>
                 </div>
               </form>
+                </div>
+                {/* Close two-panel layout */}
+              </div>
             </div>
           </div>
         )}
@@ -3483,6 +3582,28 @@ export default function PedidosChina() {
             </div>
           </div>
         )}
+        {/* Lightbox de imagen */}
+        {lightboxImg && (
+          <div
+            className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[60] animate-in fade-in duration-200 cursor-pointer p-6"
+            onClick={(e) => { e.stopPropagation(); setLightboxImg(null); }}
+            onKeyDown={(e) => { if (e.key === 'Escape') setLightboxImg(null); }}
+            tabIndex={0}
+          >
+            <img
+              src={lightboxImg}
+              alt="Vista ampliada"
+              className="max-w-full max-h-full rounded-xl object-contain shadow-2xl animate-in zoom-in-90 duration-300"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              onClick={() => setLightboxImg(null)}
+              className="absolute top-5 right-5 text-white/70 hover:text-white transition-colors"
+            >
+              <XCircle className="h-8 w-8" />
+            </button>
+          </div>
+        )}
         {/* Modal Detalle del Pedido */}
         {modalDetalle.open && modalDetalle.pedido && (() => {
           const p = modalDetalle.pedido;
@@ -3506,12 +3627,8 @@ export default function PedidosChina() {
                 <div className={`sticky top-0 z-10 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border-b px-5 py-4 rounded-t-2xl`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-xs font-mono ${isDark ? 'text-slate-400' : 'text-gray-400'}`}>#{p.id}</span>
-                        <Badge className={badge.className}>{badge.label}</Badge>
-                      </div>
                       <h3 className={`text-lg font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                        {p.producto || 'Sin nombre'}
+                        <span className={`font-mono ${isDark ? 'text-slate-400' : 'text-gray-400'}`}>#ORD-{p.id}</span>{' '}{p.producto || 'Sin nombre'}
                       </h3>
                     </div>
                     <Button
@@ -3531,13 +3648,19 @@ export default function PedidosChina() {
                     {/* Columna izquierda — Imagen + Links */}
                     {productImg && (
                       <div className="md:w-2/5 shrink-0">
-                        <div className={`rounded-xl overflow-hidden border ${isDark ? 'border-slate-700 bg-slate-900' : 'border-gray-200 bg-gray-100'}`}>
+                        <div
+                          className={`rounded-xl overflow-hidden border ${isDark ? 'border-slate-700 bg-slate-900' : 'border-gray-200 bg-gray-100'} cursor-pointer group relative`}
+                          onClick={() => setLightboxImg(productImg)}
+                        >
                           <img
                             src={productImg}
                             alt={p.producto}
-                            className="w-full h-48 md:h-56 object-cover"
+                            className="w-full h-48 md:h-56 object-cover transition-transform duration-200 group-hover:scale-105"
                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                           />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                            <Search className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
                         </div>
                       </div>
                     )}
@@ -3568,12 +3691,13 @@ export default function PedidosChina() {
                       </div>
                       <div>
                         <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                          <DollarSign className="h-3 w-3 inline mr-1" />Presupuesto
+                          Estado
                         </span>
-                        <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                          {p.estimatedBudget ? `$${Number(p.estimatedBudget).toFixed(2)}` : '—'}
-                        </p>
+                        <div className="mt-1">
+                          <Badge className={badge.className}>{badge.label}</Badge>
+                        </div>
                       </div>
+
                     </div>
 
                     {/* Envío inline */}
@@ -3650,13 +3774,13 @@ export default function PedidosChina() {
                         {p.unitQuote != null && Number(p.unitQuote) > 0 && (
                           <div className="flex justify-between text-sm">
                             <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Precio unitario</span>
-                            <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>${Number(p.unitQuote).toFixed(2)}</span>
+                            <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>¥{Number(p.unitQuote).toFixed(2)}</span>
                           </div>
                         )}
                         {p.shippingPrice != null && Number(p.shippingPrice) > 0 && (
                           <div className="flex justify-between text-sm">
                             <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Envío</span>
-                            <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>${Number(p.shippingPrice).toFixed(2)}</span>
+                            <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>¥{Number(p.shippingPrice).toFixed(2)}</span>
                           </div>
                         )}
                         {p.totalQuote != null && Number(p.totalQuote) > 0 && (
@@ -3864,8 +3988,11 @@ export default function PedidosChina() {
                             <Boxes className={`h-5 w-5 ${mounted && theme === 'dark' ? 'text-indigo-300' : 'text-indigo-600'}`} />
                           </div>
                           <div className="space-y-1">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <h3 className={`font-semibold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>#BOX-{id}</h3>
+                              {box?.name && (
+                                <span className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{String((box as any).name)}</span>
+                              )}
                               {boxType && (
                                 <Badge variant="outline" className={`ml-2 text-xs ${boxType === 'Aereo' ? 'text-sky-500 border-sky-500' : 'text-blue-600 border-blue-600'}`}>
                                   {t(`chinese.ordersPage.modals.selectBoxForOrder.boxTypes.${boxType.toLowerCase() as 'aereo' | 'maritimo' | 'mixto'}`, { defaultValue: boxType })}
@@ -4166,6 +4293,11 @@ export default function PedidosChina() {
           id: modalPropAlternativa.pedido.id,
           producto: modalPropAlternativa.pedido.producto,
           cliente: modalPropAlternativa.pedido.cliente,
+          imgs: modalPropAlternativa.pedido.imgs,
+          cantidad: modalPropAlternativa.pedido.cantidad,
+          fecha: modalPropAlternativa.pedido.fecha,
+          shippingType: modalPropAlternativa.pedido.shippingType,
+          deliveryType: modalPropAlternativa.pedido.deliveryType,
           alternativeRejectionReason: modalPropAlternativa.pedido.alternativeRejectionReason,
         } : null}
         onSuccess={() => {

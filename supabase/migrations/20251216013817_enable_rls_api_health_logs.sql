@@ -33,4 +33,3 @@ USING (
 
 -- Nota: No creamos políticas para UPDATE o DELETE porque los logs son históricos
 -- y no deben ser modificados o eliminados por usuarios
-

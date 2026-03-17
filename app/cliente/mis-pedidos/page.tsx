@@ -70,7 +70,8 @@ import {
   CreditCard,
   Banknote,
   Wallet,
-  Coins
+  Coins,
+  Calendar
 } from 'lucide-react';
 
 // Rutas de animaciones Lottie (desde /public)
@@ -88,6 +89,7 @@ interface Order {
   id: string;
   product: string;
   description: string;
+  specifications?: string | null;
   amount: string;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'quoted' | 'payment_rejected';
   progress: number;
@@ -560,7 +562,7 @@ export default function MisPedidosPage() {
     try {
       const { data, error } = await supabase
         .from('orders')
-        .select('id, productName, description, estimatedBudget, totalQuote, unitQuote, shippingPrice, state, created_at, pdfRoutes, invoiceRoute, quantity, box_id, imgs, batch_id, shippingType, deliveryType')
+        .select('id, productName, description, specifications, estimatedBudget, totalQuote, unitQuote, shippingPrice, state, created_at, pdfRoutes, invoiceRoute, quantity, box_id, imgs, batch_id, shippingType, deliveryType')
         .eq('client_id', clientId)
         .eq('archived_by_client', false) // Filter out archived orders
         .order('id', { ascending: false });
@@ -671,6 +673,7 @@ export default function MisPedidosPage() {
           id: String(row.id),
           product: row.productName || 'Pedido',
           description: row.description || '',
+          specifications: row.specifications || null,
           amount: `$${Number(calcAmountUSD || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
           status,
           progress: mapStateToProgress(row.state as number | null),
@@ -1670,6 +1673,7 @@ export default function MisPedidosPage() {
         client_id: clientId,
         productName: orderData.productName, // Nombre simple
         description: orderData.description,
+        specifications: orderData.specifications,
         quantity: orderData.quantity,
         estimatedBudget: Number(orderData.estimatedBudget),
         deliveryType: orderData.deliveryVenezuela,
@@ -2640,8 +2644,8 @@ export default function MisPedidosPage() {
                         </Button>
                       )}
 
-                      {/* Botones del Modal */}
-                      <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3 w-full sm:w-auto">
+                      {/* Botones del Modal: en paso 4 ocupar todo el ancho para alinear "Enviar solicitud" a la derecha */}
+                      <div className={`flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 w-full ${currentStep === 4 ? 'sm:w-full' : 'sm:w-auto'}`}>
                         {currentStep === 3 && (
                           <Button
                             onClick={handleAddToQueue}
@@ -3005,210 +3009,321 @@ export default function MisPedidosPage() {
       </div>
 
       {/* Modal de detalles del pedido */}
-      <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
-        {selectedOrder && (
-          <DialogContent className="w-[95vw] sm:w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{t('client.recentOrders.modal.detailsTitle')}: {selectedOrder.id}</DialogTitle>
-              <DialogDescription>
-                {t('client.recentOrders.modal.detailsSubtitle')}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-6">
-              {/* Información básica */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.modal.product')}</p>
-                  <p className={`text-lg ${mounted && theme === 'dark' ? 'text-white' : ''}`}>{selectedOrder.product}</p>
+      {/* Modal Ver Detalles — Rediseñado */}
+      {isDetailsModalOpen && selectedOrder && (() => {
+        const isDark = mounted && theme === 'dark';
+        const shippingLabels: Record<string, string> = { air: 'Aéreo', maritime: 'Marítimo', doorToDoor: 'Puerta a puerta' };
+        const deliveryLabels: Record<string, string> = { office: 'Oficina', warehouse: 'Almacén', pickup: 'Retiro en tienda', delivery: 'Domicilio' };
+        const getStateLabel = (sn?: number, status?: string) => {
+          if (typeof sn === 'number') {
+            return sn === 13 ? t('client.recentOrders.statuses.delivered') :
+              sn === 12 ? t('client.recentOrders.statuses.inStore') :
+              sn === 11 ? t('client.recentOrders.statuses.arriving') :
+              sn === 10 ? t('client.recentOrders.statuses.inCustoms') :
+              (sn >= 7 && sn <= 9) ? t('client.recentOrders.statuses.sentFromChina') :
+              sn === 6 ? t('client.recentOrders.statuses.packagingBox') :
+              sn === 5 ? t('client.recentOrders.statuses.paymentValidated') :
+              sn === 4 ? t('client.recentOrders.statuses.processing') :
+              sn === 3 ? t('client.recentOrders.statuses.quoted') :
+              t('client.recentOrders.statuses.pending');
+          }
+          return getStatusText(status || 'pending');
+        };
+        const getStateBadgeClass = (sn?: number) => {
+          if (typeof sn !== 'number') return 'bg-yellow-900/30 text-yellow-300 border-yellow-700';
+          if (sn === 13) return isDark ? 'bg-emerald-900/30 text-emerald-300 border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-200';
+          if (sn === 12) return isDark ? 'bg-gray-800 text-gray-300 border-gray-700' : 'bg-gray-100 text-gray-800 border-gray-200';
+          if (sn === 11) return isDark ? 'bg-green-900/30 text-green-300 border-green-700' : 'bg-green-100 text-green-800 border-green-200';
+          if (sn === 10) return isDark ? 'bg-orange-900/30 text-orange-300 border-orange-700' : 'bg-orange-100 text-orange-800 border-orange-200';
+          if (sn >= 7 && sn <= 9) return isDark ? 'bg-cyan-900/30 text-cyan-300 border-cyan-700' : 'bg-cyan-100 text-cyan-800 border-cyan-200';
+          if (sn === 6) return isDark ? 'bg-blue-900/30 text-blue-300 border-blue-700' : 'bg-blue-100 text-blue-800 border-blue-200';
+          if (sn === 5) return isDark ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700' : 'bg-yellow-100 text-yellow-800 border-yellow-200';
+          if (sn === 4) return isDark ? 'bg-blue-900/30 text-blue-300 border-blue-700' : 'bg-blue-100 text-blue-800 border-blue-200';
+          if (sn === 3) return isDark ? 'bg-green-900/30 text-green-300 border-green-700' : 'bg-green-100 text-green-800 border-green-200';
+          return isDark ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700' : 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        };
+
+        return (
+          <>
+            <div
+              className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 transition-opacity duration-300 animate-in fade-in`}
+              onClick={() => setIsDetailsModalOpen(false)}
+            >
+              <div
+                className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-2xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-y-auto transition-all duration-300 animate-in slide-in-from-bottom-4 zoom-in-95`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className={`sticky top-0 z-10 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border-b px-5 py-4 rounded-t-2xl`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        {t('client.recentOrders.modal.detailsTitle', { defaultValue: 'Detalles del Pedido' })}
+                      </h3>
+                      <p className={`text-sm mt-0.5 ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                        {t('client.recentOrders.modal.detailsSubtitle', { defaultValue: 'Información completa y documentos del pedido' })}
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => setIsDetailsModalOpen(false)} className={`h-8 w-8 p-0 shrink-0 ${isDark ? 'hover:bg-slate-700' : ''}`}>
+                      <XCircle className="h-5 w-5" />
+                    </Button>
+                  </div>
                 </div>
-                <div>
-                  <p className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
-                    {selectedOrder.status === 'pending' && t('client.recentOrders.budget')}
-                    {selectedOrder.status === 'quoted' && t('client.recentOrders.statuses.quoted')}
-                    {selectedOrder.status !== 'pending' && selectedOrder.status !== 'quoted' && t('client.recentOrders.modal.amount')}
-                  </p>
-                  <div className="text-lg font-bold">
-                    {selectedOrder.status === 'pending' && typeof selectedOrder.estimatedBudget !== 'undefined' && selectedOrder.estimatedBudget !== null ? (
-                      <PriceDisplay
-                        amount={Number(selectedOrder.estimatedBudget)}
-                        currency="USD"
-                        variant="card"
-                        size="lg"
-                        emphasizeBolivars={true}
-                        showRefresh={true}
-                        className={mounted && theme === 'dark' ? 'border-green-700' : 'border-green-200'}
-                      />
-                    ) : selectedOrder.status === 'quoted' ? (
-                      <PriceDisplay
-                        amount={selectedOrder.totalQuote !== null && selectedOrder.totalQuote !== undefined
-                          ? selectedOrder.totalQuote
-                          : ((selectedOrder.unitQuote ?? 0) + (selectedOrder.shippingPrice ?? 0)) / (cnyRate || 7.25)
-                        }
-                        currency="USD"
-                        variant="card"
-                        size="lg"
-                        emphasizeBolivars={true}
-                        showRefresh={true}
-                        className={mounted && theme === 'dark' ? 'border-green-700' : 'border-green-200'}
-                      />
+
+                {/* Two-column content */}
+                <div className="flex flex-col md:flex-row gap-5 p-5">
+                  {/* LEFT: Product image + info grid + description + links */}
+                  <div className="md:w-2/5 shrink-0 space-y-3">
+                    {/* Product image */}
+                    {selectedOrder.imageUrl ? (
+                      <div
+                        className={`rounded-xl overflow-hidden border ${isDark ? 'border-slate-700' : 'border-gray-200'} cursor-pointer group relative`}
+                        onClick={() => {
+                          const lightbox = document.getElementById('client-details-lightbox');
+                          if (lightbox) lightbox.style.display = 'flex';
+                        }}
+                      >
+                        <img
+                          src={selectedOrder.imageUrl}
+                          alt={selectedOrder.product}
+                          className="w-full h-52 md:h-64 object-cover transition-transform duration-200 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <Search className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
+                        </div>
+                      </div>
                     ) : (
-                      <PriceDisplay
-                        amount={selectedOrder.totalQuote !== null && selectedOrder.totalQuote !== undefined
-                          ? selectedOrder.totalQuote
-                          : ((selectedOrder.unitQuote ?? 0) + (selectedOrder.shippingPrice ?? 0)) / (cnyRate || 7.25)
-                        }
-                        currency="USD"
-                        variant="card"
-                        size="lg"
-                        emphasizeBolivars={true}
-                        showRefresh={true}
-                        className={mounted && theme === 'dark' ? 'border-green-700' : 'border-green-200'}
-                      />
+                      <div className={`w-full h-52 md:h-64 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 ${isDark ? 'border-slate-700 text-slate-500' : 'border-gray-200 text-gray-400'}`}>
+                        <ImageIcon className="h-10 w-10 opacity-40" />
+                        <span className="text-xs">Sin imagen</span>
+                      </div>
+                    )}
+
+                    {/* Product info grid */}
+                    <div className={`rounded-xl border ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-3.5 space-y-2.5`}>
+                      <h4 className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        <span className="font-mono text-xs">#ORD-{selectedOrder.id}</span> {selectedOrder.product}
+                      </h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <span className={`text-[10px] uppercase tracking-wide font-medium ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                            <Clock className="h-3 w-3 inline mr-1" />Fecha
+                          </span>
+                          <p className={`text-xs font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                            {selectedOrder.createdAt ? new Date(selectedOrder.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className={`text-[10px] uppercase tracking-wide font-medium ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                            {t('client.recentOrders.modal.status', { defaultValue: 'Estado' })}
+                          </span>
+                          <div className="mt-0.5">
+                            <Badge className={`text-[10px] font-semibold px-2 py-0.5 ${getStateBadgeClass(selectedOrder.stateNum)}`}>
+                              {getStateLabel(selectedOrder.stateNum, selectedOrder.status)}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div>
+                          <span className={`text-[10px] uppercase tracking-wide font-medium ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                            <Truck className="h-3 w-3 inline mr-1" />Envío
+                          </span>
+                          <p className={`text-xs font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                            {shippingLabels[selectedOrder.shippingType || ''] || selectedOrder.shippingType || '—'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className={`text-[10px] uppercase tracking-wide font-medium ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                            <MapPin className="h-3 w-3 inline mr-1" />Entrega
+                          </span>
+                          <p className={`text-xs font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                            {deliveryLabels[selectedOrder.deliveryVenezuela || ''] || selectedOrder.deliveryVenezuela || '—'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Description card */}
+                    {selectedOrder.description && (
+                      <div className={`rounded-xl border ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-3.5`}>
+                        <span className={`text-[10px] uppercase tracking-wide font-medium ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                          <FileText className="h-3 w-3 inline mr-1" />{t('client.recentOrders.modal.description', { defaultValue: 'Descripción' })}
+                        </span>
+                        <p className={`text-xs mt-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                          {selectedOrder.description}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Specifications card */}
+                    {selectedOrder.specifications && (
+                      <div className={`rounded-xl border ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-3.5`}>
+                        <span className={`text-[10px] uppercase tracking-wide font-medium ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                          <Settings className="h-3 w-3 inline mr-1" />{t('client.recentOrders.newOrder.specifications', { defaultValue: 'Especificaciones Técnicas' })}
+                        </span>
+                        <p className={`text-xs mt-1.5 whitespace-pre-wrap ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                          {selectedOrder.specifications}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Links card */}
+                    {(selectedOrder.tracking || selectedOrder.tracking_link || selectedOrder.pdfRoutes) && (
+                      <div className={`rounded-xl border ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-3.5`}>
+                        <span className={`text-[10px] uppercase tracking-wide font-medium ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                          <Link className="h-3 w-3 inline mr-1" />Links
+                        </span>
+                        <div className="mt-1.5 space-y-1">
+                          {selectedOrder.tracking && (
+                            <p className={`text-xs font-mono ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                              <Package className="h-3 w-3 inline mr-1" />{selectedOrder.tracking}
+                            </p>
+                          )}
+                          {selectedOrder.tracking_link && (
+                            <a
+                              href={selectedOrder.tracking_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`text-xs block truncate ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'} transition-colors`}
+                            >
+                              {selectedOrder.tracking_link}
+                            </a>
+                          )}
+                          {selectedOrder.pdfRoutes && (
+                            <a
+                              href={selectedOrder.pdfRoutes}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`text-xs block truncate ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'} transition-colors`}
+                            >
+                              {selectedOrder.pdfRoutes}
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* RIGHT: Price + Progress + Documents */}
+                  <div className="flex-1 space-y-4">
+                    {/* Price display */}
+                    <div className={`rounded-xl border p-4 ${isDark ? 'border-green-800/50 bg-green-900/10' : 'border-green-200 bg-green-50/50'}`}>
+                      <span className={`text-[10px] uppercase tracking-wide font-medium ${isDark ? 'text-green-400' : 'text-green-700'}`}>
+                        <DollarSign className="h-3 w-3 inline mr-1" />
+                        {selectedOrder.status === 'pending' ? t('client.recentOrders.budget', { defaultValue: 'Presupuesto' })
+                          : selectedOrder.status === 'quoted' ? t('client.recentOrders.statuses.quoted', { defaultValue: 'Cotizado' })
+                          : t('client.recentOrders.modal.amount', { defaultValue: 'Monto' })}
+                      </span>
+                      <div className="mt-2">
+                        {selectedOrder.status === 'pending' && selectedOrder.estimatedBudget != null ? (
+                          <PriceDisplay amount={Number(selectedOrder.estimatedBudget)} currency="USD" variant="card" size="lg" emphasizeBolivars={true} showRefresh={true} className={isDark ? 'border-green-700' : 'border-green-200'} />
+                        ) : (
+                          <PriceDisplay
+                            amount={selectedOrder.totalQuote != null ? selectedOrder.totalQuote : ((selectedOrder.unitQuote ?? 0) + (selectedOrder.shippingPrice ?? 0)) / (cnyRate || 7.25)}
+                            currency="USD" variant="card" size="lg" emphasizeBolivars={true} showRefresh={true}
+                            className={isDark ? 'border-green-700' : 'border-green-200'}
+                          />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Progress */}
+                    <div className={`rounded-xl border p-4 ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className={`text-[10px] uppercase tracking-wide font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                          {t('client.recentOrders.progress', { defaultValue: 'Progreso del pedido' })}
+                        </span>
+                        <span className={`text-sm font-bold tabular-nums ${selectedOrder.progress >= 100 ? (isDark ? 'text-emerald-400' : 'text-emerald-600') : (isDark ? 'text-blue-400' : 'text-blue-600')}`}>
+                          {selectedOrder.progress}%
+                        </span>
+                      </div>
+                      <div className={`w-full rounded-full h-2.5 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
+                        <div
+                          className={`h-2.5 rounded-full transition-all duration-500 ${getProgressColor(selectedOrder.progress)}`}
+                          style={{ width: `${selectedOrder.progress}%` }}
+                        />
+                      </div>
+                      {selectedOrder.estimatedDelivery && (
+                        <p className={`text-[10px] mt-2 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                          {t('client.recentOrders.estimatedDelivery', { defaultValue: 'Entrega estimada' })}: {selectedOrder.estimatedDelivery}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Documents */}
+                    {selectedOrder.documents && selectedOrder.documents.length > 0 && (
+                      <div className={`rounded-xl border p-4 ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'}`}>
+                        <span className={`text-[10px] uppercase tracking-wide font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
+                          <FileText className="h-3 w-3 inline mr-1" />Documentos
+                        </span>
+                        <div className="mt-2 space-y-1.5">
+                          {selectedOrder.documents.map((doc, index) => (
+                            <div key={index} className={`flex items-center gap-2 p-2.5 rounded-lg ${isDark ? 'bg-slate-700/50' : 'bg-white border border-gray-100'}`}>
+                              <span className="text-sm">{doc.type === 'image' ? '📷' : '🔗'}</span>
+                              <span className={`text-sm flex-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{doc.name || doc.label}</span>
+                              <Button
+                                variant="ghost" size="sm" className="h-6 px-2"
+                                onClick={() => {
+                                  if (selectedOrder.pdfRoutes) {
+                                    window.open(selectedOrder.pdfRoutes, '_blank', 'noopener,noreferrer');
+                                  }
+                                }}
+                              >
+                                <Eye className="h-3.5 w-3.5 mr-1" />{t('client.recentOrders.actions.view', { defaultValue: 'Ver' })}
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
-                <div>
-                  <p className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.modal.status')}</p>
-                  {typeof selectedOrder.stateNum === 'number' ? (
-                    <Badge className={`text-xs font-semibold px-3 py-1 transition-colors hover:brightness-110 hover:ring-1 ${mounted && theme === 'dark' ? (
-                      selectedOrder.stateNum === 13 ? 'bg-emerald-900/30 text-emerald-300 border-emerald-700 hover:bg-emerald-900/50 hover:ring-emerald-500/20' :
-                        selectedOrder.stateNum === 12 ? 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700 hover:ring-gray-500/20' :
-                          selectedOrder.stateNum === 11 ? 'bg-green-900/30 text-green-300 border-green-700 hover:bg-green-900/50 hover:ring-green-500/20' :
-                            selectedOrder.stateNum === 10 ? 'bg-orange-900/30 text-orange-300 border-orange-700 hover:bg-orange-900/50 hover:ring-orange-500/20' :
-                              (selectedOrder.stateNum === 7 || selectedOrder.stateNum === 8 || selectedOrder.stateNum === 9) ? 'bg-cyan-900/30 text-cyan-300 border-cyan-700 hover:bg-cyan-900/50 hover:ring-cyan-500/20' :
-                                selectedOrder.stateNum === 6 ? 'bg-blue-900/30 text-blue-300 border-blue-700 hover:bg-blue-900/50 hover:ring-blue-500/20' :
-                                  selectedOrder.stateNum === 5 ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700 hover:bg-yellow-900/50 hover:ring-yellow-500/20' :
-                                    selectedOrder.stateNum === 4 ? 'bg-blue-900/30 text-blue-300 border-blue-700 hover:bg-blue-900/50 hover:ring-blue-500/20' :
-                                      selectedOrder.stateNum === 3 ? 'bg-green-900/30 text-green-300 border-green-700 hover:bg-green-900/50 hover:ring-green-500/20' :
-                                        selectedOrder.stateNum === 2 ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700 hover:bg-yellow-900/50 hover:ring-yellow-500/20' :
-                                          'bg-yellow-900/30 text-yellow-300 border-yellow-700 hover:bg-yellow-900/50 hover:ring-yellow-500/20'
-                    ) : (
-                      selectedOrder.stateNum === 13 ? 'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-50 hover:ring-emerald-200' :
-                        selectedOrder.stateNum === 12 ? 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-50 hover:ring-gray-200' :
-                          selectedOrder.stateNum === 11 ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-50 hover:ring-green-200' :
-                            selectedOrder.stateNum === 10 ? 'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-50 hover:ring-orange-200' :
-                              (selectedOrder.stateNum === 7 || selectedOrder.stateNum === 8 || selectedOrder.stateNum === 9) ? 'bg-cyan-100 text-cyan-800 border-cyan-200 hover:bg-cyan-50 hover:ring-cyan-200' :
-                                selectedOrder.stateNum === 6 ? 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:ring-blue-200' :
-                                  selectedOrder.stateNum === 5 ? 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:ring-yellow-200' :
-                                    selectedOrder.stateNum === 4 ? 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-50 hover:ring-blue-200' :
-                                      selectedOrder.stateNum === 3 ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-50 hover:ring-green-200' :
-                                        selectedOrder.stateNum === 2 ? 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:ring-yellow-200' :
-                                          'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-50 hover:ring-yellow-200'
-                    )
-                      }`}>
-                      {selectedOrder.stateNum === 13 ? t('client.recentOrders.statuses.delivered') :
-                        selectedOrder.stateNum === 5 ? t('client.recentOrders.statuses.paymentValidated') :
-                          selectedOrder.stateNum === 6 ? t('client.recentOrders.statuses.packagingBox') :
-                            // 7 y 8 etiquetados como 9
-                            (selectedOrder.stateNum === 7 || selectedOrder.stateNum === 8 || selectedOrder.stateNum === 9) ? t('client.recentOrders.statuses.sentFromChina') :
-                              selectedOrder.stateNum === 10 ? t('client.recentOrders.statuses.inCustoms') :
-                                selectedOrder.stateNum === 11 ? t('client.recentOrders.statuses.arriving') :
-                                  selectedOrder.stateNum === 12 ? t('client.recentOrders.statuses.inStore') :
-                                    selectedOrder.stateNum === 4 ? t('client.recentOrders.statuses.processing') :
-                                      selectedOrder.stateNum === 3 ? t('client.recentOrders.statuses.quoted') :
-                                        selectedOrder.stateNum === 2 ? t('client.recentOrders.statuses.pending') :
-                                          t('client.recentOrders.statuses.pending')}
-                    </Badge>
+
+                {/* Footer */}
+                <div className={`sticky bottom-0 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-gray-200'} border-t px-5 py-4 rounded-b-2xl flex gap-3`}>
+                  {selectedOrder.invoiceRoute ? (
+                    <Button
+                      variant="outline"
+                      className={`flex-1 ${isDark ? 'border-slate-600 text-slate-300 hover:bg-slate-700' : ''}`}
+                      onClick={() => window.open(selectedOrder.invoiceRoute as string, '_blank', 'noopener,noreferrer')}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      {t('client.recentOrders.modal.downloadInvoice', { defaultValue: 'Descargar Factura' })}
+                    </Button>
                   ) : (
-                    <Badge className={getStatusColor(selectedOrder.status)}>
-                      {getStatusText(selectedOrder.status)}
-                    </Badge>
+                    <div className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm ${isDark ? 'bg-slate-700/50 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
+                      <Clock className="h-4 w-4" />
+                      {t('client.recentOrders.modal.invoiceNotReady', { defaultValue: 'Factura no disponible aún' })}
+                    </div>
                   )}
                 </div>
-                <div>
-                  <p className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.modal.tracking')}</p>
-                  <p className={`text-sm font-mono ${mounted && theme === 'dark' ? 'text-slate-400' : ''}`}>{selectedOrder.tracking}</p>
-                </div>
-              </div>
-
-              {/* Descripción */}
-              <div>
-                <p className={`text-sm font-medium mb-2 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.modal.description')}</p>
-                <p className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{selectedOrder.description}</p>
-              </div>
-
-              {/* Progreso */}
-              <div>
-                <p className={`text-sm font-medium mb-2 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.progress')}</p>
-                <div className="space-y-2">
-                  <div className={`flex justify-between text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : ''}`}>
-                    <span>{t('client.recentOrders.modal.currentProgress')}</span>
-                    <span>{selectedOrder.progress}%</span>
-                  </div>
-                  <div className={`w-full rounded-full h-3 ${mounted && theme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'}`}>
-                    <div
-                      className={`h-3 rounded-full ${getProgressColor(selectedOrder.progress)}`}
-                      style={{ width: `${selectedOrder.progress}%` }}
-                    ></div>
-                  </div>
-                  <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                    {t('client.recentOrders.estimatedDelivery')}: {selectedOrder.estimatedDelivery}
-                  </p>
-                </div>
-              </div>
-
-              {/* Documentos */}
-              {selectedOrder.documents && selectedOrder.documents.length > 0 && (
-                <div>
-                  <p className={`text-sm font-medium mb-2 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{t('client.recentOrders.modal.detailsSubtitle')}</p>
-                  <div className="space-y-2">
-                    {selectedOrder.documents.map((doc, index) => (
-                      <div key={index} className={`flex items-center gap-2 p-2 rounded ${mounted && theme === 'dark' ? 'bg-slate-700' : 'bg-slate-50'}`}>
-                        <div className={`w-4 h-4 ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-600'}`}>
-                          {doc.type === 'image' ? '📷' : '🔗'}
-                        </div>
-                        <span className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : ''}`}>{doc.name || doc.label}</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-2 ml-auto"
-                          onClick={() => {
-                            if (selectedOrder.pdfRoutes) {
-                              try {
-                                const url = selectedOrder.pdfRoutes;
-                                window.open(url, '_blank', 'noopener,noreferrer');
-                              } catch (e) {
-                                console.error('No se pudo abrir el PDF:', e);
-                              }
-                            }
-                          }}>
-
-                          {t('client.recentOrders.actions.view')}
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Acciones */}
-              <div className="flex gap-2 pt-4 border-t">
-                {selectedOrder.invoiceRoute ? (
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => {
-                      try {
-                        window.open(selectedOrder.invoiceRoute as string, '_blank', 'noopener,noreferrer');
-                      } catch (e) {
-                        console.error('No se pudo abrir la factura:', e);
-                      }
-                    }}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    {t('client.recentOrders.modal.downloadInvoice')}
-                  </Button>
-                ) : (
-                  <div className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm ${mounted && theme === 'dark' ? 'bg-slate-700/50 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
-                    <Clock className="h-4 w-4" />
-                    {t('client.recentOrders.modal.invoiceNotReady', { defaultValue: 'Factura no disponible aún' })}
-                  </div>
-                )}
               </div>
             </div>
-          </DialogContent>
-        )}
-      </Dialog>
+
+            {/* Lightbox */}
+            {selectedOrder.imageUrl && (
+              <div
+                id="client-details-lightbox"
+                className="fixed inset-0 bg-black/80 backdrop-blur-md items-center justify-center z-[60] cursor-pointer p-6"
+                style={{ display: 'none' }}
+                onClick={(e) => { e.stopPropagation(); (e.currentTarget as HTMLElement).style.display = 'none'; }}
+              >
+                <img
+                  src={selectedOrder.imageUrl}
+                  alt="Vista ampliada"
+                  className="max-w-full max-h-full rounded-xl object-contain shadow-2xl"
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <button
+                  onClick={(e) => { e.stopPropagation(); const lb = document.getElementById('client-details-lightbox'); if (lb) lb.style.display = 'none'; }}
+                  className="absolute top-5 right-5 text-white/70 hover:text-white transition-colors"
+                >
+                  <XCircle className="h-8 w-8" />
+                </button>
+              </div>
+            )}
+          </>
+        );
+      })()}
 
       {/* Modal de Seguimiento (copiado del tracking) */}
       {
