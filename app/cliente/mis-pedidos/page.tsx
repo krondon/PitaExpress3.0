@@ -2644,8 +2644,8 @@ export default function MisPedidosPage() {
                         </Button>
                       )}
 
-                      {/* Botones del Modal */}
-                      <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 w-full sm:w-auto">
+                      {/* Botones del Modal: en paso 4 ocupar todo el ancho para alinear "Enviar solicitud" a la derecha */}
+                      <div className={`flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 w-full ${currentStep === 4 ? 'sm:w-full' : 'sm:w-auto'}`}>
                         {currentStep === 3 && (
                           <Button
                             onClick={handleAddToQueue}

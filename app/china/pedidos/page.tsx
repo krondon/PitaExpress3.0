@@ -3988,8 +3988,11 @@ export default function PedidosChina() {
                             <Boxes className={`h-5 w-5 ${mounted && theme === 'dark' ? 'text-indigo-300' : 'text-indigo-600'}`} />
                           </div>
                           <div className="space-y-1">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <h3 className={`font-semibold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>#BOX-{id}</h3>
+                              {box?.name && (
+                                <span className={`text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>{String((box as any).name)}</span>
+                              )}
                               {boxType && (
                                 <Badge variant="outline" className={`ml-2 text-xs ${boxType === 'Aereo' ? 'text-sky-500 border-sky-500' : 'text-blue-600 border-blue-600'}`}>
                                   {t(`chinese.ordersPage.modals.selectBoxForOrder.boxTypes.${boxType.toLowerCase() as 'aereo' | 'maritimo' | 'mixto'}`, { defaultValue: boxType })}

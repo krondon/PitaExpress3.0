@@ -1791,8 +1791,11 @@ export default function ChinaOrdersTabContent() {
                           <Boxes className="h-5 w-5 text-indigo-600 dark:text-indigo-300" />
                         </div>
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="font-semibold text-slate-900 dark:text-white">#BOX-{id}</h3>
+                            {box.name && (
+                              <span className="text-sm font-medium text-slate-600 dark:text-slate-300">{String(box.name)}</span>
+                            )}
                             {boxType && (
                               <Badge variant="outline" className={`ml-2 text-xs ${boxType === 'Aereo' ? 'text-sky-500 border-sky-500' : 'text-blue-600 border-blue-600'}`}>
                                 {boxType}

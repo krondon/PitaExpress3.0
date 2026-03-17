@@ -21,4 +21,3 @@ COMMENT ON COLUMN api_health_logs.status IS 'Estado del intento: success o faile
 COMMENT ON COLUMN api_health_logs.response_time_ms IS 'Tiempo de respuesta en milisegundos';
 COMMENT ON COLUMN api_health_logs.error_message IS 'Mensaje de error si el intento falló';
 COMMENT ON COLUMN api_health_logs.rate_obtained IS 'Tasa de cambio obtenida si el intento fue exitoso';
-
