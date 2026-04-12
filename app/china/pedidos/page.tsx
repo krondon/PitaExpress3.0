@@ -17,6 +17,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { toast } from '@/hooks/use-toast';
 import ProposeAlternativeModal from '@/components/china/ProposeAlternativeModal';
 import CotizarModal from '@/components/china/CotizarModal';
+import OrderDetailModal from '@/components/china/OrderDetailModal';
+import CancelOrderModal from '@/components/china/CancelOrderModal';
 import { submitChinaOrderQuote, fetchChinaQuoteConfig } from '@/lib/china/submit-china-order-quote';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ArchiveHistoryButton } from '@/components/shared/ArchiveHistoryButton';
@@ -352,30 +354,10 @@ export default function PedidosChina() {
     }
   }
 
-  // Cancelar pedido (se llama después de confirmar en el modal)
-  const handleCancelOrder = async (orderId: number) => {
-    try {
-      const supabase = getSupabaseBrowserClient();
-      const { error } = await supabase
-        .from('orders')
-        .update({ state: 0 })
-        .eq('id', orderId);
-
-      if (error) throw error;
-
-      toast({
-        title: t('chinese.ordersPage.toasts.orderCancelled', { defaultValue: 'Pedido cancelado' }),
-        description: t('chinese.ordersPage.toasts.orderCancelledDesc', { defaultValue: 'El pedido ha sido marcado como cancelado.' }),
-      });
-      setModalCancelOrder({ open: false });
-      fetchPedidos(currentPage);
-    } catch (error: any) {
-      console.error('Error cancelling order:', error);
-      toast({
-        title: t('chinese.ordersPage.toasts.errorTitle'),
-        description: error.message || t('chinese.ordersPage.toasts.errorDesc'),
-      });
-    }
+  // Cancelar pedido — ahora se maneja desde CancelOrderModal compartido
+  // La función solo refresca datos después de la cancelación exitosa
+  const refreshAfterCancel = () => {
+    fetchPedidos(currentPage);
   };
   // Modal proponer alternativa
   const [modalPropAlternativa, setModalPropAlternativa] = useState<{ open: boolean; pedido?: Pedido }>({ open: false });
@@ -3030,228 +3012,14 @@ export default function PedidosChina() {
             </div>
           </div>
         )}
-        {/* Lightbox de imagen */}
-        {lightboxImg && (
-          <div
-            className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[60] animate-in fade-in duration-200 cursor-pointer p-6"
-            onClick={(e) => { e.stopPropagation(); setLightboxImg(null); }}
-            onKeyDown={(e) => { if (e.key === 'Escape') setLightboxImg(null); }}
-            tabIndex={0}
-          >
-            <img
-              src={lightboxImg}
-              alt="Vista ampliada"
-              className="max-w-full max-h-full rounded-xl object-contain shadow-2xl animate-in zoom-in-90 duration-300"
-              onClick={(e) => e.stopPropagation()}
-            />
-            <button
-              onClick={() => setLightboxImg(null)}
-              className="absolute top-5 right-5 text-white/70 hover:text-white transition-colors"
-            >
-              <XCircle className="h-8 w-8" />
-            </button>
-          </div>
-        )}
-        {/* Modal Detalle del Pedido */}
-        {modalDetalle.open && modalDetalle.pedido && (() => {
-          const p = modalDetalle.pedido;
-          const isDark = mounted && theme === 'dark';
-          const shippingLabels: Record<string, string> = { air: 'Aéreo', maritime: 'Marítimo', doorToDoor: 'Puerta a puerta' };
-          const deliveryLabels: Record<string, string> = { office: 'Oficina', warehouse: 'Almacén', express: 'Express', pickup: 'Retiro en tienda', delivery: 'Entrega a domicilio' };
-          const badge = getOrderBadge(p.numericState);
-          const hasQuote = (p.unitQuote != null && Number(p.unitQuote) > 0) || (p.shippingPrice != null && Number(p.shippingPrice) > 0) || (p.totalQuote != null && Number(p.totalQuote) > 0);
-          const productImg = p.imgs && p.imgs.length > 0 ? p.imgs[0] : null;
-
-          return (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300 p-4">
-              <div
-                ref={modalDetalleRef}
-                className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-2xl w-full max-w-lg md:max-w-2xl max-h-[85vh] overflow-y-auto transition-all duration-300 ${isModalDetalleClosing
-                  ? 'translate-y-full scale-95 opacity-0'
-                  : 'animate-in slide-in-from-bottom-4 duration-300'
-                }`}
-              >
-                {/* Header */}
-                <div className={`sticky top-0 z-10 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border-b px-5 py-4 rounded-t-2xl`}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <h3 className={`text-lg font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                        <span className={`font-mono ${isDark ? 'text-slate-400' : 'text-gray-400'}`}>#ORD-{p.id}</span>{' '}{p.producto || 'Sin nombre'}
-                      </h3>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={closeModalDetalle}
-                      className={`h-8 w-8 p-0 shrink-0 ${isDark ? 'hover:bg-slate-700' : ''}`}
-                    >
-                      <XCircle className="h-5 w-5" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="px-5 py-4 space-y-5">
-                  {/* F-Pattern: Imagen izq + datos der (desktop) / stacked (mobile) */}
-                  <div className="flex flex-col md:flex-row md:items-start gap-5">
-                    {/* Columna izquierda — Imagen + Links */}
-                    {productImg && (
-                      <div className="md:w-2/5 shrink-0">
-                        <div
-                          className={`rounded-xl overflow-hidden border ${isDark ? 'border-slate-700 bg-slate-900' : 'border-gray-200 bg-gray-100'} cursor-pointer group relative`}
-                          onClick={() => setLightboxImg(productImg)}
-                        >
-                          <img
-                            src={productImg}
-                            alt={p.producto}
-                            className="w-full h-48 md:h-56 object-cover transition-transform duration-200 group-hover:scale-105"
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                          />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                            <Search className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Columna derecha — Datos principales */}
-                    <div className={`flex-1 ${!productImg ? 'w-full' : ''}`}>
-                  <div className={`rounded-xl border ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-4 space-y-3`}>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                          <User className="h-3 w-3 inline mr-1" />Cliente
-                        </span>
-                        <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{p.cliente || '—'}</p>
-                      </div>
-                      <div>
-                        <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                          <Tag className="h-3 w-3 inline mr-1" />Cantidad
-                        </span>
-                        <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{p.cantidad}</p>
-                      </div>
-                      <div>
-                        <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                          <Calendar className="h-3 w-3 inline mr-1" />Fecha
-                        </span>
-                        <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                          {p.fecha ? new Date(p.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
-                        </p>
-                      </div>
-                      <div>
-                        <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                          Estado
-                        </span>
-                        <div className="mt-1">
-                          <Badge className={badge.className}>{badge.label}</Badge>
-                        </div>
-                      </div>
-
-                    </div>
-
-                    {/* Envío inline */}
-                    <div className={`pt-3 border-t ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                            <Truck className="h-3 w-3 inline mr-1" />Tipo de envío
-                          </span>
-                          <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                            {shippingLabels[p.shippingType || ''] || p.shippingType || '—'}
-                          </p>
-                        </div>
-                        <div>
-                          <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                            <MapPin className="h-3 w-3 inline mr-1" />Entrega
-                          </span>
-                          <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                            {deliveryLabels[p.deliveryType || ''] || p.deliveryType || '—'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                    </div>
-                  </div>
-
-                  {/* Links — full width debajo del F-pattern */}
-                  {p.links && p.links.length > 0 && (
-                    <div className={`rounded-xl border ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-4`}>
-                      <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>🔗 Links del producto</span>
-                      <div className="mt-2 space-y-1.5">
-                        {p.links.map((link, i) => (
-                          <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="block text-sm text-blue-500 hover:text-blue-400 hover:underline truncate">{link}</a>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Descripción */}
-                  {p.description && (
-                    <div className={`rounded-xl border ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-4`}>
-                      <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                        <FileText className="h-3 w-3 inline mr-1" />Descripción
-                      </span>
-                      <p className={`text-sm mt-1.5 whitespace-pre-wrap ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-                        {p.description}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Especificaciones técnicas */}
-                  {p.especificaciones && (
-                    <div className={`rounded-xl border ${isDark ? 'border-amber-900/40 bg-amber-900/10' : 'border-amber-200 bg-amber-50'} p-4`}>
-                      <span className={`text-xs font-medium ${isDark ? 'text-amber-300' : 'text-amber-700'}`}>
-                        ⚙️ Especificaciones técnicas
-                      </span>
-                      <p className={`text-sm mt-1.5 whitespace-pre-wrap ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-                        {p.especificaciones}
-                      </p>
-                    </div>
-                  )}
-
-
-
-                  {/* Cotización */}
-                  {hasQuote && (
-                    <div className={`rounded-xl border ${isDark ? 'border-blue-900/50 bg-blue-900/20' : 'border-blue-200 bg-blue-50'} p-4`}>
-                      <span className={`text-xs font-medium ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>
-                        <Calculator className="h-3 w-3 inline mr-1" />Cotización
-                      </span>
-                      <div className="mt-2 space-y-1.5">
-                        {p.unitQuote != null && Number(p.unitQuote) > 0 && (
-                          <div className="flex justify-between text-sm">
-                            <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Precio unitario</span>
-                            <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>¥{Number(p.unitQuote).toFixed(2)}</span>
-                          </div>
-                        )}
-                        {p.shippingPrice != null && Number(p.shippingPrice) > 0 && (
-                          <div className="flex justify-between text-sm">
-                            <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Envío</span>
-                            <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>¥{Number(p.shippingPrice).toFixed(2)}</span>
-                          </div>
-                        )}
-                        {p.totalQuote != null && Number(p.totalQuote) > 0 && (
-                          <div className={`flex justify-between text-sm pt-1.5 border-t ${isDark ? 'border-blue-800' : 'border-blue-200'}`}>
-                            <span className={`font-bold ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>Total</span>
-                            <span className={`font-bold text-base ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>${Number(p.totalQuote).toFixed(2)}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Footer */}
-                <div className={`sticky bottom-0 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border-t px-5 py-3 rounded-b-2xl`}>
-                  <Button variant="outline" onClick={closeModalDetalle} className="w-full">
-                    Cerrar
-                  </Button>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
+        {/* Modal Detalle del Pedido (componente compartido) */}
+        <OrderDetailModal
+          open={modalDetalle.open}
+          pedido={modalDetalle.pedido}
+          onClose={() => {
+            setModalDetalle({ open: false });
+          }}
+        />
 
         {/* Modal Crear Caja */}
         {modalCrearCaja.open && (
@@ -3680,58 +3448,14 @@ export default function PedidosChina() {
         )}
       </div>
 
-      {/* Modal Cancelar Pedido */}
-      <Dialog open={modalCancelOrder.open} onOpenChange={(open) => setModalCancelOrder({ ...modalCancelOrder, open })}>
-        <DialogContent className={`max-w-md ${mounted && theme === 'dark' ? 'bg-slate-800' : ''}`}>
-          <DialogHeader>
-            <DialogTitle className={`flex items-center gap-2 ${mounted && theme === 'dark' ? 'text-white' : ''}`}>
-              <XCircle className="h-5 w-5 text-red-500" />
-              {t('chinese.ordersPage.modals.cancelOrder.title', { defaultValue: 'Cancelar Pedido' })}
-            </DialogTitle>
-            <DialogDescription className={mounted && theme === 'dark' ? 'text-slate-300' : ''}>
-              {t('chinese.ordersPage.modals.cancelOrder.description', { defaultValue: '¿Estás seguro de que deseas cancelar este pedido? Esta acción no se puede deshacer.' })}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className={`p-4 rounded-lg border ${mounted && theme === 'dark' ? 'bg-slate-700/50 border-slate-600' : 'bg-slate-50 border-slate-200'}`}>
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${mounted && theme === 'dark' ? 'bg-blue-900/30' : 'bg-blue-100'}`}>
-                <Package className={`h-5 w-5 ${mounted && theme === 'dark' ? 'text-blue-300' : 'text-blue-600'}`} />
-              </div>
-              <div>
-                <p className={`font-semibold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                  #ORD-{modalCancelOrder.pedidoId}
-                </p>
-                <p className={`text-sm truncate max-w-[250px] ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                  {modalCancelOrder.pedidoName}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setModalCancelOrder({ open: false })}
-              className={mounted && theme === 'dark' ? 'border-slate-600 hover:bg-slate-700' : ''}
-            >
-              {t('chinese.ordersPage.modals.cancelOrder.goBack', { defaultValue: 'Volver' })}
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                if (modalCancelOrder.pedidoId) {
-                  handleCancelOrder(modalCancelOrder.pedidoId);
-                }
-              }}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              <XCircle className="h-4 w-4 mr-2" />
-              {t('chinese.ordersPage.modals.cancelOrder.confirmCancel', { defaultValue: 'Sí, cancelar pedido' })}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Modal Cancelar Pedido (componente compartido) */}
+      <CancelOrderModal
+        open={modalCancelOrder.open}
+        pedidoId={modalCancelOrder.pedidoId}
+        pedidoName={modalCancelOrder.pedidoName}
+        onClose={() => setModalCancelOrder({ open: false })}
+        onCancelled={refreshAfterCancel}
+      />
 
       {/* Modal Proponer Alternativa */}
       <ProposeAlternativeModal

@@ -18,6 +18,8 @@ import { useRealtimeChina } from '@/hooks/use-realtime-china';
 import { useProductAlternatives } from '@/hooks/use-product-alternatives';
 import ProposeAlternativeModal from './ProposeAlternativeModal';
 import CotizarModal from './CotizarModal';
+import OrderDetailModal from './OrderDetailModal';
+import CancelOrderModal from './CancelOrderModal';
 import jsPDF from 'jspdf';
 import { PriceDisplayWithCNY } from '@/components/shared/PriceDisplayWithCNY';
 import { useCNYConversion } from '@/hooks/use-cny-conversion';
@@ -48,7 +50,7 @@ interface Pedido {
   cliente: string;
   producto: string;
   cantidad: number;
-  estado: 'pendiente' | 'cotizado' | 'procesando' | 'enviado';
+  estado: 'pendiente' | 'cotizado' | 'procesando' | 'enviado' | 'cancelado';
   cotizado: boolean;
   precio: number | null;
   fecha: string;
@@ -64,11 +66,14 @@ interface Pedido {
   description?: string;
   imgs?: string[];
   links?: string[];
+  unitQuote?: number | null;
+  shippingPrice?: number | null;
 }
 interface BoxItem { boxes_id?: number | string; id?: number | string; box_id?: number | string; container_id?: number | string | null; state?: number; creation_date?: string; created_at?: string; name?: string }
 interface ContainerItem { containers_id?: number | string; id?: number | string; container_id?: number | string; state?: number; creation_date?: string; created_at?: string; name?: string }
 
 function mapStateToEstado(state: number): Pedido['estado'] {
+  if (state === -2 || state === -1 || state === 0) return 'cancelado';
   if (state >= 5 && state <= 8) return 'enviado';
   if (state === 3 || state === 4) return state === 3 ? 'cotizado' : 'procesando';
   if (state === 1 || state === 2) return 'pendiente'; // Estados 1 y 2 son pendientes
@@ -115,6 +120,11 @@ export default function ChinaOrdersTabContent() {
   const [loadingPedidos, setLoadingPedidos] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [filtroCliente, setFiltroCliente] = useState('');
+
+  // Modal de detalle de pedido (componente compartido)
+  const [modalDetalle, setModalDetalle] = useState<{ open: boolean; pedido?: Pedido }>({ open: false });
+  // Modal de cancelar pedido (componente compartido)
+  const [modalCancelOrder, setModalCancelOrder] = useState<{ open: boolean; pedidoId?: number; pedidoName?: string }>({ open: false });
 
   // Modales pedidosn
   const [modalCotizar, setModalCotizar] = useState<{ open: boolean; pedido?: Pedido; precioUnitario?: number; precioEnvio?: number; altura?: number; anchura?: number; largo?: number; peso?: number }>({ open: false, precioUnitario: 0, precioEnvio: 0, altura: 0, anchura: 0, largo: 0, peso: 0 });
@@ -452,6 +462,8 @@ export default function ChinaOrdersTabContent() {
           description: order.description || '',
           imgs: Array.isArray(order.imgs) ? order.imgs : [],
           links: Array.isArray(order.links) ? order.links : [],
+          unitQuote: order.unitQuote != null ? Number(order.unitQuote) : null,
+          shippingPrice: order.shippingPrice != null ? Number(order.shippingPrice) : null,
         }));
       setPedidos(mappedPedidos);
     } finally { setLoadingPedidos(false); }
@@ -1098,14 +1110,7 @@ export default function ChinaOrdersTabContent() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                if (p.pdfRoutes) {
-                  const bust = p.pdfRoutes.includes('?') ? `&t=${Date.now()}` : `?t=${Date.now()}`;
-                  window.open(p.pdfRoutes + bust, '_blank', 'noopener,noreferrer');
-                } else {
-                  toast({ title: t('chinese.ordersPage.orders.pdfMissingToastTitle', { defaultValue: 'PDF no disponible' }) });
-                }
-              }}
+              onClick={() => setModalDetalle({ open: true, pedido: p })}
               className="flex items-center gap-1"
             >
               <Eye className="h-4 w-4" />
@@ -1122,13 +1127,10 @@ export default function ChinaOrdersTabContent() {
                     variant="outline"
                     size="sm"
                     className={`h-7 md:h-8 px-3 md:px-4 text-xs font-semibold transition-all duration-300 ${mounted && theme === 'dark' ? 'border-red-600 text-red-300 hover:bg-red-900/30 hover:border-red-500' : 'border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300'}`}
-                    onClick={() => {
-                      // implementar cancelar pedido
-                      toast({ title: 'Cancelar pedido', description: 'Funcionalidad pendiente' });
-                    }}
+                    onClick={() => setModalCancelOrder({ open: true, pedidoId: p.id, pedidoName: p.producto })}
                   >
                     <XCircle className="h-3 w-3 mr-1" />
-                    {t('chinese.ordersPage.modals.selectBoxForOrder.cancel', { defaultValue: 'Cancelar' })}
+                    {t('chinese.ordersPage.modals.cancelOrder.cancelButton', { defaultValue: 'Cancelar' })}
                   </Button>
 
                   <Button
@@ -2008,6 +2010,22 @@ export default function ChinaOrdersTabContent() {
           cliente: modalPropAlternativa.pedido.cliente,
         } : null}
         onSuccess={() => fetchPedidos()}
+      />
+
+      {/* Modal detalle de pedido (componente compartido) */}
+      <OrderDetailModal
+        open={modalDetalle.open}
+        pedido={modalDetalle.pedido}
+        onClose={() => setModalDetalle({ open: false })}
+      />
+
+      {/* Modal cancelar pedido (componente compartido) */}
+      <CancelOrderModal
+        open={modalCancelOrder.open}
+        pedidoId={modalCancelOrder.pedidoId}
+        pedidoName={modalCancelOrder.pedidoName}
+        onClose={() => setModalCancelOrder({ open: false })}
+        onCancelled={() => fetchPedidos()}
       />
 
       <Toaster />
