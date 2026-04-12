@@ -106,10 +106,17 @@ interface Order {
   // Cotización
   unitQuote?: number | null;
   shippingPrice?: number | null;
+  totalQuote?: number | null;
   height?: number | null;
   width?: number | null;
   long?: number | null;
   weight?: number | null;
+  // Datos adicionales
+  quantity?: number | null;
+  shippingType?: string | null;
+  deliveryType?: string | null;
+  productName?: string;
+  imgs?: string[];
 }
 
 interface NewOrderData {
@@ -411,6 +418,7 @@ export default function PedidosPage() {
 
   const { toggleMobileMenu } = useAdminLayoutContext();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [detailLightbox, setDetailLightbox] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDocumentsModalOpen, setIsDocumentsModalOpen] = useState(false);
   const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
@@ -544,10 +552,16 @@ export default function PedidosPage() {
         alternativeRejectionReason: o.alternativeRejectionReason,
         unitQuote: o.unitQuote,
         shippingPrice: o.shippingPrice,
+        totalQuote: o.totalQuote,
         height: o.height,
         width: o.width,
         long: o.long,
         weight: o.weight,
+        quantity: o.quantity,
+        shippingType: o.shippingType,
+        deliveryType: o.deliveryType,
+        productName: o.productName || '',
+        imgs: o.imgs || [],
       };
     });
     setOrders(mapped);
@@ -1844,239 +1858,301 @@ export default function PedidosPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Lightbox de imagen del detalle */}
+      {detailLightbox && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[60] animate-in fade-in duration-200 cursor-pointer p-6"
+          onClick={() => setDetailLightbox(null)}
+        >
+          <img
+            src={detailLightbox}
+            alt="Vista ampliada"
+            className="max-w-full max-h-full rounded-xl object-contain shadow-2xl animate-in zoom-in-90 duration-300"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            onClick={() => setDetailLightbox(null)}
+            className="absolute top-5 right-5 text-white/70 hover:text-white transition-colors"
+          >
+            <X className="h-8 w-8" />
+          </button>
+        </div>
+      )}
+
       {/* Modal de Detalles del Pedido */}
       <Dialog open={!!selectedOrder && !isEditModalOpen && !isDocumentsModalOpen && !isTrackingModalOpen} onOpenChange={() => setSelectedOrder(null)}>
-        {selectedOrder && (
-          <DialogContent
-            className={mounted && theme === 'dark' ? 'sm:max-w-[700px] max-h-[80vh] overflow-y-auto bg-slate-900 p-0 rounded-lg shadow-2xl animate-in fade-in-0 slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95' : 'sm:max-w-[700px] max-h-[80vh] overflow-y-auto bg-white p-0 rounded-lg shadow-2xl animate-in fade-in-0 slide-in-from-bottom-2 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95'}
-          >
-            <div className="flex flex-col md:flex-row">
-              {/* Sección izquierda - Detalles del pedido */}
-              <div className={mounted && theme === 'dark' ? 'md:w-2/3 p-4 md:p-6 lg:p-8 border-b md:border-b-0 md:border-r border-slate-700 overflow-y-auto' : 'md:w-2/3 p-4 md:p-6 lg:p-8 border-b md:border-b-0 md:border-r border-gray-200 overflow-y-auto'}>
-                <DialogHeader>
-                  <DialogTitle className={`text-lg md:text-xl lg:text-2xl font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                    {t('admin.orders.modal.detailsTitle', { id: selectedOrder.id })}
-                  </DialogTitle>
-                  <DialogDescription className={`text-sm md:text-base ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-gray-500'}`}>
-                    {t('admin.orders.modal.detailsDescription')}
-                  </DialogDescription>
-                </DialogHeader>
+        {selectedOrder && (() => {
+          const isDark = mounted && theme === 'dark';
+          const shippingLabels: Record<string, string> = { air: 'Aéreo', maritime: 'Marítimo', doorToDoor: 'Puerta a puerta' };
+          const deliveryLabels: Record<string, string> = { office: 'Oficina', warehouse: 'Almacén', express: 'Express', pickup: 'Retiro en tienda', delivery: 'Entrega a domicilio' };
+          const hasQuote = (selectedOrder.unitQuote != null && Number(selectedOrder.unitQuote) > 0) || (selectedOrder.totalQuote != null && Number(selectedOrder.totalQuote) > 0);
+          const productImg = selectedOrder.imgs && selectedOrder.imgs.length > 0 ? selectedOrder.imgs[0] : null;
+          const progressVal = mapStateToProgress(selectedOrder.stateNum);
+          const currentKey = adminStateToStepKey(selectedOrder.stateNum);
+          const steps: { key: StepKey; label: string }[] = [
+            { key: 'created', label: t('client.recentOrders.trackingModal.states.created') },
+            { key: 'processing', label: t('client.recentOrders.trackingModal.states.processing') },
+            { key: 'shipped', label: t('client.recentOrders.trackingModal.states.shipped') },
+            { key: 'in-transit', label: t('client.recentOrders.trackingModal.states.in-transit') },
+            { key: 'customs', label: t('client.recentOrders.trackingModal.states.customs') },
+            { key: 'delivered', label: t('client.recentOrders.trackingModal.states.delivered') },
+          ];
+          const currentIndex = steps.findIndex(s => s.key === currentKey);
 
-                <div className="mt-4 md:mt-6 space-y-3 md:space-y-4">
-                  {/* Detalles de la tarjeta */}
-                  <div className="flex items-center space-x-3">
-                    <div className={mounted && theme === 'dark' ? 'w-8 h-8 md:w-10 md:h-10 rounded-full bg-blue-900 flex items-center justify-center' : 'w-8 h-8 md:w-10 md:h-10 rounded-full bg-blue-100 flex items-center justify-center'}>
-                      <Package className={mounted && theme === 'dark' ? 'w-4 h-4 md:w-5 md:h-5 text-blue-300' : 'w-4 h-4 md:w-5 md:h-5 text-blue-600'} />
-                    </div>
-                    <div>
-                      <p className={`font-semibold text-base md:text-lg ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('admin.orders.modal.client')}</p>
-                      <p className={`text-sm md:text-base ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>{selectedOrder.client}</p>
+          return (
+          <DialogContent
+            className={`sm:max-w-[700px] max-h-[85vh] overflow-y-auto p-0 rounded-2xl border-0 shadow-2xl ${isDark ? 'bg-slate-900' : 'bg-white'}`}
+          >
+            {/* ── Header con imagen del producto ── */}
+            <div className={`px-6 pt-6 pb-4 ${isDark ? 'border-slate-800' : 'border-gray-100'} border-b`}>
+              <div className="flex items-start gap-5">
+                {/* Imagen del producto */}
+                {productImg ? (
+                  <div
+                    className={`w-28 h-28 rounded-xl overflow-hidden border-2 shrink-0 cursor-pointer group relative ${isDark ? 'border-slate-700' : 'border-gray-200'}`}
+                    onClick={() => setDetailLightbox(productImg)}
+                  >
+                    <img
+                      src={productImg}
+                      alt={selectedOrder.productName || ''}
+                      className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                      <Search className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                   </div>
-
-                  <div className="flex items-center space-x-3">
-                    <div className={mounted && theme === 'dark' ? 'w-8 h-8 md:w-10 md:h-10 rounded-full bg-purple-900 flex items-center justify-center' : 'w-8 h-8 md:w-10 md:h-10 rounded-full bg-purple-100 flex items-center justify-center'}>
-                      <MapPin className={mounted && theme === 'dark' ? 'w-4 h-4 md:w-5 md:h-5 text-purple-300' : 'w-4 h-4 md:w-5 md:h-5 text-purple-600'} />
+                ) : (
+                  <div className={`w-28 h-28 rounded-xl flex items-center justify-center shrink-0 ${isDark ? 'bg-slate-800 border-2 border-slate-700' : 'bg-gray-50 border-2 border-gray-200'}`}>
+                    <Package className={`w-10 h-10 ${isDark ? 'text-slate-600' : 'text-gray-300'}`} />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0 pt-1">
+                  <DialogHeader className="text-left space-y-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className={`font-mono text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>#ORD-{selectedOrder.id}</span>
+                        <DialogTitle className={`text-lg font-bold tracking-tight mt-0.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                          {selectedOrder.productName || selectedOrder.description || 'Pedido'}
+                        </DialogTitle>
+                      </div>
+                      <Badge className={`${statusConfig[selectedOrder.status].color} border text-[10px] shrink-0 mt-1`}>
+                        {(() => { const StatusIcon = statusConfig[selectedOrder.status].icon; return <StatusIcon className="w-3 h-3 mr-1" />; })()}
+                        {t(`admin.orders.status.${selectedOrder.status}`)}
+                      </Badge>
                     </div>
-                    <div>
-                      <p className={`font-semibold text-base md:text-lg ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('admin.orders.modal.assignedTo')}</p>
-                      <Badge className={`${assignedConfig[selectedOrder.assignedTo].color} border text-xs md:text-sm`}>
+                    <DialogDescription className={`text-xs ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                      {selectedOrder.createdAt
+                        ? new Date(selectedOrder.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
+                        : t('admin.orders.modal.detailsDescription')}
+                    </DialogDescription>
+                  </DialogHeader>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              {/* ── Datos del pedido ── */}
+              <div className={`rounded-xl border p-4 ${isDark ? 'border-slate-800 bg-slate-800/40' : 'border-gray-100 bg-gray-50/60'}`}>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                      <User className="h-3 w-3 inline mr-1 -mt-px" />Cliente
+                    </span>
+                    <p className={`text-sm font-semibold mt-0.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>{selectedOrder.client}</p>
+                  </div>
+                  <div>
+                    <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                      <MapPin className="h-3 w-3 inline mr-1 -mt-px" />Asignado a
+                    </span>
+                    <div className="mt-1">
+                      <Badge className={`${assignedConfig[selectedOrder.assignedTo].color} border text-xs`}>
                         {t(`admin.orders.assigned.${selectedOrder.assignedTo}`)}
                       </Badge>
                     </div>
                   </div>
-
-                  <div className="flex items-center space-x-3">
-                    <div className={mounted && theme === 'dark' ? 'w-8 h-8 md:w-10 md:h-10 rounded-full bg-green-900 flex items-center justify-center' : 'w-8 h-8 md:w-10 md:h-10 rounded-full bg-green-100 flex items-center justify-center'}>
-                      <Clock className={mounted && theme === 'dark' ? 'w-4 h-4 md:w-5 md:h-5 text-green-300' : 'w-4 h-4 md:w-5 md:h-5 text-green-600'} />
-                    </div>
+                  <div>
+                    <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                      <Clock className="h-3 w-3 inline mr-1 -mt-px" />Tiempo
+                    </span>
+                    <p className={`text-sm font-semibold mt-0.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>{selectedOrder.daysElapsed} días</p>
+                  </div>
+                  {selectedOrder.quantity != null && Number(selectedOrder.quantity) > 0 && (
                     <div>
-                      <p className={`font-semibold text-base md:text-lg ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('admin.orders.modal.elapsedTime')}</p>
-                      <p className={`text-sm md:text-base ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>{t('admin.orders.table.daysElapsed', { count: selectedOrder.daysElapsed })}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <div className={mounted && theme === 'dark' ? 'w-8 h-8 md:w-10 md:h-10 rounded-full bg-orange-900 flex items-center justify-center' : 'w-8 h-8 md:w-10 md:h-10 rounded-full bg-orange-100 flex items-center justify-center'}>
-                      <Calendar className={mounted && theme === 'dark' ? 'w-4 h-4 md:w-5 md:h-5 text-orange-300' : 'w-4 h-4 md:w-5 md:h-5 text-orange-600'} />
-                    </div>
-                    <div>
-                      <p className={`font-semibold text-base md:text-lg ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('admin.orders.modal.currentStatus')}</p>
-                      <Badge className={`${statusConfig[selectedOrder.status].color} border text-xs md:text-sm`}>
-                        {
-                          (() => {
-                            const StatusIcon = statusConfig[selectedOrder.status].icon;
-                            return <StatusIcon className="w-3 h-3 mr-1" />;
-                          })()
-                        }
-                        {t(`admin.orders.status.${selectedOrder.status}`)}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  {/* Progreso del pedido */}
-                  <div className="mt-4">
-                    <p className={`font-semibold text-base md:text-lg mb-2 ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('admin.orders.modal.progress')}</p>
-                    <div className="space-y-2">
-                      <Progress value={mapStateToProgress(selectedOrder.stateNum)} className={mounted && theme === 'dark' ? 'bg-slate-800' : ''} />
-                      <div className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
-                        {mapStateToProgress(selectedOrder.stateNum)}%
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Paso actual con etiquetas (copiado de Mis pedidos) */}
-                  <div className="mt-4">
-                    <p className={`font-semibold text-base md:text-lg mb-2 ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('admin.orders.modal.currentStep')}</p>
-                    {(() => {
-                      const currentKey = adminStateToStepKey(selectedOrder.stateNum);
-                      const steps: { key: StepKey; label: string }[] = [
-                        { key: 'created', label: t('client.recentOrders.trackingModal.states.created') },
-                        { key: 'processing', label: t('client.recentOrders.trackingModal.states.processing') },
-                        { key: 'shipped', label: t('client.recentOrders.trackingModal.states.shipped') },
-                        { key: 'in-transit', label: t('client.recentOrders.trackingModal.states.in-transit') },
-                        { key: 'customs', label: t('client.recentOrders.trackingModal.states.customs') },
-                        { key: 'delivered', label: t('client.recentOrders.trackingModal.states.delivered') },
-                      ];
-                      const currentIndex = steps.findIndex(s => s.key === currentKey);
-                      return (
-                        <div className="flex items-center gap-3 flex-wrap">
-                          {steps.map((s, idx) => {
-                            const done = idx <= currentIndex;
-                            return (
-                              <div key={s.key} className="flex items-center gap-2">
-                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold border ${done ? (mounted && theme === 'dark' ? 'bg-green-600 text-white border-green-700' : 'bg-green-600 text-white border-green-700') : (mounted && theme === 'dark' ? 'bg-slate-800 text-slate-300 border-slate-600' : 'bg-slate-100 text-slate-600 border-slate-300')}`}>
-                                  {idx + 1}
-                                </div>
-                                <span className={`text-xs md:text-sm ${done ? (mounted && theme === 'dark' ? 'text-green-300' : 'text-green-700') : (mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-600')}`}>{s.label}</span>
-                                {idx < steps.length - 1 && (
-                                  <div className={`w-6 h-[2px] ${idx < currentIndex ? 'bg-green-600' : (mounted && theme === 'dark' ? 'bg-slate-600' : 'bg-slate-300')}`} />
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    })()}
-                  </div>
-
-                  {/* Datos de Cotización (Visible si existe cotización) */}
-                  {(selectedOrder.unitQuote && selectedOrder.shippingPrice) && (
-                    <div className="mt-4">
-                      <p className={`font-semibold text-base md:text-lg mb-2 ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                        Datos de Cotización
-                      </p>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <div className={`p-3 rounded-lg border ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-                          <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Precio Unitario</p>
-                          <div className="flex items-baseline gap-1 mt-1">
-                            <span className="text-sm font-semibold">¥</span>
-                            <span className={`text-lg font-bold ${mounted && theme === 'dark' ? 'text-blue-400' : 'text-blue-700'}`}>
-                              {selectedOrder.unitQuote}
-                            </span>
-                          </div>
-                        </div>
-                        <div className={`p-3 rounded-lg border ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-                          <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Envío Interno</p>
-                          <div className="flex items-baseline gap-1 mt-1">
-                            <span className="text-sm font-semibold">¥</span>
-                            <span className={`text-lg font-bold ${mounted && theme === 'dark' ? 'text-orange-400' : 'text-orange-700'}`}>
-                              {selectedOrder.shippingPrice}
-                            </span>
-                          </div>
-                        </div>
-                        <div className={`p-3 rounded-lg border ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-                          <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Peso</p>
-                          <div className="flex items-baseline gap-1 mt-1">
-                            <span className={`text-lg font-bold ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-900'}`}>
-                              {selectedOrder.weight ?? 0}
-                            </span>
-                            <span className="text-xs text-slate-500 font-medium">kg</span>
-                          </div>
-                        </div>
-                        <div className={`p-3 rounded-lg border ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-                          <p className={`text-xs ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Medidas (cm)</p>
-                          <div className={`text-sm font-medium mt-1 ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
-                            {selectedOrder.height ?? 0} x {selectedOrder.width ?? 0} x {selectedOrder.long ?? 0}
-                          </div>
-                        </div>
-                      </div>
+                      <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                        <Hash className="h-3 w-3 inline mr-1 -mt-px" />Cantidad
+                      </span>
+                      <p className={`text-sm font-semibold mt-0.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>{selectedOrder.quantity}</p>
                     </div>
                   )}
                 </div>
 
-                <div className="mt-6 md:mt-8">
-                  <p className={`font-semibold text-lg md:text-xl ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('admin.orders.modal.orderDescription')}</p>
-                  <p className={`mt-2 text-sm md:text-base ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>{selectedOrder.description}</p>
+                {/* Envío */}
+                {(selectedOrder.shippingType || selectedOrder.deliveryType) && (
+                  <div className={`pt-3 mt-3 border-t ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
+                    <div className="grid grid-cols-2 gap-3">
+                      {selectedOrder.shippingType && (
+                        <div>
+                          <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                            <Truck className="h-3 w-3 inline mr-1 -mt-px" />Tipo de envío
+                          </span>
+                          <p className={`text-sm font-semibold mt-0.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                            {shippingLabels[selectedOrder.shippingType] || selectedOrder.shippingType}
+                          </p>
+                        </div>
+                      )}
+                      {selectedOrder.deliveryType && (
+                        <div>
+                          <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                            <MapPin className="h-3 w-3 inline mr-1 -mt-px" />Entrega
+                          </span>
+                          <p className={`text-sm font-semibold mt-0.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                            {deliveryLabels[selectedOrder.deliveryType] || selectedOrder.deliveryType}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ── Progreso ── */}
+              <div className={`rounded-xl border p-4 ${isDark ? 'border-slate-800 bg-slate-800/40' : 'border-gray-100 bg-gray-50/60'}`}>
+                <div className="flex items-center justify-between mb-2.5">
+                  <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                    {t('admin.orders.modal.progress')}
+                  </span>
+                  <span className={`text-xs font-bold tabular-nums ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>{progressVal}%</span>
+                </div>
+                <Progress value={progressVal} className={`h-1.5 ${isDark ? 'bg-slate-700' : ''}`} />
+                <div className="flex items-center gap-1 mt-3 flex-wrap">
+                  {steps.map((s, idx) => {
+                    const done = idx <= currentIndex;
+                    return (
+                      <div key={s.key} className="flex items-center gap-0.5">
+                        <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold ${done ? 'bg-green-600 text-white' : (isDark ? 'bg-slate-700 text-slate-500' : 'bg-gray-200 text-gray-400')}`}>
+                          {done ? <Check className="w-2.5 h-2.5" /> : idx + 1}
+                        </div>
+                        <span className={`text-[9px] ${done ? (isDark ? 'text-green-400' : 'text-green-700') : (isDark ? 'text-slate-600' : 'text-gray-400')}`}>{s.label}</span>
+                        {idx < steps.length - 1 && (
+                          <div className={`w-3 h-[1px] mx-px ${idx < currentIndex ? 'bg-green-500' : (isDark ? 'bg-slate-700' : 'bg-gray-200')}`} />
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
-              {/* Sección derecha - Historial y Acciones */}
-              <div className={mounted && theme === 'dark' ? 'md:w-1/3 p-4 md:p-6 lg:p-8 bg-slate-800 flex flex-col' : 'md:w-1/3 p-4 md:p-6 lg:p-8 bg-gray-50 flex flex-col'}>
-                <div className="flex flex-col space-y-2">
-                  <Button
-                    className={mounted && theme === 'dark' ? 'w-full bg-blue-600 text-white hover:bg-blue-700' : 'w-full bg-blue-600 text-white hover:bg-blue-700'}
-                    onClick={() => handleOpenEditModal(selectedOrder)}
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    {t('admin.orders.modal.buttons.update')}
-                  </Button>
-                  <Button
-                    className={mounted && theme === 'dark' ? 'w-full bg-red-600 text-white hover:bg-red-700' : 'w-full bg-red-600 text-white hover:bg-red-700'}
-                    onClick={handleDeleteOrder}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    {t('admin.orders.modal.buttons.delete')}
-                  </Button>
-                  <Button
-                    className={mounted && theme === 'dark' ? 'w-full bg-slate-700 text-slate-200 hover:bg-slate-600' : 'w-full bg-gray-200 text-gray-700 hover:bg-gray-300'}
-                    onClick={() => {
-                      const url = selectedOrder?.pdfUrl || '';
-                      if (url && isValidUrl(url)) {
-                        window.open(url, '_blank', 'noopener,noreferrer');
-                      } else {
-                        setIsDocumentsModalOpen(true);
-                      }
-                    }}
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    {t('admin.orders.modal.buttons.viewDocuments')}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 dark:border-red-900/30 dark:hover:bg-red-900/20 w-full disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={() => setIsArchiveModalOpen(true)}
-                    disabled={archivableOrdersCount === 0}
-                    title={archivableOrdersCount === 0 ? "No hay pedidos archivables (Solo Cancelados o Entregados hace >30 días)" : "Borrar Historial"}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Borrar Historial
-                  </Button>
-                  <Button
-                    className={mounted && theme === 'dark' ? 'w-full bg-emerald-600 text-white hover:bg-emerald-700' : 'w-full bg-emerald-600 text-white hover:bg-emerald-700'}
-                    onClick={() => handleOpenTrackingModal(selectedOrder)}
-                  >
-                    <Truck className="w-4 h-4 mr-2" />
-                    {t('tracking')}
-                  </Button>
-                  {selectedOrder.status === 'pendiente-china' && selectedOrder.alternativeStatus !== 'accepted' && selectedOrder.alternativeStatus !== 'pending' && (
-                    <Button
-                      className={mounted && theme === 'dark' ? 'w-full bg-indigo-600 text-white hover:bg-indigo-700' : 'w-full bg-indigo-600 text-white hover:bg-indigo-700'}
-                      onClick={() => {
-                        setSelectedOrderForAlternative(selectedOrder);
-                        setIsProposeModalOpen(true);
-                        setSelectedOrder(null);
-                      }}
-                    >
-                      <Send className="w-4 h-4 mr-2" />
-                      {t('chinese.ordersPage.orders.proposeAlternative', { defaultValue: 'Proponer Alternativa' })}
-                    </Button>
+              {/* ── Cotización ── */}
+              {hasQuote && (
+                <div className={`rounded-xl border p-4 ${isDark ? 'border-blue-900/40 bg-blue-950/20' : 'border-blue-100 bg-blue-50/50'}`}>
+                  <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                    <DollarSign className="h-3 w-3 inline mr-1 -mt-px" />Datos de Cotización
+                  </span>
+                  <div className="grid grid-cols-2 gap-3 mt-3">
+                    {selectedOrder.unitQuote != null && Number(selectedOrder.unitQuote) > 0 && (
+                      <div className={`p-2.5 rounded-lg ${isDark ? 'bg-slate-800/80 border border-slate-700/50' : 'bg-white border border-blue-100'}`}>
+                        <p className={`text-[10px] uppercase tracking-wider mb-0.5 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>Precio Unit.</p>
+                        <div className="flex items-baseline gap-0.5">
+                          <span className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>¥</span>
+                          <span className={`text-base font-bold tabular-nums ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>{Number(selectedOrder.unitQuote).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    )}
+                    {selectedOrder.shippingPrice != null && Number(selectedOrder.shippingPrice) > 0 && (
+                      <div className={`p-2.5 rounded-lg ${isDark ? 'bg-slate-800/80 border border-slate-700/50' : 'bg-white border border-blue-100'}`}>
+                        <p className={`text-[10px] uppercase tracking-wider mb-0.5 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>Envío</p>
+                        <div className="flex items-baseline gap-0.5">
+                          <span className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>¥</span>
+                          <span className={`text-base font-bold tabular-nums ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>{Number(selectedOrder.shippingPrice).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    )}
+                    {selectedOrder.weight != null && Number(selectedOrder.weight) > 0 && (
+                      <div className={`p-2.5 rounded-lg ${isDark ? 'bg-slate-800/80 border border-slate-700/50' : 'bg-white border border-blue-100'}`}>
+                        <p className={`text-[10px] uppercase tracking-wider mb-0.5 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>Peso</p>
+                        <span className={`text-base font-bold tabular-nums ${isDark ? 'text-slate-200' : 'text-slate-900'}`}>{selectedOrder.weight}</span>
+                        <span className={`text-[10px] ml-0.5 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>kg</span>
+                      </div>
+                    )}
+                    {(selectedOrder.height || selectedOrder.width || selectedOrder.long) && (
+                      <div className={`p-2.5 rounded-lg ${isDark ? 'bg-slate-800/80 border border-slate-700/50' : 'bg-white border border-blue-100'}`}>
+                        <p className={`text-[10px] uppercase tracking-wider mb-0.5 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>Medidas</p>
+                        <p className={`text-sm font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                          {selectedOrder.height ?? 0} × {selectedOrder.width ?? 0} × {selectedOrder.long ?? 0}
+                          <span className={`text-[10px] font-normal ml-0.5 ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>cm</span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  {/* Total — precio al cliente */}
+                  {selectedOrder.totalQuote != null && Number(selectedOrder.totalQuote) > 0 && (
+                    <div className={`mt-3 pt-3 border-t ${isDark ? 'border-blue-900/40' : 'border-blue-200'}`}>
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-semibold ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
+                          Total (precio al cliente)
+                        </span>
+                        <span className={`text-xl font-bold tabular-nums ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
+                          ${Number(selectedOrder.totalQuote).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
                   )}
                 </div>
+              )}
+
+              {/* ── Descripción ── */}
+              {selectedOrder.description && (
+                <div className={`rounded-xl border p-4 ${isDark ? 'border-slate-800 bg-slate-800/40' : 'border-gray-100 bg-gray-50/60'}`}>
+                  <span className={`text-[11px] font-medium uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-gray-400'}`}>
+                    <FileText className="h-3 w-3 inline mr-1 -mt-px" />{t('admin.orders.modal.orderDescription')}
+                  </span>
+                  <p className={`text-sm mt-2 whitespace-pre-wrap leading-relaxed ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>
+                    {selectedOrder.description}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* ── Footer: acciones mínimas ── */}
+            <div className={`px-6 py-4 border-t ${isDark ? 'border-slate-800' : 'border-gray-100'}`}>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={() => handleOpenEditModal(selectedOrder)}
+                >
+                  <Edit className="w-3.5 h-3.5 mr-1.5" />
+                  {t('admin.orders.modal.buttons.update')}
+                </Button>
+                {selectedOrder.status === 'pendiente-china' && selectedOrder.alternativeStatus !== 'accepted' && selectedOrder.alternativeStatus !== 'pending' && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className={isDark ? 'border-indigo-700 text-indigo-300 hover:bg-indigo-900/30' : 'border-indigo-200 text-indigo-700 hover:bg-indigo-50'}
+                    onClick={() => {
+                      setSelectedOrderForAlternative(selectedOrder);
+                      setIsProposeModalOpen(true);
+                      setSelectedOrder(null);
+                    }}
+                  >
+                    <Send className="w-3.5 h-3.5 mr-1.5" />
+                    Proponer Alternativa
+                  </Button>
+                )}
+                <div className="flex-1" />
+                <button
+                  onClick={handleDeleteOrder}
+                  className={`text-xs flex items-center gap-1 hover:underline ${isDark ? 'text-red-400 hover:text-red-300' : 'text-red-500 hover:text-red-600'}`}
+                >
+                  <Trash2 className="w-3 h-3" />
+                  Eliminar pedido
+                </button>
               </div>
             </div>
           </DialogContent>
-        )}
+          );
+        })()}
       </Dialog>
 
       {/* Modal para Ver Tracking */}
