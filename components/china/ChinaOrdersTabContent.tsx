@@ -21,6 +21,7 @@ import CotizarModal from './CotizarModal';
 import jsPDF from 'jspdf';
 import { PriceDisplayWithCNY } from '@/components/shared/PriceDisplayWithCNY';
 import { useCNYConversion } from '@/hooks/use-cny-conversion';
+import { submitChinaOrderQuote } from '@/lib/china/submit-china-order-quote';
 import { useTheme } from 'next-themes';
 
 // Utilidad para convertir un SVG público a PNG DataURL para incrustar en PDF (cliente)
@@ -59,6 +60,10 @@ interface Pedido {
   hasAlternative?: boolean;
   alternativeStatus?: 'pending' | 'accepted' | 'rejected' | null;
   alternativeRejectionReason?: string | null;
+  especificaciones?: string;
+  description?: string;
+  imgs?: string[];
+  links?: string[];
 }
 interface BoxItem { boxes_id?: number | string; id?: number | string; box_id?: number | string; container_id?: number | string | null; state?: number; creation_date?: string; created_at?: string; name?: string }
 interface ContainerItem { containers_id?: number | string; id?: number | string; container_id?: number | string; state?: number; creation_date?: string; created_at?: string; name?: string }
@@ -114,8 +119,6 @@ export default function ChinaOrdersTabContent() {
   // Modales pedidosn
   const [modalCotizar, setModalCotizar] = useState<{ open: boolean; pedido?: Pedido; precioUnitario?: number; precioEnvio?: number; altura?: number; anchura?: number; largo?: number; peso?: number }>({ open: false, precioUnitario: 0, precioEnvio: 0, altura: 0, anchura: 0, largo: 0, peso: 0 });
   const [modalEmpaquetarPedido, setModalEmpaquetarPedido] = useState<{ open: boolean; pedidoId?: number }>({ open: false });
-  const [isClosingModalCotizar, setIsClosingModalCotizar] = useState(false);
-  const [enteredModalCotizar, setEnteredModalCotizar] = useState(false); // animación de entrada
   const [isClosingModalEmpaquetarPedido, setIsClosingModalEmpaquetarPedido] = useState(false);
   const modalCotizarRef = useRef<HTMLDivElement>(null);
   const modalEmpaquetarPedidoRef = useRef<HTMLDivElement>(null);
@@ -245,16 +248,6 @@ export default function ChinaOrdersTabContent() {
   const modalVerCajasContRef = useRef<HTMLDivElement>(null);
   // Nuevo: Modal para enviar contenedor con datos (tracking, empresa, fecha estimada)
 
-  // Animación de entrada del modal cotizar
-  useEffect(() => {
-    if (modalCotizar.open) {
-      setEnteredModalCotizar(false);
-      const id = requestAnimationFrame(() => setEnteredModalCotizar(true));
-      return () => cancelAnimationFrame(id);
-    } else {
-      setEnteredModalCotizar(false);
-    }
-  }, [modalCotizar.open]);
   const modalEnviarContenedorRef = useRef<HTMLDivElement>(null);
   const [modalEnviarContenedor, setModalEnviarContenedor] = useState<{ open: boolean; container?: ContainerItem }>({ open: false });
   const [isClosingModalEnviarContenedor, setIsClosingModalEnviarContenedor] = useState(false);
@@ -455,6 +448,10 @@ export default function ChinaOrdersTabContent() {
           hasAlternative: order.hasAlternative,
           alternativeStatus: order.alternativeStatus,
           alternativeRejectionReason: order.alternativeRejectionReason,
+          especificaciones: order.specifications || '',
+          description: order.description || '',
+          imgs: Array.isArray(order.imgs) ? order.imgs : [],
+          links: Array.isArray(order.links) ? order.links : [],
         }));
       setPedidos(mappedPedidos);
     } finally { setLoadingPedidos(false); }
@@ -706,42 +703,52 @@ export default function ChinaOrdersTabContent() {
     } catch (e: any) { console.error(e); toast({ title: 'No se pudo enviar contenedor', description: e?.message || 'Error desconocido' }); }
   }
 
-  // ================== COTIZAR ==================
+  // ================== COTIZAR (misma lógica que /china/pedidos) ==================
   async function cotizarPedido(pedido: Pedido, precioUnitario: number, precioEnvio: number, altura: number, anchura: number, largo: number, peso: number) {
-    try {
-      const supabase = getSupabaseBrowserClient();
-      const totalProductos = Number(precioUnitario) * Number(pedido.cantidad || 0);
-      const total = totalProductos + Number(precioEnvio);
-      // 1) Actualizar solo campos de cotización (sin cambiar el estado aquí)
-      const { error } = await supabase.from('orders').update({
-        totalQuote: total,
-        unitQuote: precioUnitario,
-        shippingPrice: precioEnvio,
-        height: altura,
-        width: anchura,
-        long: largo,
-        weight: peso
-      }).eq('id', pedido.id);
-      if (error) throw error;
+    const result = await submitChinaOrderQuote({
+      orderId: pedido.id,
+      cantidad: pedido.cantidad,
+      precioUnitario,
+      precioEnvio,
+      altura,
+      anchura,
+      largo,
+      peso,
+      numericState: pedido.numericState,
+      pedidoDeliveryType: pedido.deliveryType,
+      pedidoShippingType: pedido.shippingType,
+      cnyRate,
+    });
 
-      // 2) Cambiar estado a 3 vía API para disparar notificaciones del lado servidor
-      try {
-        await fetch(`/api/orders/${pedido.id}/state`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ state: 3, changed_by: 'china', notes: 'Pedido cotizado' }),
+    if (!result.ok) {
+      if (result.reason === 'already_shipped') {
+        toast({
+          title: t('chinese.ordersPage.toasts.notAllowedTitle'),
+          description: t('chinese.ordersPage.toasts.orderAlreadyShipped'),
         });
-      } catch (e) {
-        console.error('No se pudo notificar cambio de estado a 3', e);
+        closeModalCotizar();
+        return;
       }
-
-      setPedidos(prev => prev.map(p => p.id === pedido.id ? { ...p, cotizado: true, precio: precioUnitario, totalQuote: total, numericState: 3, estado: 'cotizado' } : p));
-      toast({ title: 'Pedido cotizado' });
-      closeModalCotizar();
-    } catch (e: any) {
-      console.error(e);
-      toast({ title: 'Error al cotizar' });
+      console.error(result.error);
+      toast({ title: 'Error al cotizar', description: 'No se pudo guardar la cotización.' });
+      return;
     }
+
+    setPedidos((prev) =>
+      prev.map((p) =>
+        p.id === pedido.id
+          ? {
+              ...p,
+              cotizado: true,
+              precio: precioUnitario,
+              totalQuote: result.totalUSDConMargen,
+              numericState: 3,
+              estado: 'cotizado',
+            }
+          : p
+      )
+    );
+    toast({ title: 'Pedido cotizado' });
   }
 
   // Intentar descargar etiqueta/pdf asociada a la caja: buscar pedidos de la caja y abrir el primer pdfRoutes encontrado
@@ -763,7 +770,7 @@ export default function ChinaOrdersTabContent() {
   }
 
   // ================== MODALES CLOSE HELPERS ==================
-  function closeModalCotizar() { setIsClosingModalCotizar(true); setTimeout(() => { setModalCotizar({ open: false }); setIsClosingModalCotizar(false); }, 200); }
+  function closeModalCotizar() { setModalCotizar({ open: false }); }
   function closeModalEmpaquetarPedido() { setIsClosingModalEmpaquetarPedido(true); setTimeout(() => { setModalEmpaquetarPedido({ open: false }); setIsClosingModalEmpaquetarPedido(false); }, 200); }
   function closeModalAvisoEtiqueta() { setModalAvisoEtiqueta({ open: false }); }
   function closeModalCrearCaja() { setIsClosingModalCrearCaja(true); setTimeout(() => { setModalCrearCaja({ open: false }); setIsClosingModalCrearCaja(false); setNewBoxName(''); }, 200); }
@@ -1717,11 +1724,11 @@ export default function ChinaOrdersTabContent() {
 
         {/* Modal Cotizar - Componente compartido */}
         <CotizarModal
+          ref={modalCotizarRef}
           open={modalCotizar.open}
           pedido={modalCotizar.pedido}
-          onClose={() => setModalCotizar({ open: false })}
+          onClose={closeModalCotizar}
           onSubmit={async (_, precioUnitario, precioEnvio, altura, anchura, largo, peso) => {
-            // Usar modalCotizar.pedido en lugar del parámetro para tener el tipo completo
             if (modalCotizar.pedido) {
               await cotizarPedido(modalCotizar.pedido, precioUnitario, precioEnvio, altura, anchura, largo, peso);
             }
