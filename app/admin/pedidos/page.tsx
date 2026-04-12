@@ -1880,7 +1880,7 @@ export default function PedidosPage() {
       )}
 
       {/* Modal de Detalles del Pedido */}
-      <Dialog open={!!selectedOrder && !isEditModalOpen && !isDocumentsModalOpen && !isTrackingModalOpen} onOpenChange={() => setSelectedOrder(null)}>
+      <Dialog open={!!selectedOrder && !isEditModalOpen && !isDocumentsModalOpen && !isTrackingModalOpen} onOpenChange={(open) => { if (!open && detailLightbox) return; if (!open) setSelectedOrder(null); }}>
         {selectedOrder && (() => {
           const isDark = mounted && theme === 'dark';
           const shippingLabels: Record<string, string> = { air: 'Aéreo', maritime: 'Marítimo', doorToDoor: 'Puerta a puerta' };
