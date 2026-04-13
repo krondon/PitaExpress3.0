@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from '@/hooks/useTranslation';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { useChinaLayoutContext } from '@/lib/ChinaLayoutContext';
@@ -16,6 +16,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Toaster } from '@/components/ui/toaster';
 import { toast } from '@/hooks/use-toast';
 import ProposeAlternativeModal from '@/components/china/ProposeAlternativeModal';
+import CotizarModal from '@/components/china/CotizarModal';
+import OrderDetailModal from '@/components/china/OrderDetailModal';
+import CancelOrderModal from '@/components/china/CancelOrderModal';
+import { submitChinaOrderQuote, fetchChinaQuoteConfig } from '@/lib/china/submit-china-order-quote';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ArchiveHistoryButton } from '@/components/shared/ArchiveHistoryButton';
 // PDF
@@ -350,30 +354,10 @@ export default function PedidosChina() {
     }
   }
 
-  // Cancelar pedido (se llama después de confirmar en el modal)
-  const handleCancelOrder = async (orderId: number) => {
-    try {
-      const supabase = getSupabaseBrowserClient();
-      const { error } = await supabase
-        .from('orders')
-        .update({ state: 0 })
-        .eq('id', orderId);
-
-      if (error) throw error;
-
-      toast({
-        title: t('chinese.ordersPage.toasts.orderCancelled', { defaultValue: 'Pedido cancelado' }),
-        description: t('chinese.ordersPage.toasts.orderCancelledDesc', { defaultValue: 'El pedido ha sido marcado como cancelado.' }),
-      });
-      setModalCancelOrder({ open: false });
-      fetchPedidos(currentPage);
-    } catch (error: any) {
-      console.error('Error cancelling order:', error);
-      toast({
-        title: t('chinese.ordersPage.toasts.errorTitle'),
-        description: error.message || t('chinese.ordersPage.toasts.errorDesc'),
-      });
-    }
+  // Cancelar pedido — ahora se maneja desde CancelOrderModal compartido
+  // La función solo refresca datos después de la cancelación exitosa
+  const refreshAfterCancel = () => {
+    fetchPedidos(currentPage);
   };
   // Modal proponer alternativa
   const [modalPropAlternativa, setModalPropAlternativa] = useState<{ open: boolean; pedido?: Pedido }>({ open: false });
@@ -381,37 +365,7 @@ export default function PedidosChina() {
   // Modal cancelar pedido
   const [modalCancelOrder, setModalCancelOrder] = useState<{ open: boolean; pedidoId?: number; pedidoName?: string }>({ open: false });
 
-  const [modalCotizar, setModalCotizar] = useState<{
-    open: boolean,
-    pedido?: Pedido,
-    precioUnitario?: number,
-    precioEnvio?: number,
-    altura?: number,
-    anchura?: number,
-    largo?: number,
-    peso?: number,
-    // inputs como texto para permitir coma o punto temporalmente
-    precioUnitarioInput?: string,
-    precioEnvioInput?: string,
-    alturaInput?: string,
-    anchuraInput?: string,
-    largoInput?: string,
-    pesoInput?: string,
-  }>({
-    open: false,
-    precioUnitario: 0,
-    precioEnvio: 0,
-    altura: 0,
-    anchura: 0,
-    largo: 0,
-    peso: 0,
-    precioUnitarioInput: '',
-    precioEnvioInput: '',
-    alturaInput: '',
-    anchuraInput: '',
-    largoInput: '',
-    pesoInput: '',
-  });
+  const [modalCotizar, setModalCotizar] = useState<{ open: boolean; pedido?: Pedido }>({ open: false });
   const [modalDetalle, setModalDetalle] = useState<{ open: boolean, pedido?: Pedido }>({ open: false });
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
   const { toggleMobileMenu } = useChinaLayoutContext();
@@ -446,7 +400,6 @@ export default function PedidosChina() {
   const [orderCountsByBox, setOrderCountsByBox] = useState<Record<string | number, number>>({});
 
   // Estados para animaciones de salida
-  const [isModalCotizarClosing, setIsModalCotizarClosing] = useState(false);
   const [isModalDetalleClosing, setIsModalDetalleClosing] = useState(false);
   const [isModalCrearCajaClosing, setIsModalCrearCajaClosing] = useState(false);
 
@@ -528,78 +481,9 @@ export default function PedidosChina() {
   useEffect(() => { modalVerPedidosBoxIdRef.current = modalVerPedidos.boxId; }, [modalVerPedidos.boxId]);
   useEffect(() => { modalVerPedidosContIdRef.current = modalVerPedidosCont.containerId; }, [modalVerPedidosCont.containerId]);
 
-  // Función para obtener el margen de ganancia desde la configuración
-  const fetchProfitMargin = useCallback(async (): Promise<number> => {
-    try {
-      const response = await fetch('/api/config');
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.config?.profit_margin !== undefined && data.config.profit_margin !== null) {
-          console.log('[China/Orders] PROFIT MARGIN FETCHED:', data.config.profit_margin);
-          return Number(data.config.profit_margin);
-        }
-        console.warn('[China/Orders] PROFIT MARGIN not in config, data:', data);
-      } else {
-        console.error('[China/Orders] PROFIT MARGIN fetch error, status:', response.status);
-      }
-    } catch (error) {
-      console.error('Error obteniendo margen de ganancia:', error);
-    }
-    console.log('[China/Orders] PROFIT MARGIN FALLBACK: 25');
-    // Fallback al valor por defecto si hay error
-    return 25;
-  }, []);
-
-  // Función para obtener la tarifa de envío aéreo desde la configuración
-  const fetchAirShippingRate = useCallback(async (): Promise<number> => {
-    try {
-      const response = await fetch('/api/config');
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.config?.air_shipping_rate !== undefined && data.config.air_shipping_rate !== null) {
-          console.log('[China/Orders] AIR RATE FETCHED:', data.config.air_shipping_rate);
-          return Number(data.config.air_shipping_rate);
-        }
-        console.warn('[China/Orders] AIR RATE not in config, data:', data);
-      } else {
-        console.error('[China/Orders] AIR RATE fetch error, status:', response.status);
-      }
-    } catch (error) {
-      console.error('Error obteniendo tarifa de envío aéreo:', error);
-    }
-    console.log('[China/Orders] AIR RATE FALLBACK: 10');
-    // Fallback al valor por defecto si hay error
-    return 10; // $10 por kg por defecto
-  }, []);
-
-  // Función para obtener la tarifa de envío marítimo desde la configuración
-  const fetchSeaShippingRate = useCallback(async (): Promise<number> => {
-    try {
-      const response = await fetch('/api/config');
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.config?.sea_shipping_rate !== undefined && data.config.sea_shipping_rate !== null) {
-          console.log('[China/Orders] SEA RATE FETCHED:', data.config.sea_shipping_rate);
-          return Number(data.config.sea_shipping_rate);
-        }
-        console.warn('[China/Orders] SEA RATE not in config, data:', data);
-      } else {
-        console.error('[China/Orders] SEA RATE fetch error, status:', response.status);
-      }
-    } catch (error) {
-      console.error('Error obteniendo tarifa de envío marítimo:', error);
-    }
-    console.log('[China/Orders] SEA RATE FALLBACK: 180');
-    // Fallback al valor por defecto si hay error
-    return 180; // $180 por m³ por defecto
-  }, []);
-
-  // Cargar margen de ganancia al inicio
   useEffect(() => {
-    fetchProfitMargin().then(margin => {
-      setProfitMargin(margin);
-    });
-  }, [fetchProfitMargin]);
+    fetchChinaQuoteConfig().then((c) => setProfitMargin(c.profitMargin));
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -841,11 +725,7 @@ export default function PedidosChina() {
 
   // Funciones para cerrar modales con animación
   const closeModalCotizar = () => {
-    setIsModalCotizarClosing(true);
-    setTimeout(() => {
-      setModalCotizar({ open: false });
-      setIsModalCotizarClosing(false);
-    }, 300);
+    setModalCotizar({ open: false });
   };
 
   const closeModalDetalle = () => {
@@ -1841,22 +1721,7 @@ export default function PedidosChina() {
                   </Button>
 
                   <Button
-                    onClick={() => setModalCotizar({
-                      open: true,
-                      pedido: p,
-                      precioUnitario: p.unitQuote || undefined, // Changed from null to undefined
-                      precioEnvio: p.shippingPrice || undefined, // Changed from null to undefined
-                      altura: p.height || 0,
-                      anchura: p.width || 0,
-                      largo: p.long || 0,
-                      peso: p.weight || 0,
-                      precioUnitarioInput: p.unitQuote && p.unitQuote > 0 ? p.unitQuote.toString() : '',
-                      precioEnvioInput: p.shippingPrice && p.shippingPrice > 0 ? p.shippingPrice.toString() : '',
-                      alturaInput: p.height ? p.height.toString() : '',
-                      anchuraInput: p.width ? p.width.toString() : '',
-                      largoInput: p.long ? p.long.toString() : '',
-                      pesoInput: p.weight ? p.weight.toString() : '',
-                    })}
+                    onClick={() => setModalCotizar({ open: true, pedido: p })}
                     size="sm"
                     className="h-7 sm:h-8 px-2 sm:px-3 flex items-center gap-1 bg-orange-600 hover:bg-orange-700 text-[10px] sm:text-xs"
                   >
@@ -1891,128 +1756,42 @@ export default function PedidosChina() {
     return String(id).toLowerCase().includes(filtroCaja.toLowerCase());
   });
 
-  // Cotizar pedido
   const cotizarPedido = async (pedido: Pedido, precioUnitario: number, precioEnvio: number, altura: number, anchura: number, largo: number, peso: number) => {
-    // Validar que el pedido no esté ya enviado (state >= 9)
-    if (pedido.numericState && pedido.numericState >= 9) {
-      toast({ title: t('chinese.ordersPage.toasts.notAllowedTitle'), description: t('chinese.ordersPage.toasts.orderAlreadyShipped') });
-      setModalCotizar({ open: false });
-      setIsModalCotizarClosing(false);
-      return;
-    }
-
-    const supabase = getSupabaseBrowserClient();
-
-    // Obtener información completa del pedido para verificar el tipo de envío
-    const { data: orderData, error: orderFetchError } = await supabase
-      .from('orders')
-      .select('deliveryType, shippingType')
-      .eq('id', pedido.id)
-      .single();
-
-    if (orderFetchError) {
-      console.error('Error obteniendo información del pedido:', orderFetchError);
-    }
-
-    // Entradas ahora en CNY (¥): convertir a USD para guardar en totalQuote
-    const totalProductosCNY = Number(precioUnitario) * Number(pedido.cantidad || 0);
-    const totalCNY = totalProductosCNY + Number(precioEnvio);
-    const rate = cnyRate && cnyRate > 0 ? cnyRate : 7.25;
-    const totalUSDBase = totalCNY / rate;
-
-    // Obtener el margen de ganancia actual desde la configuración
-    const currentProfitMargin = await fetchProfitMargin();
-    setProfitMargin(currentProfitMargin); // Actualizar estado para referencia futura
-
-    // Aplicar margen de ganancia: precioConMargen = precioBase × (1 + margen/100)
-    // Ejemplo: $1000 × (1 + 25/100) = $1000 × 1.25 = $1250
-    let totalUSDConMargen = totalUSDBase * (1 + currentProfitMargin / 100);
-
-    console.log('[China/Orders] Cotizar calculation start:', {
+    const result = await submitChinaOrderQuote({
+      orderId: pedido.id,
+      cantidad: pedido.cantidad,
       precioUnitario,
       precioEnvio,
-      cantidad: pedido.cantidad,
-      totalCNY,
-      rate,
-      totalUSDBase,
-      profitMargin: currentProfitMargin,
-      totalUSDWithMargin: totalUSDConMargen
+      altura,
+      anchura,
+      largo,
+      peso,
+      numericState: pedido.numericState,
+      pedidoDeliveryType: pedido.deliveryType,
+      pedidoShippingType: pedido.shippingType,
+      cnyRate,
     });
 
-    // Si el pedido es aéreo, calcular y sumar el costo de envío aéreo
-    const isAirShipping = orderData?.deliveryType === 'air' || orderData?.shippingType === 'air' || pedido.deliveryType === 'air' || pedido.shippingType === 'air';
-
-    if (isAirShipping && peso > 0) {
-      // Obtener la tarifa de envío aéreo desde la configuración
-      const airShippingRate = await fetchAirShippingRate();
-
-      // Calcular costo de envío aéreo: peso × tarifa por kg
-      const costoEnvioAereo = Number(peso) * airShippingRate;
-
-      // Sumar el costo de envío al precio con margen
-      totalUSDConMargen = totalUSDConMargen + costoEnvioAereo;
-
-      console.log(`Pedido aéreo: peso=${peso}kg, tarifa=$${airShippingRate}/kg, costo envío=$${costoEnvioAereo}, precio final=$${totalUSDConMargen}`);
-    }
-
-    // Si el pedido es marítimo, calcular y sumar el costo de envío marítimo
-    const isSeaShipping = orderData?.deliveryType === 'maritime' || orderData?.shippingType === 'maritime' || orderData?.shippingType === 'sea' || pedido.deliveryType === 'maritime' || pedido.shippingType === 'maritime' || pedido.shippingType === 'sea';
-
-    if (isSeaShipping && altura > 0 && anchura > 0 && largo > 0) {
-      // Obtener la tarifa de envío marítimo desde la configuración
-      const seaShippingRate = await fetchSeaShippingRate();
-
-      // Convertir dimensiones de cm a metros
-      const alturaMetros = Number(altura) / 100;
-      const anchuraMetros = Number(anchura) / 100;
-      const largoMetros = Number(largo) / 100;
-
-      // Calcular volumen en metros cúbicos
-      const volumen = alturaMetros * anchuraMetros * largoMetros;
-
-      // Calcular costo de envío marítimo: volumen × tarifa por m³
-      const costoEnvioMaritimo = volumen * seaShippingRate;
-
-      // Sumar el costo de envío al precio con margen
-      totalUSDConMargen = totalUSDConMargen + costoEnvioMaritimo;
-
-      console.log(`Pedido marítimo: dimensiones=${altura}×${anchura}×${largo}cm (${volumen.toFixed(3)}m³), tarifa=$${seaShippingRate}/m³, costo envío=$${costoEnvioMaritimo.toFixed(2)}, precio final=$${totalUSDConMargen.toFixed(2)}`);
-    }
-
-    // 1) Actualizar totalQuote en la tabla orders con el precio que incluye el margen y envío aéreo/marítimo (si aplica)
-    const { error: updateError } = await supabase
-      .from('orders')
-      .update({
-        totalQuote: totalUSDConMargen, // Guardar precio final: precioBase + margen + envío aéreo/marítimo (si aplica)
-        unitQuote: precioUnitario,
-        shippingPrice: precioEnvio,
-        height: altura,
-        width: anchura,
-        long: largo,
-        weight: peso
-      })
-      .eq('id', pedido.id);
-    if (updateError) {
+    if (!result.ok) {
+      if (result.reason === 'already_shipped') {
+        toast({ title: t('chinese.ordersPage.toasts.notAllowedTitle'), description: t('chinese.ordersPage.toasts.orderAlreadyShipped') });
+        setModalCotizar({ open: false });
+        return;
+      }
       alert('Error al actualizar la cotización en la base de datos.');
-      console.error('Error update totalQuote:', updateError);
+      console.error('Error update totalQuote:', result.error);
       return;
     }
-    // 2) Cambiar estado a 3 vía API para disparar notificaciones del lado servidor
-    try {
-      await fetch(`/api/orders/${pedido.id}/state`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ state: 3, changed_by: 'china', notes: 'Pedido cotizado' }),
-      });
-    } catch (e) {
-      console.error('No se pudo notificar cambio de estado a 3', e);
-    }
 
-    // Actualizar estado local y cerrar modal (sin PDF)
-    setPedidos(prev => prev.map(p => p.id === pedido.id ? { ...p, cotizado: true, estado: 'cotizado', precio: precioUnitario, totalQuote: totalUSDConMargen, numericState: 3 } : p));
-    setModalCotizar({ open: false });
-    setIsModalCotizarClosing(false);
-  };  // getStatusColor/Text ya no se usan; sustituido por getOrderBadge basado en estado numérico
+    setProfitMargin(result.profitMarginUsed);
+    setPedidos((prev) =>
+      prev.map((p) =>
+        p.id === pedido.id
+          ? { ...p, cotizado: true, estado: 'cotizado', precio: precioUnitario, totalQuote: result.totalUSDConMargen, numericState: 3 }
+          : p
+      )
+    );
+  };
 
   // Asignar pedido a caja (empaquetar)
   const handleSelectCajaForPedido = async (pedidoId: number, box: BoxItem) => {
@@ -2938,364 +2717,15 @@ export default function PedidosChina() {
           </div>
         )}
 
-        {/* Modal Cotizar */}
-        {modalCotizar.open && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300 p-4">
-            <div
-              ref={modalCotizarRef}
-              className={`${mounted && theme === 'dark' ? 'bg-slate-800' : 'bg-white'} rounded-2xl max-w-lg md:max-w-5xl mx-auto w-full max-h-[90vh] overflow-y-auto transition-all duration-300 ${isModalCotizarClosing
-                ? 'translate-y-full scale-95 opacity-0'
-                : 'animate-in slide-in-from-bottom-4 duration-300'
-                }`}
-            >
-              {/* Header */}
-              <div className={`sticky top-0 z-10 ${mounted && theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border-b px-5 py-4 rounded-t-2xl`}>
-                <div className="flex items-center justify-between">
-                  <h3 className={`text-xl font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{t('chinese.ordersPage.modals.quote.title')}</h3>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={closeModalCotizar}
-                    className={`h-8 w-8 p-0 ${mounted && theme === 'dark' ? 'hover:bg-slate-700' : ''}`}
-                  >
-                    <XCircle className="h-5 w-5" />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Two-panel layout */}
-              <div className="flex flex-col md:flex-row">
-                {/* Panel izquierdo — Preview del producto */}
-                <div className={`md:w-2/5 shrink-0 p-5 ${mounted && theme === 'dark' ? 'md:border-r md:border-slate-700' : 'md:border-r md:border-gray-200'}`}>
-                  <div className="space-y-4">
-                    {/* Imagen */}
-                    {modalCotizar.pedido?.imgs && modalCotizar.pedido.imgs.length > 0 && (
-                      <div
-                        className={`rounded-xl overflow-hidden border ${mounted && theme === 'dark' ? 'border-slate-700 bg-slate-900' : 'border-gray-200 bg-gray-100'} cursor-pointer group relative`}
-                        onClick={() => setLightboxImg(modalCotizar.pedido!.imgs![0])}
-                      >
-                        <img
-                          src={modalCotizar.pedido.imgs[0]}
-                          alt={modalCotizar.pedido?.producto}
-                          className="w-full h-44 object-cover transition-transform duration-200 group-hover:scale-105"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                          <Search className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Datos del pedido */}
-                    <div className={`rounded-xl border ${mounted && theme === 'dark' ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-3.5 space-y-2.5`}>
-                      <h4 className={`text-sm font-bold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                        <span className={`font-mono ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-gray-400'}`}>#ORD-{modalCotizar.pedido?.id}</span>{' '}{modalCotizar.pedido?.producto || '—'}
-                      </h4>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>
-                            <User className="h-3 w-3 inline mr-1" />Cliente
-                          </span>
-                          <p className={`text-xs font-semibold ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{modalCotizar.pedido?.cliente || '—'}</p>
-                        </div>
-                        <div>
-                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>
-                            <Tag className="h-3 w-3 inline mr-1" />Cantidad
-                          </span>
-                          <p className={`text-xs font-semibold ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>{modalCotizar.pedido?.cantidad}</p>
-                        </div>
-                        <div>
-                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>
-                            <Calendar className="h-3 w-3 inline mr-1" />Fecha
-                          </span>
-                          <p className={`text-xs font-semibold ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
-                            {modalCotizar.pedido?.fecha ? new Date(modalCotizar.pedido.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
-                          </p>
-                        </div>
-                        <div>
-                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>
-                            Estado
-                          </span>
-                          <div className="mt-0.5">
-                            <Badge className={getOrderBadge(modalCotizar.pedido?.numericState).className}>{getOrderBadge(modalCotizar.pedido?.numericState).label}</Badge>
-                          </div>
-                        </div>
-                        <div>
-                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>
-                            <Truck className="h-3 w-3 inline mr-1" />Envío
-                          </span>
-                          <p className={`text-xs font-semibold ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
-                            {({ air: 'Aéreo', maritime: 'Marítimo', doorToDoor: 'Puerta a puerta' } as Record<string, string>)[modalCotizar.pedido?.shippingType || ''] || modalCotizar.pedido?.shippingType || '—'}
-                          </p>
-                        </div>
-                        <div>
-                          <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>
-                            <MapPin className="h-3 w-3 inline mr-1" />Entrega
-                          </span>
-                          <p className={`text-xs font-semibold ${mounted && theme === 'dark' ? 'text-slate-200' : 'text-slate-800'}`}>
-                            {({ office: 'Oficina', warehouse: 'Almacén', pickup: 'Retiro en tienda', delivery: 'Domicilio' } as Record<string, string>)[modalCotizar.pedido?.deliveryType || ''] || modalCotizar.pedido?.deliveryType || '—'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Descripción */}
-                    {modalCotizar.pedido?.description && (
-                      <div className={`rounded-xl border ${mounted && theme === 'dark' ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-3.5`}>
-                        <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>
-                          <FileText className="h-3 w-3 inline mr-1" />Descripción
-                        </span>
-                        <p className={`text-xs mt-1 whitespace-pre-wrap leading-relaxed ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>{modalCotizar.pedido.description}</p>
-                      </div>
-                    )}
-
-                    {/* Especificaciones */}
-                    {modalCotizar.pedido?.especificaciones && (
-                      <div className={`rounded-xl border ${mounted && theme === 'dark' ? 'border-amber-900/40 bg-amber-900/10' : 'border-amber-200 bg-amber-50'} p-3.5`}>
-                        <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-amber-400' : 'text-amber-700'}`}>
-                          ⚙️ Especificaciones
-                        </span>
-                        <p className={`text-xs mt-1 whitespace-pre-wrap leading-relaxed ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>{modalCotizar.pedido.especificaciones}</p>
-                      </div>
-                    )}
-
-                    {/* Links */}
-                    {modalCotizar.pedido?.links && modalCotizar.pedido.links.length > 0 && (
-                      <div className={`rounded-xl border ${mounted && theme === 'dark' ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-3.5`}>
-                        <span className={`text-[10px] uppercase tracking-wide font-medium ${mounted && theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}>🔗 Links</span>
-                        <div className="mt-1 space-y-1">
-                          {modalCotizar.pedido.links.map((link, i) => (
-                            <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="block text-xs text-blue-500 hover:text-blue-400 hover:underline truncate">{link}</a>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Panel derecho — Formulario de cotización */}
-                <div className="flex-1 p-5">
-              <form onSubmit={e => {
-                e.preventDefault();
-                const precio = Number((e.target as any).precio.value);
-                const precioEnvio = Number((e.target as any).precioEnvio.value);
-                const altura = Number((e.target as any).altura.value);
-                const anchura = Number((e.target as any).anchura.value);
-                const largo = Number((e.target as any).largo.value);
-                const peso = Number((e.target as any).peso.value);
-                if (precio > 0 && modalCotizar.pedido) {
-                  cotizarPedido(modalCotizar.pedido, precio, precioEnvio, altura, anchura, largo, peso);
-                }
-              }} className="space-y-5">
-                <div className="space-y-2">
-                  <label className={`block text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('chinese.ordersPage.modals.quote.unitPriceLabel')}</label>
-                  <div className="relative">
-                    <span className={`absolute left-3 top-3 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>¥</span>
-                    <input
-                      type="text"
-                      name="precio"
-                      inputMode="decimal"
-                      required
-                      value={modalCotizar.precioUnitarioInput ?? ''}
-                      className={`w-full pl-8 pr-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${!modalCotizar.precioUnitarioInput || (modalCotizar.precioUnitario && modalCotizar.precioUnitario > 0) ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
-                      placeholder={t('chinese.ordersPage.modals.quote.unitPricePlaceholder')}
-                      onChange={e => {
-                        // Aceptar coma o punto como separador decimal y permitir punto final temporal
-                        let raw = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
-                        const parts = raw.split('.');
-                        let intPart = (parts[0] || '').slice(0, 7);
-                        let decPart = (parts[1] || '').slice(0, 2);
-                        // Reconstruir permitiendo punto aunque no haya decimales aún
-                        const cleaned = parts.length > 1 ? `${intPart}.${decPart}` : intPart;
-                        const numero = cleaned === '' || cleaned === '.' ? 0 : Number(cleaned);
-                        setModalCotizar(prev => ({ ...prev, precioUnitario: numero, precioUnitarioInput: cleaned }));
-                      }}
-                    />
-                    <p className={`mt-1 text-xs ${!modalCotizar.precioUnitarioInput || (modalCotizar.precioUnitario && modalCotizar.precioUnitario > 0) ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{!modalCotizar.precioUnitarioInput || (modalCotizar.precioUnitario && modalCotizar.precioUnitario > 0) ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterPrice', { defaultValue: 'Ingresa un precio mayor a 0' })}</p>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className={`block text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('chinese.ordersPage.modals.quote.shippingPriceLabel')}</label>
-                  <div className="relative">
-                    <span className={`absolute left-3 top-3 ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>¥</span>
-                    <input
-                      type="text"
-                      name="precioEnvio"
-                      inputMode="decimal"
-                      required
-                      value={modalCotizar.precioEnvioInput ?? ''}
-                      className={`w-full pl-8 pr-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${!modalCotizar.precioEnvioInput || (modalCotizar.precioEnvio !== undefined && modalCotizar.precioEnvio >= 0) ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
-                      placeholder={t('chinese.ordersPage.modals.quote.shippingPricePlaceholder')}
-                      onChange={e => {
-                        // Aceptar coma o punto como separador decimal y permitir punto final temporal
-                        let raw = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
-                        const parts = raw.split('.');
-                        let intPart = (parts[0] || '').slice(0, 7);
-                        let decPart = (parts[1] || '').slice(0, 2);
-                        const cleaned = parts.length > 1 ? `${intPart}.${decPart}` : intPart;
-                        const numero = cleaned === '' || cleaned === '.' ? 0 : Number(cleaned);
-                        setModalCotizar(prev => ({ ...prev, precioEnvio: numero, precioEnvioInput: cleaned }));
-                      }}
-                    />
-                    <p className={`mt-1 text-xs ${!modalCotizar.precioEnvioInput || (modalCotizar.precioEnvio !== undefined && modalCotizar.precioEnvio >= 0) ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{!modalCotizar.precioEnvioInput || (modalCotizar.precioEnvio !== undefined && modalCotizar.precioEnvio >= 0) ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterValidPrice', { defaultValue: 'Ingresa un precio válido' })}</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <label className={`block text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('chinese.ordersPage.modals.quote.heightLabel')}</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        name="altura"
-                        inputMode="decimal"
-                        required
-                        value={modalCotizar.alturaInput ?? ''}
-                        className={`w-full pr-12 pl-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${!modalCotizar.alturaInput || (modalCotizar.altura && modalCotizar.altura > 0) ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
-                        placeholder={t('chinese.ordersPage.modals.quote.heightPlaceholder')}
-                        onChange={e => {
-                          // Aceptar coma o punto como separador decimal y permitir punto final temporal
-                          let raw = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
-                          const parts = raw.split('.');
-                          let intPart = (parts[0] || '').slice(0, 7);
-                          let decPart = (parts[1] || '').slice(0, 1);
-                          const cleaned = parts.length > 1 ? `${intPart}.${decPart}` : intPart;
-                          const numero = cleaned === '' || cleaned === '.' ? 0 : Number(cleaned);
-                          setModalCotizar(prev => ({ ...prev, altura: numero, alturaInput: cleaned }));
-                        }}
-                      />
-                      <span className={`absolute right-3 top-3 text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>cm</span>
-                      <p className={`mt-1 text-xs ${!modalCotizar.alturaInput || (modalCotizar.altura && modalCotizar.altura > 0) ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{!modalCotizar.alturaInput || (modalCotizar.altura && modalCotizar.altura > 0) ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterHeight', { defaultValue: 'Ingresa una altura mayor a 0' })}</p>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className={`block text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('chinese.ordersPage.modals.quote.widthLabel')}</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        name="anchura"
-                        inputMode="decimal"
-                        required
-                        value={modalCotizar.anchuraInput ?? ''}
-                        className={`w-full pr-12 pl-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${!modalCotizar.anchuraInput || (modalCotizar.anchura && modalCotizar.anchura > 0) ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
-                        placeholder={t('chinese.ordersPage.modals.quote.widthPlaceholder')}
-                        onChange={e => {
-                          // Aceptar coma o punto como separador decimal y permitir punto final temporal
-                          let raw = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
-                          const parts = raw.split('.');
-                          let intPart = (parts[0] || '').slice(0, 7);
-                          let decPart = (parts[1] || '').slice(0, 1);
-                          const cleaned = parts.length > 1 ? `${intPart}.${decPart}` : intPart;
-                          const numero = cleaned === '' || cleaned === '.' ? 0 : Number(cleaned);
-                          setModalCotizar(prev => ({ ...prev, anchura: numero, anchuraInput: cleaned }));
-                        }}
-                      />
-                      <span className={`absolute right-3 top-3 text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>cm</span>
-                      <p className={`mt-1 text-xs ${!modalCotizar.anchuraInput || (modalCotizar.anchura && modalCotizar.anchura > 0) ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{!modalCotizar.anchuraInput || (modalCotizar.anchura && modalCotizar.anchura > 0) ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterWidth', { defaultValue: 'Ingresa una anchura mayor a 0' })}</p>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className={`block text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('chinese.ordersPage.modals.quote.lengthLabel')}</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        name="largo"
-                        inputMode="decimal"
-                        required
-                        value={modalCotizar.largoInput ?? ''}
-                        className={`w-full pr-12 pl-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${!modalCotizar.largoInput || (modalCotizar.largo && modalCotizar.largo > 0) ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
-                        placeholder={t('chinese.ordersPage.modals.quote.lengthPlaceholder')}
-                        onChange={e => {
-                          // Aceptar coma o punto como separador decimal y permitir punto final temporal
-                          let raw = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
-                          const parts = raw.split('.');
-                          let intPart = (parts[0] || '').slice(0, 7);
-                          let decPart = (parts[1] || '').slice(0, 1);
-                          const cleaned = parts.length > 1 ? `${intPart}.${decPart}` : intPart;
-                          const numero = cleaned === '' || cleaned === '.' ? 0 : Number(cleaned);
-                          setModalCotizar(prev => ({ ...prev, largo: numero, largoInput: cleaned }));
-                        }}
-                      />
-                      <span className={`absolute right-3 top-3 text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>cm</span>
-                      <p className={`mt-1 text-xs ${!modalCotizar.largoInput || (modalCotizar.largo && modalCotizar.largo > 0) ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{!modalCotizar.largoInput || (modalCotizar.largo && modalCotizar.largo > 0) ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterLength', { defaultValue: 'Ingresa un largo mayor a 0' })}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className={`block text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('chinese.ordersPage.modals.quote.weightLabel')}</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      name="peso"
-                      inputMode="decimal"
-                      required
-                      value={modalCotizar.pesoInput ?? ''}
-                      className={`w-full pr-12 pl-4 py-3 rounded-lg focus:outline-none transition-colors border ${mounted && theme === 'dark' ? 'bg-slate-700 text-white border-slate-600' : ''} ${!modalCotizar.pesoInput || (modalCotizar.peso && modalCotizar.peso > 0) ? (mounted && theme === 'dark' ? 'focus:ring-2 focus:ring-blue-600 focus:border-blue-600' : 'border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500') : 'border-red-500 focus:ring-2 focus:ring-red-500 focus:border-red-500'}`}
-                      placeholder={t('chinese.ordersPage.modals.quote.weightPlaceholder')}
-                      onChange={e => {
-                        // Aceptar coma o punto como separador decimal y permitir punto final temporal
-                        let raw = e.target.value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
-                        const parts = raw.split('.');
-                        let intPart = (parts[0] || '').slice(0, 7);
-                        let decPart = (parts[1] || '').slice(0, 1);
-                        const cleaned = parts.length > 1 ? `${intPart}.${decPart}` : intPart;
-                        const numero = cleaned === '' || cleaned === '.' ? 0 : Number(cleaned);
-                        setModalCotizar(prev => ({ ...prev, peso: numero, pesoInput: cleaned }));
-                      }}
-                    />
-                    <span className={`absolute right-3 top-3 text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>kg</span>
-                    <p className={`mt-1 text-xs ${!modalCotizar.pesoInput || (modalCotizar.peso && modalCotizar.peso > 0) ? (mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500') : 'text-red-500'}`}>{!modalCotizar.pesoInput || (modalCotizar.peso && modalCotizar.peso > 0) ? t('chinese.ordersPage.modals.quote.validation.maxDigits', { defaultValue: 'Máx 7 dígitos enteros' }) : t('chinese.ordersPage.modals.quote.validation.enterWeight', { defaultValue: 'Ingresa un peso mayor a 0' })}</p>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className={`block text-sm font-medium ${mounted && theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>{t('chinese.ordersPage.modals.quote.totalToPay')}</label>
-                  <div className={`px-4 py-3 border rounded-lg ${mounted && theme === 'dark' ? 'bg-gradient-to-r from-green-900/20 to-emerald-900/20 border-green-700' : 'bg-gradient-to-r from-green-50 to-emerald-50 border-slate-200'}`}>
-                    {(() => {
-                      const qty = Number(modalCotizar.pedido?.cantidad || 0);
-                      const unitPrice = Number(modalCotizar.precioUnitario || 0);
-                      const shipping = Number(modalCotizar.precioEnvio || 0);
-                      const totalCNY = (unitPrice * qty) + shipping;
-                      const totalUSD = cnyRate && cnyRate > 0 ? totalCNY / cnyRate : 0;
-                      return (
-                        <div className="space-y-1">
-                          <div className={`font-bold ${mounted && theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>
-                            {`¥${totalCNY.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                          </div>
-                          <div className={`text-sm ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
-                            {cnyLoading ? '...' : `≈ $${totalUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                </div>
-                <div className="flex justify-end space-x-3 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={closeModalCotizar}
-                  >
-                    {t('chinese.ordersPage.modals.quote.cancel')}
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={!(modalCotizar.precioUnitario && modalCotizar.precioUnitario > 0 && String(Math.trunc(modalCotizar.precioUnitario)).length <= 7 &&
-                      modalCotizar.precioEnvio !== undefined && modalCotizar.precioEnvio >= 0 &&
-                      modalCotizar.altura && modalCotizar.altura > 0 &&
-                      modalCotizar.anchura && modalCotizar.anchura > 0 &&
-                      modalCotizar.largo && modalCotizar.largo > 0 &&
-                      modalCotizar.peso && modalCotizar.peso > 0)}
-                    className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {t('chinese.ordersPage.modals.quote.sendQuote')}
-                  </Button>
-                </div>
-              </form>
-                </div>
-                {/* Close two-panel layout */}
-              </div>
-            </div>
-          </div>
-        )}
+        <CotizarModal
+          ref={modalCotizarRef}
+          open={modalCotizar.open}
+          pedido={modalCotizar.pedido}
+          onClose={closeModalCotizar}
+          onSubmit={async (ped, precioUnitario, precioEnvio, altura, anchura, largo, peso) => {
+            await cotizarPedido(ped as Pedido, precioUnitario, precioEnvio, altura, anchura, largo, peso);
+          }}
+        />
 
         {/* Modal Empaquetar Caja: seleccionar contenedor */}
         {modalEmpaquetarCaja.open && (
@@ -3582,228 +3012,14 @@ export default function PedidosChina() {
             </div>
           </div>
         )}
-        {/* Lightbox de imagen */}
-        {lightboxImg && (
-          <div
-            className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[60] animate-in fade-in duration-200 cursor-pointer p-6"
-            onClick={(e) => { e.stopPropagation(); setLightboxImg(null); }}
-            onKeyDown={(e) => { if (e.key === 'Escape') setLightboxImg(null); }}
-            tabIndex={0}
-          >
-            <img
-              src={lightboxImg}
-              alt="Vista ampliada"
-              className="max-w-full max-h-full rounded-xl object-contain shadow-2xl animate-in zoom-in-90 duration-300"
-              onClick={(e) => e.stopPropagation()}
-            />
-            <button
-              onClick={() => setLightboxImg(null)}
-              className="absolute top-5 right-5 text-white/70 hover:text-white transition-colors"
-            >
-              <XCircle className="h-8 w-8" />
-            </button>
-          </div>
-        )}
-        {/* Modal Detalle del Pedido */}
-        {modalDetalle.open && modalDetalle.pedido && (() => {
-          const p = modalDetalle.pedido;
-          const isDark = mounted && theme === 'dark';
-          const shippingLabels: Record<string, string> = { air: 'Aéreo', maritime: 'Marítimo', doorToDoor: 'Puerta a puerta' };
-          const deliveryLabels: Record<string, string> = { office: 'Oficina', warehouse: 'Almacén', express: 'Express', pickup: 'Retiro en tienda', delivery: 'Entrega a domicilio' };
-          const badge = getOrderBadge(p.numericState);
-          const hasQuote = (p.unitQuote != null && Number(p.unitQuote) > 0) || (p.shippingPrice != null && Number(p.shippingPrice) > 0) || (p.totalQuote != null && Number(p.totalQuote) > 0);
-          const productImg = p.imgs && p.imgs.length > 0 ? p.imgs[0] : null;
-
-          return (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-300 p-4">
-              <div
-                ref={modalDetalleRef}
-                className={`${isDark ? 'bg-slate-800' : 'bg-white'} rounded-2xl w-full max-w-lg md:max-w-2xl max-h-[85vh] overflow-y-auto transition-all duration-300 ${isModalDetalleClosing
-                  ? 'translate-y-full scale-95 opacity-0'
-                  : 'animate-in slide-in-from-bottom-4 duration-300'
-                }`}
-              >
-                {/* Header */}
-                <div className={`sticky top-0 z-10 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border-b px-5 py-4 rounded-t-2xl`}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <h3 className={`text-lg font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                        <span className={`font-mono ${isDark ? 'text-slate-400' : 'text-gray-400'}`}>#ORD-{p.id}</span>{' '}{p.producto || 'Sin nombre'}
-                      </h3>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={closeModalDetalle}
-                      className={`h-8 w-8 p-0 shrink-0 ${isDark ? 'hover:bg-slate-700' : ''}`}
-                    >
-                      <XCircle className="h-5 w-5" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="px-5 py-4 space-y-5">
-                  {/* F-Pattern: Imagen izq + datos der (desktop) / stacked (mobile) */}
-                  <div className="flex flex-col md:flex-row md:items-start gap-5">
-                    {/* Columna izquierda — Imagen + Links */}
-                    {productImg && (
-                      <div className="md:w-2/5 shrink-0">
-                        <div
-                          className={`rounded-xl overflow-hidden border ${isDark ? 'border-slate-700 bg-slate-900' : 'border-gray-200 bg-gray-100'} cursor-pointer group relative`}
-                          onClick={() => setLightboxImg(productImg)}
-                        >
-                          <img
-                            src={productImg}
-                            alt={p.producto}
-                            className="w-full h-48 md:h-56 object-cover transition-transform duration-200 group-hover:scale-105"
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                          />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                            <Search className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Columna derecha — Datos principales */}
-                    <div className={`flex-1 ${!productImg ? 'w-full' : ''}`}>
-                  <div className={`rounded-xl border ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-4 space-y-3`}>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                          <User className="h-3 w-3 inline mr-1" />Cliente
-                        </span>
-                        <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{p.cliente || '—'}</p>
-                      </div>
-                      <div>
-                        <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                          <Tag className="h-3 w-3 inline mr-1" />Cantidad
-                        </span>
-                        <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{p.cantidad}</p>
-                      </div>
-                      <div>
-                        <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                          <Calendar className="h-3 w-3 inline mr-1" />Fecha
-                        </span>
-                        <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                          {p.fecha ? new Date(p.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
-                        </p>
-                      </div>
-                      <div>
-                        <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                          Estado
-                        </span>
-                        <div className="mt-1">
-                          <Badge className={badge.className}>{badge.label}</Badge>
-                        </div>
-                      </div>
-
-                    </div>
-
-                    {/* Envío inline */}
-                    <div className={`pt-3 border-t ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                            <Truck className="h-3 w-3 inline mr-1" />Tipo de envío
-                          </span>
-                          <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                            {shippingLabels[p.shippingType || ''] || p.shippingType || '—'}
-                          </p>
-                        </div>
-                        <div>
-                          <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                            <MapPin className="h-3 w-3 inline mr-1" />Entrega
-                          </span>
-                          <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                            {deliveryLabels[p.deliveryType || ''] || p.deliveryType || '—'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                    </div>
-                  </div>
-
-                  {/* Links — full width debajo del F-pattern */}
-                  {p.links && p.links.length > 0 && (
-                    <div className={`rounded-xl border ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-4`}>
-                      <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>🔗 Links del producto</span>
-                      <div className="mt-2 space-y-1.5">
-                        {p.links.map((link, i) => (
-                          <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="block text-sm text-blue-500 hover:text-blue-400 hover:underline truncate">{link}</a>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Descripción */}
-                  {p.description && (
-                    <div className={`rounded-xl border ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-gray-200 bg-gray-50'} p-4`}>
-                      <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>
-                        <FileText className="h-3 w-3 inline mr-1" />Descripción
-                      </span>
-                      <p className={`text-sm mt-1.5 whitespace-pre-wrap ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-                        {p.description}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Especificaciones técnicas */}
-                  {p.especificaciones && (
-                    <div className={`rounded-xl border ${isDark ? 'border-amber-900/40 bg-amber-900/10' : 'border-amber-200 bg-amber-50'} p-4`}>
-                      <span className={`text-xs font-medium ${isDark ? 'text-amber-300' : 'text-amber-700'}`}>
-                        ⚙️ Especificaciones técnicas
-                      </span>
-                      <p className={`text-sm mt-1.5 whitespace-pre-wrap ${isDark ? 'text-slate-300' : 'text-gray-700'}`}>
-                        {p.especificaciones}
-                      </p>
-                    </div>
-                  )}
-
-
-
-                  {/* Cotización */}
-                  {hasQuote && (
-                    <div className={`rounded-xl border ${isDark ? 'border-blue-900/50 bg-blue-900/20' : 'border-blue-200 bg-blue-50'} p-4`}>
-                      <span className={`text-xs font-medium ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>
-                        <Calculator className="h-3 w-3 inline mr-1" />Cotización
-                      </span>
-                      <div className="mt-2 space-y-1.5">
-                        {p.unitQuote != null && Number(p.unitQuote) > 0 && (
-                          <div className="flex justify-between text-sm">
-                            <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Precio unitario</span>
-                            <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>¥{Number(p.unitQuote).toFixed(2)}</span>
-                          </div>
-                        )}
-                        {p.shippingPrice != null && Number(p.shippingPrice) > 0 && (
-                          <div className="flex justify-between text-sm">
-                            <span className={isDark ? 'text-slate-300' : 'text-gray-600'}>Envío</span>
-                            <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>¥{Number(p.shippingPrice).toFixed(2)}</span>
-                          </div>
-                        )}
-                        {p.totalQuote != null && Number(p.totalQuote) > 0 && (
-                          <div className={`flex justify-between text-sm pt-1.5 border-t ${isDark ? 'border-blue-800' : 'border-blue-200'}`}>
-                            <span className={`font-bold ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>Total</span>
-                            <span className={`font-bold text-base ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>${Number(p.totalQuote).toFixed(2)}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Footer */}
-                <div className={`sticky bottom-0 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border-t px-5 py-3 rounded-b-2xl`}>
-                  <Button variant="outline" onClick={closeModalDetalle} className="w-full">
-                    Cerrar
-                  </Button>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
+        {/* Modal Detalle del Pedido (componente compartido) */}
+        <OrderDetailModal
+          open={modalDetalle.open}
+          pedido={modalDetalle.pedido}
+          onClose={() => {
+            setModalDetalle({ open: false });
+          }}
+        />
 
         {/* Modal Crear Caja */}
         {modalCrearCaja.open && (
@@ -4232,58 +3448,14 @@ export default function PedidosChina() {
         )}
       </div>
 
-      {/* Modal Cancelar Pedido */}
-      <Dialog open={modalCancelOrder.open} onOpenChange={(open) => setModalCancelOrder({ ...modalCancelOrder, open })}>
-        <DialogContent className={`max-w-md ${mounted && theme === 'dark' ? 'bg-slate-800' : ''}`}>
-          <DialogHeader>
-            <DialogTitle className={`flex items-center gap-2 ${mounted && theme === 'dark' ? 'text-white' : ''}`}>
-              <XCircle className="h-5 w-5 text-red-500" />
-              {t('chinese.ordersPage.modals.cancelOrder.title', { defaultValue: 'Cancelar Pedido' })}
-            </DialogTitle>
-            <DialogDescription className={mounted && theme === 'dark' ? 'text-slate-300' : ''}>
-              {t('chinese.ordersPage.modals.cancelOrder.description', { defaultValue: '¿Estás seguro de que deseas cancelar este pedido? Esta acción no se puede deshacer.' })}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className={`p-4 rounded-lg border ${mounted && theme === 'dark' ? 'bg-slate-700/50 border-slate-600' : 'bg-slate-50 border-slate-200'}`}>
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${mounted && theme === 'dark' ? 'bg-blue-900/30' : 'bg-blue-100'}`}>
-                <Package className={`h-5 w-5 ${mounted && theme === 'dark' ? 'text-blue-300' : 'text-blue-600'}`} />
-              </div>
-              <div>
-                <p className={`font-semibold ${mounted && theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                  #ORD-{modalCancelOrder.pedidoId}
-                </p>
-                <p className={`text-sm truncate max-w-[250px] ${mounted && theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
-                  {modalCancelOrder.pedidoName}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setModalCancelOrder({ open: false })}
-              className={mounted && theme === 'dark' ? 'border-slate-600 hover:bg-slate-700' : ''}
-            >
-              {t('chinese.ordersPage.modals.cancelOrder.goBack', { defaultValue: 'Volver' })}
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                if (modalCancelOrder.pedidoId) {
-                  handleCancelOrder(modalCancelOrder.pedidoId);
-                }
-              }}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              <XCircle className="h-4 w-4 mr-2" />
-              {t('chinese.ordersPage.modals.cancelOrder.confirmCancel', { defaultValue: 'Sí, cancelar pedido' })}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Modal Cancelar Pedido (componente compartido) */}
+      <CancelOrderModal
+        open={modalCancelOrder.open}
+        pedidoId={modalCancelOrder.pedidoId}
+        pedidoName={modalCancelOrder.pedidoName}
+        onClose={() => setModalCancelOrder({ open: false })}
+        onCancelled={refreshAfterCancel}
+      />
 
       {/* Modal Proponer Alternativa */}
       <ProposeAlternativeModal

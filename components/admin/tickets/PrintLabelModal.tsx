@@ -133,18 +133,19 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                                             value={currentFullCode || ticket.full_code}
                                             format="CODE128"
                                             width={1.5}
-                                            height={100}
+                                            height={221}
                                             displayValue={false}
                                             margin={0}
                                         />
                                     </div>
                                     <div style={{
                                         fontFamily: "'CustomArial', sans-serif",
-                                        fontSize: '22px',
-                                        color: '#4b5563',
-                                        letterSpacing: '1.2em',
-                                        marginTop: '8px',
-                                        marginLeft: '1.2em'
+                                        fontSize: '40px',
+                                        fontWeight: 700,
+                                        color: '#000000',
+                                        letterSpacing: '0.12em',
+                                        marginTop: '14px',
+                                        marginLeft: '0.12em'
                                     }}>
                                         {currentFullCode || ticket.full_code}
                                     </div>
@@ -177,22 +178,29 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
             {/* Print Styles */}
             <style jsx global>{`
                 @media print {
+                    /* Hoja estándar apaisada: toda la página en blanco (evita franja gris en la vista previa) */
                     @page {
-                        size: 11.69in 6in;
+                        size: A4 landscape;
                         margin: 0;
                     }
 
                     html {
-                        height: 6in !important;
-                        overflow: hidden !important;
+                        width: 100% !important;
+                        height: 100% !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        overflow: visible !important;
+                        background: white !important;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
                     }
 
                     body {
                         margin: 0 !important;
                         padding: 0 !important;
-                        width: 11.69in !important;
-                        height: 6in !important;
-                        overflow: hidden !important;
+                        width: 100% !important;
+                        min-height: 100% !important;
+                        overflow: visible !important;
                         -webkit-print-color-adjust: exact;
                         print-color-adjust: exact;
                         background: white !important;
@@ -206,15 +214,18 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                         overflow: hidden !important;
                     }
 
-                    /* Show only print label - hoja más alta para que entre toda la etiqueta */
                     #print-label {
                         display: flex !important;
                         visibility: visible !important;
                         position: fixed !important;
+                        inset: 0 !important;
                         left: 0 !important;
                         top: 0 !important;
-                        width: 11.69in !important;
-                        height: 6in !important;
+                        right: 0 !important;
+                        bottom: 0 !important;
+                        width: 100% !important;
+                        height: 100% !important;
+                        min-height: 100% !important;
                         align-items: center !important;
                         justify-content: center !important;
                         background: white !important;
@@ -242,7 +253,8 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                         flexDirection: 'column',
                         alignItems: 'center',
                         gap: '10px',
-                        maxHeight: '100%'
+                        maxHeight: '100%',
+                        backgroundColor: '#ffffff'
                     }}>
                         {/* Logo - más grande al imprimir */}
                         <div style={{ alignSelf: 'flex-start', marginBottom: '12px', marginLeft: '7.5em' }}>
@@ -270,7 +282,7 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                                     value={currentFullCode || ticket.full_code}
                                     format="CODE128"
                                     width={1.5}
-                                    height={190}
+                                    height={364}
                                     displayValue={false}
                                     margin={0}
                                     background="#ffffff"
@@ -278,11 +290,12 @@ export default function PrintLabelModal({ open, onOpenChange, ticket, onSuccess 
                             </div>
                             <div style={{
                                 fontFamily: "'CustomArial', sans-serif",
-                                fontSize: '28px',
-                                color: '#4b5563',
-                                letterSpacing: '1.0em',
-                                marginTop: '12px',
-                                marginLeft: '1.2em'
+                                fontSize: '52px',
+                                fontWeight: 700,
+                                color: '#000000',
+                                letterSpacing: '0.1em',
+                                marginTop: '16px',
+                                marginLeft: '0.1em'
                             }}>
                                 {currentFullCode || ticket.full_code}
                             </div>

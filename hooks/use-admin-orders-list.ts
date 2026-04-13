@@ -20,10 +20,15 @@ export interface AdminOrderListItem {
   alternativeRejectionReason?: string | null;
   unitQuote?: number | null;
   shippingPrice?: number | null;
+  totalQuote?: number | null;
   height?: number | null;
   width?: number | null;
   long?: number | null;
   weight?: number | null;
+  quantity?: number | null;
+  shippingType?: string | null;
+  deliveryType?: string | null;
+  imgs?: string[];
 }
 
 export function useAdminOrdersList() {
@@ -41,7 +46,7 @@ export function useAdminOrdersList() {
       const [{ data: orders, error: ordersError }, { data: clients, error: clientsError }] = await Promise.all([
         supabase
           .from('orders')
-          .select('id, state, productName, description, client_id, asignedEVzla, asignedEChina, created_at, updated_at, estimatedBudget, reputation, pdfRoutes, unitQuote, shippingPrice, height, width, long, weight')
+          .select('id, state, productName, description, client_id, asignedEVzla, asignedEChina, created_at, updated_at, estimatedBudget, reputation, pdfRoutes, unitQuote, shippingPrice, totalQuote, height, width, long, weight, quantity, shippingType, deliveryType, imgs')
           .eq('archived_by_admin', false) // Filter out archived
           // LIFO: Mayor ID primero
           .order('id', { ascending: false }),
@@ -101,10 +106,15 @@ export function useAdminOrdersList() {
           alternativeRejectionReason: rejectionReason,
           unitQuote: o.unitQuote,
           shippingPrice: o.shippingPrice,
+          totalQuote: o.totalQuote,
           height: o.height,
           width: o.width,
           long: o.long,
           weight: o.weight,
+          quantity: o.quantity,
+          shippingType: o.shippingType,
+          deliveryType: o.deliveryType,
+          imgs: Array.isArray(o.imgs) ? o.imgs : [],
         };
       });
 
